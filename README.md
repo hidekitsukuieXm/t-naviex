@@ -242,11 +242,54 @@ SMTP_PASS=""
 
 ---
 
+## GitHub Issues
+
+プロジェクトの実装タスクはGitHub Issuesで管理されています。
+
+**リポジトリ**: https://github.com/hidekitsukuieXm/t-naviex
+
+### ラベル体系
+
+| カテゴリ | ラベル |
+|---------|--------|
+| フェーズ | `phase:1` ~ `phase:7` |
+| 領域 | `area:frontend`, `area:backend`, `area:database`, `area:ai`, `area:integration`, `area:infrastructure`, `area:security`, `area:testing` |
+| 優先度 | `priority:high`, `priority:medium`, `priority:low` |
+
+### マイルストーン
+
+| マイルストーン | Issue数 |
+|--------------|---------|
+| Phase 1: 基盤・コア機能（MVP） | 50件 (#1-#50) |
+| Phase 2: テスト実施・結果管理 | 23件 (#51-#73) |
+| Phase 3: バグ・課題管理・外部連携 | 15件 (#74-#88) |
+| Phase 4: ダッシュボード・レポート・分析 | 19件 (#89-#107) |
+| Phase 5: AI機能統合 | 14件 (#108-#121) |
+| Phase 6: テスト資産管理・高度な機能 | 26件 (#122-#147) |
+| Phase 7: エンタープライズ機能 | 32件 (#148-#179) |
+| **合計** | **179件** |
+
+### Issue一覧の確認
+
+```bash
+# 全Issue一覧
+gh issue list --repo hidekitsukuieXm/t-naviex --limit 200
+
+# Phase別一覧
+gh issue list --repo hidekitsukuieXm/t-naviex --label "phase:1"
+
+# 優先度別一覧
+gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
+```
+
+---
+
 ## 作成履歴
 
 | 日付 | 内容 |
 |------|------|
 | 2026-05-15 | プロジェクト初期設計完了。USDM要求仕様書を基に、ER図、GUI仕様書、API仕様書、テスト仕様書、実装計画を作成。 |
+| 2026-05-15 | GitHubリポジトリ作成、ラベル・マイルストーン設定、GitHub Issues 179件作成完了。 |
 
 ---
 

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx xlsx-cli:*)",
+      "Bash(python:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Project design documentation\n\n- Add USDM requirements specification \\(Excel\\)\n- Add ER diagram \\(Markdown with Mermaid\\)\n- Add GUI specification \\(Markdown with Mermaid\\)\n- Add API specification \\(REST API documentation\\)\n- Add test specification \\(unit, integration, E2E\\)\n- Add implementation plan \\(7-phase TODO list\\)\n- Add README.md with project overview\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}

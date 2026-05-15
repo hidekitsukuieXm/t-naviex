@@ -290,7 +290,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 |------|------|
 | 2026-05-15 | プロジェクト初期設計完了。USDM要求仕様書を基に、ER図、GUI仕様書、API仕様書、テスト仕様書、実装計画を作成。 |
 | 2026-05-15 | GitHubリポジトリ作成、ラベル・マイルストーン設定、GitHub Issues 179件作成完了。 |
-| 2026-05-15 | **Issue #1 完了**: Next.js 16 プロジェクト初期化（App Router）。TypeScript、ESLint、Tailwind CSS、Vitest設定。PR #180 |
+| 2026-05-15 | **Issue #1 完了**: Next.js 16 プロジェクト初期化（App Router）。TypeScript、ESLint、Tailwind CSS、Vitest設定。PR #180 マージ完了。 |
 
 ---
 

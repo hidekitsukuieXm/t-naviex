@@ -73,7 +73,7 @@ docs/
 
 | Phase | 内容 | 状態 |
 |-------|------|------|
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 未着手 |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (1/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート | 未着手 |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携 | 未着手 |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析 | 未着手 |
@@ -290,6 +290,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 |------|------|
 | 2026-05-15 | プロジェクト初期設計完了。USDM要求仕様書を基に、ER図、GUI仕様書、API仕様書、テスト仕様書、実装計画を作成。 |
 | 2026-05-15 | GitHubリポジトリ作成、ラベル・マイルストーン設定、GitHub Issues 179件作成完了。 |
+| 2026-05-15 | **Issue #1 完了**: Next.js 16 プロジェクト初期化（App Router）。TypeScript、ESLint、Tailwind CSS、Vitest設定。PR #180 |
 
 ---
 

@@ -294,6 +294,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-15 | GitHubリポジトリ作成、ラベル・マイルストーン設定、GitHub Issues 179件作成完了。                                                                |
 | 2026-05-15 | **Issue #1 完了**: Next.js 16 プロジェクト初期化（App Router）。TypeScript、ESLint、Tailwind CSS、Vitest設定。PR #180 マージ完了。             |
 | 2026-05-22 | **Issue #2 完了**: TypeScript・ESLint・Prettier設定。strict mode強化、Prettier統合、VS Code設定、Husky + lint-staged設定。PR #181 マージ完了。 |
+| 2026-05-22 | **Issue #3 完了**: Tailwind CSS + shadcn/ui セットアップ。基本UIコンポーネント導入、カラーテーマ設定、ダークモード対応準備。                   |
 
 ---
 

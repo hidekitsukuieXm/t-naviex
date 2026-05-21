@@ -22,21 +22,21 @@ T-NaviExは、製品開発のライフサイクル全般でシステム・ソフ
 
 ## 技術スタック
 
-| カテゴリ | 技術 |
-|---------|------|
-| フロントエンド | Next.js 14+ (App Router) |
-| UIコンポーネント | shadcn/ui + Tailwind CSS |
-| バックエンド | Node.js |
-| ORM | Prisma |
-| データベース | PostgreSQL 16 |
-| 認証 | NextAuth.js (Auth.js) |
-| リッチテキスト | MDXEditor |
-| グラフ | Recharts / Chart.js |
-| AI | Claude API (Anthropic) |
-| RAG | Graph RAG (Neo4j / ArangoDB) |
-| コンテナ | Docker / Docker Compose |
-| CI/CD | GitHub Actions |
-| テスト | Vitest + Playwright |
+| カテゴリ         | 技術                         |
+| ---------------- | ---------------------------- |
+| フロントエンド   | Next.js 14+ (App Router)     |
+| UIコンポーネント | shadcn/ui + Tailwind CSS     |
+| バックエンド     | Node.js                      |
+| ORM              | Prisma                       |
+| データベース     | PostgreSQL 16                |
+| 認証             | NextAuth.js (Auth.js)        |
+| リッチテキスト   | MDXEditor                    |
+| グラフ           | Recharts / Chart.js          |
+| AI               | Claude API (Anthropic)       |
+| RAG              | Graph RAG (Neo4j / ArangoDB) |
+| コンテナ         | Docker / Docker Compose      |
+| CI/CD            | GitHub Actions               |
+| テスト           | Vitest + Playwright          |
 
 ---
 
@@ -56,14 +56,14 @@ docs/
 
 ### 各ドキュメントの概要
 
-| ドキュメント | 内容 |
-|-------------|------|
-| **USDM要求仕様書** | 30の要求（R-XXXX）と約180の仕様（S-XXXX）を定義。機能要件と非機能要件を網羅。 |
-| **ER図** | 約40テーブルのデータモデル。ユーザー・権限系、プロジェクト系、テスト設計系、テスト実施系、バグ系、ダッシュボード系に分類。 |
-| **GUI仕様書** | 画面遷移図、レイアウト構成、各画面の詳細仕様をMermaid図形式で定義。 |
-| **API仕様書** | REST API全エンドポイントの仕様。認証、リクエスト/レスポンス形式、エラーコードを定義。 |
-| **テスト仕様書** | 単体テスト、結合テスト、E2Eテスト、性能テスト、セキュリティテストの仕様。約300件以上のテストケース。 |
-| **実装計画** | 7フェーズに分けた実装タスク一覧。約200タスクを定義。 |
+| ドキュメント       | 内容                                                                                                                       |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| **USDM要求仕様書** | 30の要求（R-XXXX）と約180の仕様（S-XXXX）を定義。機能要件と非機能要件を網羅。                                              |
+| **ER図**           | 約40テーブルのデータモデル。ユーザー・権限系、プロジェクト系、テスト設計系、テスト実施系、バグ系、ダッシュボード系に分類。 |
+| **GUI仕様書**      | 画面遷移図、レイアウト構成、各画面の詳細仕様をMermaid図形式で定義。                                                        |
+| **API仕様書**      | REST API全エンドポイントの仕様。認証、リクエスト/レスポンス形式、エラーコードを定義。                                      |
+| **テスト仕様書**   | 単体テスト、結合テスト、E2Eテスト、性能テスト、セキュリティテストの仕様。約300件以上のテストケース。                       |
+| **実装計画**       | 7フェーズに分けた実装タスク一覧。約200タスクを定義。                                                                       |
 
 ---
 
@@ -71,15 +71,15 @@ docs/
 
 段階的にリリースする計画です。
 
-| Phase | 内容 | 状態 |
-|-------|------|------|
+| Phase       | 内容                                                            | 状態          |
+| ----------- | --------------------------------------------------------------- | ------------- |
 | **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (1/50) |
-| **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート | 未着手 |
-| **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携 | 未着手 |
-| **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析 | 未着手 |
-| **Phase 5** | AI機能統合: Claude API、テストケース自動生成、AIレビュー | 未着手 |
-| **Phase 6** | テスト資産管理・高度な機能: Graph RAG、ナレッジ管理 | 未着手 |
-| **Phase 7** | エンタープライズ機能: SSO、MFA、API管理 | 未着手 |
+| **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手        |
+| **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手        |
+| **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手        |
+| **Phase 5** | AI機能統合: Claude API、テストケース自動生成、AIレビュー        | 未着手        |
+| **Phase 6** | テスト資産管理・高度な機能: Graph RAG、ナレッジ管理             | 未着手        |
+| **Phase 7** | エンタープライズ機能: SSO、MFA、API管理                         | 未着手        |
 
 ---
 
@@ -156,10 +156,12 @@ npm run test:run            # 単体テスト（1回実行）
 npm run test:integration    # 結合テスト
 npm run test:e2e            # E2Eテスト
 
-# Lint・型チェック
-npm run lint
-npm run lint:fix
-npm run typecheck
+# Lint・型チェック・フォーマット
+npm run lint                # ESLint実行
+npm run lint:fix            # ESLint自動修正
+npm run typecheck           # TypeScript型チェック
+npm run format              # Prettierフォーマット
+npm run format:check        # Prettierフォーマットチェック
 
 # Prisma
 npx prisma migrate dev      # マイグレーション作成・適用
@@ -250,24 +252,24 @@ SMTP_PASS=""
 
 ### ラベル体系
 
-| カテゴリ | ラベル |
-|---------|--------|
-| フェーズ | `phase:1` ~ `phase:7` |
-| 領域 | `area:frontend`, `area:backend`, `area:database`, `area:ai`, `area:integration`, `area:infrastructure`, `area:security`, `area:testing` |
-| 優先度 | `priority:high`, `priority:medium`, `priority:low` |
+| カテゴリ | ラベル                                                                                                                                  |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| フェーズ | `phase:1` ~ `phase:7`                                                                                                                   |
+| 領域     | `area:frontend`, `area:backend`, `area:database`, `area:ai`, `area:integration`, `area:infrastructure`, `area:security`, `area:testing` |
+| 優先度   | `priority:high`, `priority:medium`, `priority:low`                                                                                      |
 
 ### マイルストーン
 
-| マイルストーン | Issue数 |
-|--------------|---------|
-| Phase 1: 基盤・コア機能（MVP） | 50件 (#1-#50) |
-| Phase 2: テスト実施・結果管理 | 23件 (#51-#73) |
-| Phase 3: バグ・課題管理・外部連携 | 15件 (#74-#88) |
-| Phase 4: ダッシュボード・レポート・分析 | 19件 (#89-#107) |
-| Phase 5: AI機能統合 | 14件 (#108-#121) |
-| Phase 6: テスト資産管理・高度な機能 | 26件 (#122-#147) |
-| Phase 7: エンタープライズ機能 | 32件 (#148-#179) |
-| **合計** | **179件** |
+| マイルストーン                          | Issue数          |
+| --------------------------------------- | ---------------- |
+| Phase 1: 基盤・コア機能（MVP）          | 50件 (#1-#50)    |
+| Phase 2: テスト実施・結果管理           | 23件 (#51-#73)   |
+| Phase 3: バグ・課題管理・外部連携       | 15件 (#74-#88)   |
+| Phase 4: ダッシュボード・レポート・分析 | 19件 (#89-#107)  |
+| Phase 5: AI機能統合                     | 14件 (#108-#121) |
+| Phase 6: テスト資産管理・高度な機能     | 26件 (#122-#147) |
+| Phase 7: エンタープライズ機能           | 32件 (#148-#179) |
+| **合計**                                | **179件**        |
 
 ### Issue一覧の確認
 
@@ -286,12 +288,13 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 
 ## 作成履歴
 
-| 日付 | 内容 |
-|------|------|
-| 2026-05-15 | プロジェクト初期設計完了。USDM要求仕様書を基に、ER図、GUI仕様書、API仕様書、テスト仕様書、実装計画を作成。 |
-| 2026-05-15 | GitHubリポジトリ作成、ラベル・マイルストーン設定、GitHub Issues 179件作成完了。 |
+| 日付       | 内容                                                                                                                               |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-15 | プロジェクト初期設計完了。USDM要求仕様書を基に、ER図、GUI仕様書、API仕様書、テスト仕様書、実装計画を作成。                         |
+| 2026-05-15 | GitHubリポジトリ作成、ラベル・マイルストーン設定、GitHub Issues 179件作成完了。                                                    |
 | 2026-05-15 | **Issue #1 完了**: Next.js 16 プロジェクト初期化（App Router）。TypeScript、ESLint、Tailwind CSS、Vitest設定。PR #180 マージ完了。 |
+| 2026-05-22 | **Issue #2 完了**: TypeScript・ESLint・Prettier設定。strict mode強化、Prettier統合、VS Code設定、Husky + lint-staged設定。         |
 
 ---
 
-*本プロジェクトはUSDM要求仕様書（SRS-TM-USDM-2026-001）に基づき設計・開発されています。*
+_本プロジェクトはUSDM要求仕様書（SRS-TM-USDM-2026-001）に基づき設計・開発されています。_

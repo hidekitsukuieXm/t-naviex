@@ -6,23 +6,23 @@
 
 ## 技術スタック
 
-| カテゴリ | 技術 |
-|---------|------|
-| フロントエンド | Next.js 14+ (App Router) |
-| バックエンド | Node.js (Express または tRPC) |
-| データベース | PostgreSQL 16 |
-| ORM | Prisma |
-| 認証 | NextAuth.js (Auth.js) |
-| UIコンポーネント | shadcn/ui + Tailwind CSS |
-| リッチテキスト | MDXEditor |
-| グラフ | Recharts / Chart.js |
-| ガントチャート | React-Gantt または frappe-gantt |
-| グリッド | AG Grid または TanStack Table |
-| AI | Claude API (Anthropic) |
-| RAG | Graph RAG (Neo4j または ArangoDB) |
-| コンテナ | Docker / Docker Compose |
-| CI/CD | GitHub Actions |
-| テスト | Vitest + Playwright |
+| カテゴリ         | 技術                              |
+| ---------------- | --------------------------------- |
+| フロントエンド   | Next.js 14+ (App Router)          |
+| バックエンド     | Node.js (Express または tRPC)     |
+| データベース     | PostgreSQL 16                     |
+| ORM              | Prisma                            |
+| 認証             | NextAuth.js (Auth.js)             |
+| UIコンポーネント | shadcn/ui + Tailwind CSS          |
+| リッチテキスト   | MDXEditor                         |
+| グラフ           | Recharts / Chart.js               |
+| ガントチャート   | React-Gantt または frappe-gantt   |
+| グリッド         | AG Grid または TanStack Table     |
+| AI               | Claude API (Anthropic)            |
+| RAG              | Graph RAG (Neo4j または ArangoDB) |
+| コンテナ         | Docker / Docker Compose           |
+| CI/CD            | GitHub Actions                    |
+| テスト           | Vitest + Playwright               |
 
 ---
 
@@ -442,16 +442,16 @@ t-naviex/
 
 ## リリースマイルストーン（目安）
 
-| Phase | 内容 | 状態 |
-|-------|------|------|
-| Phase 1 | 基盤・コア機能（MVP） | 未着手 |
-| Phase 2 | テスト実施・結果管理 | 未着手 |
-| Phase 3 | バグ・課題管理・外部連携 | 未着手 |
-| Phase 4 | ダッシュボード・レポート | 未着手 |
-| Phase 5 | AI機能統合 | 未着手 |
+| Phase   | 内容                       | 状態   |
+| ------- | -------------------------- | ------ |
+| Phase 1 | 基盤・コア機能（MVP）      | 未着手 |
+| Phase 2 | テスト実施・結果管理       | 未着手 |
+| Phase 3 | バグ・課題管理・外部連携   | 未着手 |
+| Phase 4 | ダッシュボード・レポート   | 未着手 |
+| Phase 5 | AI機能統合                 | 未着手 |
 | Phase 6 | テスト資産管理・高度な機能 | 未着手 |
-| Phase 7 | エンタープライズ機能 | 未着手 |
+| Phase 7 | エンタープライズ機能       | 未着手 |
 
 ---
 
-*本計画は USDM 要求仕様書（SRS-TM-USDM-2026-001）に基づき作成しています。*
+_本計画は USDM 要求仕様書（SRS-TM-USDM-2026-001）に基づき作成しています。_

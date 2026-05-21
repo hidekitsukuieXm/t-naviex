@@ -44,10 +44,10 @@ Cookie: next-auth.session-token=<session_token>
 
 ### 2.2 レート制限
 
-| プラン | リクエスト数/分 | リクエスト数/日 |
-|--------|----------------|-----------------|
-| 標準 | 60 | 10,000 |
-| エンタープライズ | 300 | 100,000 |
+| プラン           | リクエスト数/分 | リクエスト数/日 |
+| ---------------- | --------------- | --------------- |
+| 標準             | 60              | 10,000          |
+| エンタープライズ | 300             | 100,000         |
 
 レート制限超過時は `429 Too Many Requests` を返却。
 
@@ -65,12 +65,12 @@ X-RateLimit-Reset: 1620000000
 
 ### 3.1 リクエストヘッダー
 
-| ヘッダー | 必須 | 説明 |
-|----------|------|------|
-| `Authorization` | Yes | Bearer トークン |
-| `Content-Type` | Yes | `application/json` |
-| `Accept` | No | `application/json` |
-| `X-Request-ID` | No | リクエスト追跡用ID |
+| ヘッダー        | 必須 | 説明               |
+| --------------- | ---- | ------------------ |
+| `Authorization` | Yes  | Bearer トークン    |
+| `Content-Type`  | Yes  | `application/json` |
+| `Accept`        | No   | `application/json` |
+| `X-Request-ID`  | No   | リクエスト追跡用ID |
 
 ### 3.2 レスポンス形式
 
@@ -109,19 +109,19 @@ X-RateLimit-Reset: 1620000000
 
 ### 3.3 HTTPステータスコード
 
-| コード | 説明 |
-|--------|------|
-| 200 | 成功 |
-| 201 | 作成成功 |
-| 204 | 削除成功（No Content） |
-| 400 | リクエスト不正 |
-| 401 | 認証エラー |
-| 403 | 権限エラー |
-| 404 | リソース未発見 |
-| 409 | 競合エラー |
-| 422 | バリデーションエラー |
-| 429 | レート制限超過 |
-| 500 | サーバーエラー |
+| コード | 説明                   |
+| ------ | ---------------------- |
+| 200    | 成功                   |
+| 201    | 作成成功               |
+| 204    | 削除成功（No Content） |
+| 400    | リクエスト不正         |
+| 401    | 認証エラー             |
+| 403    | 権限エラー             |
+| 404    | リソース未発見         |
+| 409    | 競合エラー             |
+| 422    | バリデーションエラー   |
+| 429    | レート制限超過         |
+| 500    | サーバーエラー         |
 
 ### 3.4 ページネーション
 
@@ -129,12 +129,12 @@ X-RateLimit-Reset: 1620000000
 GET /api/v1/test-cases?page=1&limit=20&sort=created_at&order=desc
 ```
 
-| パラメータ | デフォルト | 説明 |
-|------------|-----------|------|
-| `page` | 1 | ページ番号 |
-| `limit` | 20 | 取得件数（最大100） |
-| `sort` | created_at | ソートフィールド |
-| `order` | desc | ソート順（asc/desc） |
+| パラメータ | デフォルト | 説明                 |
+| ---------- | ---------- | -------------------- |
+| `page`     | 1          | ページ番号           |
+| `limit`    | 20         | 取得件数（最大100）  |
+| `sort`     | created_at | ソートフィールド     |
+| `order`    | desc       | ソート順（asc/desc） |
 
 ### 3.5 フィルタリング
 
@@ -145,6 +145,7 @@ GET /api/v1/test-cases?status=active&priority=1,2&tags=smoke,regression
 ### 3.6 日時形式
 
 ISO 8601形式を使用:
+
 ```
 2026-05-15T10:30:00.000Z
 ```
@@ -240,11 +241,11 @@ GET /api/v1/users
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `status` | string | active, inactive, suspended |
-| `role` | string | admin, manager, member, guest |
-| `search` | string | 名前・メールで検索 |
+| パラメータ | 型     | 説明                          |
+| ---------- | ------ | ----------------------------- |
+| `status`   | string | active, inactive, suspended   |
+| `role`     | string | admin, manager, member, guest |
+| `search`   | string | 名前・メールで検索            |
 
 #### レスポンス
 
@@ -341,10 +342,10 @@ GET /api/v1/projects
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `status` | string | active, archived, completed |
-| `type` | string | waterfall, agile, hybrid |
+| パラメータ | 型     | 説明                        |
+| ---------- | ------ | --------------------------- |
+| `status`   | string | active, archived, completed |
+| `type`     | string | waterfall, agile, hybrid    |
 
 #### レスポンス
 
@@ -492,10 +493,10 @@ GET /api/v1/projects/{projectId}/test-specs
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `status` | string | outline, detail, review, redesign, completed |
-| `requirementId` | number | 紐付け要求仕様ID |
+| パラメータ      | 型     | 説明                                         |
+| --------------- | ------ | -------------------------------------------- |
+| `status`        | string | outline, detail, review, redesign, completed |
+| `requirementId` | number | 紐付け要求仕様ID                             |
 
 #### レスポンス
 
@@ -673,16 +674,16 @@ GET /api/v1/projects/{projectId}/test-cases
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `testSpecId` | number | テスト仕様書ID |
-| `sectionId` | number | セクションID |
-| `priority` | number | 優先度（1-5） |
-| `status` | string | ステータス |
-| `tags` | string | タグ（カンマ区切り） |
-| `testType` | string | テストタイプ |
-| `assigneeId` | number | 担当者ID |
-| `search` | string | 全文検索 |
+| パラメータ   | 型     | 説明                 |
+| ------------ | ------ | -------------------- |
+| `testSpecId` | number | テスト仕様書ID       |
+| `sectionId`  | number | セクションID         |
+| `priority`   | number | 優先度（1-5）        |
+| `status`     | string | ステータス           |
+| `tags`       | string | タグ（カンマ区切り） |
+| `testType`   | string | テストタイプ         |
+| `assigneeId` | number | 担当者ID             |
+| `search`     | string | 全文検索             |
 
 #### レスポンス
 
@@ -803,6 +804,7 @@ POST /api/v1/projects/{projectId}/test-cases/bulk
 ```
 
 サポートされるアクション:
+
 - `move`: セクション移動
 - `copy`: コピー
 - `delete`: 一括削除
@@ -918,11 +920,11 @@ GET /api/v1/projects/{projectId}/test-runs
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `status` | string | pending, in_progress, completed, closed |
-| `milestoneId` | number | マイルストーンID |
-| `configurationId` | number | コンフィギュレーションID |
+| パラメータ        | 型     | 説明                                    |
+| ----------------- | ------ | --------------------------------------- |
+| `status`          | string | pending, in_progress, completed, closed |
+| `milestoneId`     | number | マイルストーンID                        |
+| `configurationId` | number | コンフィギュレーションID                |
 
 #### レスポンス
 
@@ -1023,11 +1025,11 @@ GET /api/v1/projects/{projectId}/test-runs/{testRunId}/results
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `status` | string | passed, failed, blocked, pending, na |
-| `assigneeId` | number | 担当者ID |
-| `testCaseId` | number | テストケースID |
+| パラメータ   | 型     | 説明                                 |
+| ------------ | ------ | ------------------------------------ |
+| `status`     | string | passed, failed, blocked, pending, na |
+| `assigneeId` | number | 担当者ID                             |
+| `testCaseId` | number | テストケースID                       |
 
 #### レスポンス
 
@@ -1147,13 +1149,13 @@ GET /api/v1/projects/{projectId}/bugs
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `status` | string | open, in_progress, resolved, closed |
-| `priority` | string | critical, high, medium, low |
-| `type` | string | bug, enhancement, question, task |
-| `assigneeId` | number | 担当者ID |
-| `testResultId` | number | テスト結果ID |
+| パラメータ     | 型     | 説明                                |
+| -------------- | ------ | ----------------------------------- |
+| `status`       | string | open, in_progress, resolved, closed |
+| `priority`     | string | critical, high, medium, low         |
+| `type`         | string | bug, enhancement, question, task    |
+| `assigneeId`   | number | 担当者ID                            |
+| `testResultId` | number | テスト結果ID                        |
 
 #### レスポンス
 
@@ -1387,11 +1389,11 @@ GET /api/v1/projects/{projectId}/reports/progress
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `startDate` | date | 開始日 |
-| `endDate` | date | 終了日 |
-| `testSpecId` | number | テスト仕様書ID |
+| パラメータ    | 型     | 説明             |
+| ------------- | ------ | ---------------- |
+| `startDate`   | date   | 開始日           |
+| `endDate`     | date   | 終了日           |
+| `testSpecId`  | number | テスト仕様書ID   |
 | `milestoneId` | number | マイルストーンID |
 
 ### 18.2 サマリーレポート
@@ -1592,13 +1594,13 @@ GET /api/v1/audit-logs
 
 #### クエリパラメータ
 
-| パラメータ | 型 | 説明 |
-|------------|------|------|
-| `userId` | number | ユーザーID |
-| `action` | string | create, update, delete, login, logout |
-| `targetType` | string | project, test_case, test_run, bug |
-| `startDate` | date | 開始日 |
-| `endDate` | date | 終了日 |
+| パラメータ   | 型     | 説明                                  |
+| ------------ | ------ | ------------------------------------- |
+| `userId`     | number | ユーザーID                            |
+| `action`     | string | create, update, delete, login, logout |
+| `targetType` | string | project, test_case, test_run, bug     |
+| `startDate`  | date   | 開始日                                |
+| `endDate`    | date   | 終了日                                |
 
 #### レスポンス
 
@@ -1765,19 +1767,19 @@ POST /api/v1/projects/{projectId}/webhooks
 
 ## 25. エラーコード一覧
 
-| コード | 説明 |
-|--------|------|
-| `AUTHENTICATION_REQUIRED` | 認証が必要です |
-| `INVALID_TOKEN` | トークンが無効です |
-| `TOKEN_EXPIRED` | トークンの有効期限が切れています |
-| `PERMISSION_DENIED` | 権限がありません |
-| `RESOURCE_NOT_FOUND` | リソースが見つかりません |
-| `VALIDATION_ERROR` | 入力値が不正です |
-| `DUPLICATE_ENTRY` | 重複するエントリが存在します |
-| `CONFLICT` | 競合が発生しました |
-| `RATE_LIMIT_EXCEEDED` | レート制限を超過しました |
-| `INTERNAL_ERROR` | サーバー内部エラー |
+| コード                    | 説明                             |
+| ------------------------- | -------------------------------- |
+| `AUTHENTICATION_REQUIRED` | 認証が必要です                   |
+| `INVALID_TOKEN`           | トークンが無効です               |
+| `TOKEN_EXPIRED`           | トークンの有効期限が切れています |
+| `PERMISSION_DENIED`       | 権限がありません                 |
+| `RESOURCE_NOT_FOUND`      | リソースが見つかりません         |
+| `VALIDATION_ERROR`        | 入力値が不正です                 |
+| `DUPLICATE_ENTRY`         | 重複するエントリが存在します     |
+| `CONFLICT`                | 競合が発生しました               |
+| `RATE_LIMIT_EXCEEDED`     | レート制限を超過しました         |
+| `INTERNAL_ERROR`          | サーバー内部エラー               |
 
 ---
 
-*本API仕様書はUSDM要求仕様書（SRS-TM-USDM-2026-001）に基づき設計しています。*
+_本API仕様書はUSDM要求仕様書（SRS-TM-USDM-2026-001）に基づき設計しています。_

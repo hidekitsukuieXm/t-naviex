@@ -300,6 +300,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-22 | **PR #183 マージ完了**: Docker / Docker Compose環境構築PRをmasterにマージ。Issue #4自動クローズ。                                                                                                                                    |
 | 2026-05-23 | **Issue #5 完了**: Prisma ORM セットアップ・初期スキーマ作成。Prisma 7.x + PostgreSQLアダプター設定、初期スキーマ（Users, Groups, UserGroups, Roles, Projects, ProjectMembers, AuditLogs）、マイグレーション作成、シードデータ作成。 |
 | 2026-05-23 | **PR #184 レビュー完了**: Prisma ORMセットアップPRのコードレビュー実施。スキーマ設計、リレーション設定、インデックス設計、シングルトンパターン、シードスクリプトの冪等性を確認しLGTM。                                               |
+| 2026-05-23 | **PR #184 マージ完了**: Prisma ORMセットアップPRをmasterにマージ。Issue #5自動クローズ。                                                                                                                                             |
 
 ---
 

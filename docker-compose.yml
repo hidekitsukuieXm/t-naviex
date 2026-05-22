@@ -1,0 +1,63 @@
+# Docker Compose configuration for production environment
+# Usage: docker-compose up -d
+
+services:
+  # ========================================
+  # Next.js Application Service
+  # ========================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: t-naviex-app
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-3000}:3000'
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-t_naviex}:${POSTGRES_PASSWORD:-t_naviex_password}@db:5432/${POSTGRES_DB:-t_naviex}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - t-naviex-network
+
+  # ========================================
+  # PostgreSQL Database Service
+  # ========================================
+  db:
+    image: postgres:16-alpine
+    container_name: t-naviex-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: '${POSTGRES_DB:-t_naviex}'
+      POSTGRES_USER: '${POSTGRES_USER:-t_naviex}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:-t_naviex_password}'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-t_naviex} -d ${POSTGRES_DB:-t_naviex}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - t-naviex-network
+
+# ========================================
+# Volume Configuration for Data Persistence
+# ========================================
+volumes:
+  postgres_data:
+    name: t-naviex-postgres-data
+    driver: local
+
+# ========================================
+# Network Configuration
+# ========================================
+networks:
+  t-naviex-network:
+    name: t-naviex-network
+    driver: bridge

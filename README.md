@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態          |
 | ----------- | --------------------------------------------------------------- | ------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (5/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (6/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手        |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手        |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手        |
@@ -301,6 +301,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **Issue #5 完了**: Prisma ORM セットアップ・初期スキーマ作成。Prisma 7.x + PostgreSQLアダプター設定、初期スキーマ（Users, Groups, UserGroups, Roles, Projects, ProjectMembers, AuditLogs）、マイグレーション作成、シードデータ作成。 |
 | 2026-05-23 | **PR #184 レビュー完了**: Prisma ORMセットアップPRのコードレビュー実施。スキーマ設計、リレーション設定、インデックス設計、シングルトンパターン、シードスクリプトの冪等性を確認しLGTM。                                               |
 | 2026-05-23 | **PR #184 マージ完了**: Prisma ORMセットアップPRをmasterにマージ。Issue #5自動クローズ。                                                                                                                                             |
+| 2026-05-23 | **Issue #6 完了**: GitHub Actions CI/CDパイプライン構築。Lint、TypeCheck、単体テスト、Buildチェック、Dockerイメージビルドジョブを設定。PR作成時に自動チェック実行。                                                                  |
 
 ---
 

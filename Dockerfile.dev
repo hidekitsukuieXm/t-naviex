@@ -1,0 +1,29 @@
+# Development Dockerfile for hot reloading
+# This Dockerfile is optimized for development with live reload support
+
+ARG NODE_VERSION=22-slim
+
+FROM node:${NODE_VERSION}
+
+# Set working directory
+WORKDIR /app
+
+# Copy package-related files
+COPY package.json package-lock.json* ./
+
+# Install all dependencies (including devDependencies)
+RUN npm ci
+
+# Copy application source code
+COPY . .
+
+# Set development environment
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Expose port
+EXPOSE 3000
+
+# Start development server with hot reloading
+CMD ["npm", "run", "dev"]

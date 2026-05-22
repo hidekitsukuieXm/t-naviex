@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ユーザー・権限系モデル
+// ============================================
+
+/// ユーザー
+model User {
+  id           BigInt     @id @default(autoincrement())
+  email        String     @unique @db.VarChar(255)
+  name         String     @db.VarChar(255)
+  passwordHash String?    @map("password_hash") @db.VarChar(255)
+  status       UserStatus @default(ACTIVE)
+  mfaEnabled   Boolean    @default(false) @map("mfa_enabled")
+  mfaType      String?    @map("mfa_type") @db.VarChar(50)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  userGroups     UserGroup[]
+  projectMembers ProjectMember[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+/// ユーザーステータス
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+
+  @@map("user_status")
+}
+
+/// グループ
+model Group {
+  id        BigInt   @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  userGroups UserGroup[]
+
+  @@map("groups")
+}
+
+/// ユーザーグループ中間テーブル
+model UserGroup {
+  userId    BigInt   @map("user_id")
+  groupId   BigInt   @map("group_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+  @@map("user_groups")
+}
+
+/// ロール（権限定義）
+model Role {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  permissions Json     @default("{}") @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  projectMembers ProjectMember[]
+
+  @@map("roles")
+}
+
+// ============================================
+// プロジェクト系モデル
+// ============================================
+
+/// プロジェクト
+model Project {
+  id            BigInt        @id @default(autoincrement())
+  name          String        @db.VarChar(255)
+  description   String?       @db.Text
+  status        ProjectStatus @default(ACTIVE)
+  projectType   String?       @map("project_type") @db.VarChar(100)
+  targetVersion String?       @map("target_version") @db.VarChar(100)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  projectMembers ProjectMember[]
+
+  @@map("projects")
+}
+
+/// プロジェクトステータス
+enum ProjectStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  PLANNING
+
+  @@map("project_status")
+}
+
+/// プロジェクトメンバー中間テーブル
+model ProjectMember {
+  projectId BigInt   @map("project_id")
+  userId    BigInt   @map("user_id")
+  roleId    BigInt   @map("role_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role    Role    @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@id([projectId, userId])
+  @@map("project_members")
+}
+
+// ============================================
+// 監査ログモデル
+// ============================================
+
+/// 監査ログ
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  userId     BigInt?  @map("user_id")
+  action     String   @db.VarChar(100)
+  targetType String   @map("target_type") @db.VarChar(100)
+  targetId   BigInt?  @map("target_id")
+  details    Json?    @db.JsonB
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

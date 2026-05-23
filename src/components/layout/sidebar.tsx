@@ -10,22 +10,13 @@ import {
   BarChart3,
   Settings,
   ChevronLeft,
-  FolderKanban,
   LayoutDashboard,
-  ChevronsUpDown,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useSidebar } from './sidebar-context';
+import { ProjectSelector } from './project-selector';
 
 interface NavItem {
   title: string;
@@ -66,23 +57,9 @@ const mainNavItems: NavItem[] = [
   },
 ];
 
-interface SampleProject {
-  id: string;
-  name: string;
-}
-
-const sampleProjects: SampleProject[] = [
-  { id: '1', name: 'Sample Project' },
-  { id: '2', name: 'Web Application' },
-  { id: '3', name: 'Mobile App' },
-];
-
-const defaultProject: SampleProject = sampleProjects[0] ?? { id: '1', name: 'Sample Project' };
-
 export function Sidebar() {
   const pathname = usePathname();
   const { state, open, toggleSidebar, isMobile } = useSidebar();
-  const [selectedProject, setSelectedProject] = React.useState<SampleProject>(defaultProject);
 
   // Don't render sidebar on mobile - it uses Sheet instead
   if (isMobile) {
@@ -99,44 +76,7 @@ export function Sidebar() {
     >
       {/* Project Selector */}
       <div className="flex h-14 items-center border-b px-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(
-              'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-sidebar-accent',
-              !open && 'justify-center px-0'
-            )}
-          >
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <FolderKanban className="size-4" />
-            </div>
-            {open && (
-              <>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate font-medium">{selectedProject.name}</span>
-                  <span className="text-xs text-muted-foreground">プロジェクト</span>
-                </div>
-                <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
-              </>
-            )}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel>プロジェクト切替</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {sampleProjects.map((project) => (
-              <DropdownMenuItem
-                key={project.id}
-                onClick={() => setSelectedProject(project)}
-                className={cn(
-                  'cursor-pointer',
-                  selectedProject.id === project.id && 'bg-accent text-accent-foreground'
-                )}
-              >
-                <FolderKanban className="mr-2 size-4" />
-                {project.name}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ProjectSelector collapsed={!open} />
       </div>
 
       {/* Navigation */}

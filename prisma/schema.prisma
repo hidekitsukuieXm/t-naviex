@@ -29,11 +29,13 @@ model User {
   updatedAt     DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  accounts       Account[]
-  sessions       Session[]
-  userGroups     UserGroup[]
-  projectMembers ProjectMember[]
-  auditLogs      AuditLog[]
+  accounts          Account[]
+  sessions          Session[]
+  userGroups        UserGroup[]
+  projectMembers    ProjectMember[]
+  auditLogs         AuditLog[]
+  accountLockout    AccountLockout?
+  passwordHistories PasswordHistory[]
 
   @@map("users")
 }
@@ -223,4 +225,57 @@ model AuditLog {
   @@index([targetType, targetId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================
+// パスワードポリシー・セキュリティ系モデル
+// ============================================
+
+/// パスワードポリシー設定（シングルトン：1レコードのみ）
+model PasswordPolicy {
+  id                     BigInt   @id @default(autoincrement())
+  minLength              Int      @default(8) @map("min_length")
+  maxLength              Int      @default(100) @map("max_length")
+  requireUppercase       Boolean  @default(true) @map("require_uppercase")
+  requireLowercase       Boolean  @default(true) @map("require_lowercase")
+  requireNumbers         Boolean  @default(true) @map("require_numbers")
+  requireSpecialChars    Boolean  @default(false) @map("require_special_chars")
+  expirationDays         Int      @default(0) @map("expiration_days")
+  preventReuse           Int      @default(0) @map("prevent_reuse")
+  maxLoginAttempts       Int      @default(5) @map("max_login_attempts")
+  lockoutDurationMinutes Int      @default(30) @map("lockout_duration_minutes")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@map("password_policies")
+}
+
+/// アカウントロック情報
+model AccountLockout {
+  id             BigInt    @id @default(autoincrement())
+  userId         BigInt    @unique @map("user_id")
+  failedAttempts Int       @default(0) @map("failed_attempts")
+  lastFailedAt   DateTime? @map("last_failed_at")
+  lockedUntil    DateTime? @map("locked_until")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("account_lockouts")
+}
+
+/// パスワード履歴（再利用防止用）
+model PasswordHistory {
+  id           BigInt   @id @default(autoincrement())
+  userId       BigInt   @map("user_id")
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_histories")
 }

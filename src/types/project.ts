@@ -82,3 +82,20 @@ export interface UserSearchResult {
   email: string;
   status: string;
 }
+
+// プロジェクトコピー関連の型定義
+
+export interface ProjectCopyOptions {
+  newName: string;
+  copyMembers: boolean;
+  copyDescription: boolean;
+  newStatus?: ProjectStatus;
+}
+
+export interface ProjectCopyResult {
+  success: boolean;
+  project: Project;
+  copiedItems: {
+    members: number;
+  };
+}

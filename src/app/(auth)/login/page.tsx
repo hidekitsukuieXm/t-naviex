@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -100,6 +101,15 @@ export default function LoginPage() {
                 'ログイン'
               )}
             </Button>
+
+            <div className="text-center text-sm">
+              <Link
+                href="/forgot-password"
+                className="text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+              >
+                パスワードをお忘れですか？
+              </Link>
+            </div>
           </form>
         </CardContent>
       </Card>

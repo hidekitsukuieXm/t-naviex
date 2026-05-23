@@ -5,7 +5,27 @@
       "Bash(python:*)",
       "Bash(gh auth status:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Project design documentation\n\n- Add USDM requirements specification \\(Excel\\)\n- Add ER diagram \\(Markdown with Mermaid\\)\n- Add GUI specification \\(Markdown with Mermaid\\)\n- Add API specification \\(REST API documentation\\)\n- Add test specification \\(unit, integration, E2E\\)\n- Add implementation plan \\(7-phase TODO list\\)\n- Add README.md with project overview\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Project design documentation\n\n- Add USDM requirements specification \\(Excel\\)\n- Add ER diagram \\(Markdown with Mermaid\\)\n- Add GUI specification \\(Markdown with Mermaid\\)\n- Add API specification \\(REST API documentation\\)\n- Add test specification \\(unit, integration, E2E\\)\n- Add implementation plan \\(7-phase TODO list\\)\n- Add README.md with project overview\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git merge:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh issue view:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "Bash(npm run lint)",
+      "Bash(npm run test:run:*)",
+      "Bash(gh pr create:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr review:*)",
+      "Bash(npx shadcn@latest add command popover -y)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(cat:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(npx prisma generate:*)"
     ]
   }
 }

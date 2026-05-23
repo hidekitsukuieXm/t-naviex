@@ -279,3 +279,16 @@ model PasswordHistory {
   @@index([userId])
   @@map("password_histories")
 }
+
+/// セッション設定（シングルトン：1レコードのみ）
+model SessionSettings {
+  id                    BigInt   @id @default(autoincrement())
+  sessionTimeoutMinutes Int      @default(30) @map("session_timeout_minutes")
+  warningBeforeMinutes  Int      @default(5) @map("warning_before_minutes")
+  extendOnActivity      Boolean  @default(true) @map("extend_on_activity")
+  maxConcurrentSessions Int      @default(0) @map("max_concurrent_sessions")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("session_settings")
+}

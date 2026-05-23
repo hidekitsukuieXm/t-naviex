@@ -37,3 +37,48 @@ export const PROJECT_TYPE_OPTIONS = [
   { value: 'desktop', label: 'デスクトップアプリ' },
   { value: 'other', label: 'その他' },
 ];
+
+// プロジェクトメンバー関連の型定義
+
+export interface ProjectMemberUser {
+  id: string;
+  name: string;
+  email: string;
+}
+
+export interface ProjectMemberRole {
+  id: string;
+  name: string;
+}
+
+export interface ProjectMember {
+  projectId: string;
+  userId: string;
+  roleId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: ProjectMemberUser;
+  role: ProjectMemberRole;
+}
+
+export interface AddMemberFormData {
+  userId: string;
+  roleId: string;
+}
+
+export interface UpdateMemberRoleFormData {
+  roleId: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  permissions: Record<string, boolean>;
+}
+
+export interface UserSearchResult {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+}

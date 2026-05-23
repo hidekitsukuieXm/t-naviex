@@ -303,6 +303,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **PR #184 マージ完了**: Prisma ORMセットアップPRをmasterにマージ。Issue #5自動クローズ。                                                                                                                                             |
 | 2026-05-23 | **Issue #6 完了**: GitHub Actions CI/CDパイプライン構築。Lint、TypeCheck、単体テスト、Buildチェック、Dockerイメージビルドジョブを設定。PR作成時に自動チェック実行。                                                                  |
 | 2026-05-23 | **PR #185 レビュー完了**: GitHub Actions CI/CDパイプラインPRのコードレビュー実施。ジョブ構成、並列/順次実行、キャッシュ設定、セキュリティ考慮を確認しLGTM。                                                                          |
+| 2026-05-23 | **PR #185 マージ完了**: GitHub Actions CI/CDパイプラインPRをmasterにマージ。Issue #6自動クローズ。                                                                                                                                   |
 
 ---
 

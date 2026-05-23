@@ -311,6 +311,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **PR #187 レビュー完了**: NextAuth.js認証PRのコードレビュー実施。Prismaスキーマ設計、認証設定、Credentialsプロバイダー、JWTセッション、ルート保護、型拡張、セキュリティ考慮を確認しLGTM。                                                                                  |
 | 2026-05-23 | **PR #187 マージ完了**: NextAuth.js認証PRをmasterにマージ。Issue #8自動クローズ。                                                                                                                                                                                          |
 | 2026-05-23 | **Issue #9 完了**: パスワードリセット機能実装。forgot-passwordページ、reset-passwordページ、リセットトークンAPI、PasswordResetTokenモデル追加。トークン有効期限1時間、セキュリティ対策実装。PR #188 作成。                                                                 |
+| 2026-05-23 | **PR #188 レビュー完了**: パスワードリセット機能PRのコードレビュー実施。セキュリティ対策（トークン生成、有効期限、列挙攻撃対策）、Prismaスキーマ、フロントエンドUX、認証ミドルウェア更新を確認しLGTM。                                                                     |
 
 ---
 

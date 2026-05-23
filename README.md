@@ -317,6 +317,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **PR #189 レビュー完了**: プロジェクトCRUD機能PRのコードレビュー実施。API設計（RESTful、認証、BigIntシリアライズ）、型定義、フロントエンドコンポーネント（再利用可能なフォーム、キャッシュ機構、状態管理）、UI/UX（ステータスバッジ、ダークモード対応）、セキュリティを確認しLGTM。                                                    |
 | 2026-05-23 | **PR #189 マージ完了**: プロジェクトCRUD機能PRをmasterにマージ。Issue #10自動クローズ。                                                                                                                                                                                                                                                |
 | 2026-05-23 | **Issue #11 実装完了**: プロジェクトメンバー管理機能実装。メンバー一覧表示API（GET /api/projects/[id]/members）、メンバー追加API（POST）、ロール変更API（PUT /api/projects/[id]/members/[userId]）、メンバー削除API（DELETE）、ユーザー検索API（GET /api/users/search）、ロール一覧API（GET /api/roles）、型定義追加、単体テスト作成。 |
+| 2026-05-23 | **PR #190 レビュー完了**: プロジェクトメンバー管理機能PRのコードレビュー実施。API設計（RESTful、認証、BigIntシリアライズ）、セキュリティ（認証チェック、入力検証、重複防止）、データ整合性、コード品質、テストカバレッジ（24件）、ユーザー検索API、ロールAPIを確認しLGTM。                                                             |
 
 ---
 

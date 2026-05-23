@@ -326,6 +326,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **PR #192 レビュー完了**: プロジェクト選択・切り替え機能PRのコードレビュー実施。アーキテクチャ設計（Context/useMemo/useCallback）、データ永続化（localStorage/URL同期）、UIコンポーネント（Command/Popover）、コード品質、テストカバレッジ（12件）を確認しLGTM。                                                                                                                              |
 | 2026-05-23 | **PR #192 マージ完了**: プロジェクト選択・切り替え機能PRをmasterにマージ。Issue #13自動クローズ。                                                                                                                                                                                                                                                                                             |
 | 2026-05-23 | **Issue #14 実装完了**: ユーザー管理CRUD機能実装。ユーザー型定義（UserStatus, User, UserDetail）、パスワードバリデーション（8文字以上、大文字・小文字・数字必須）、bcryptパスワードハッシュ化（12ラウンド）、ユーザーリポジトリ、ユーザーCRUD API（GET/POST /api/users、GET/PUT/DELETE /api/users/[id]、PUT /api/users/[id]/password）、単体テスト（61件新規追加、合計107件）。PR #193 作成。 |
+| 2026-05-23 | **PR #193 レビュー完了**: ユーザー管理CRUD機能PRのコードレビュー実施。セキュリティ設計（bcrypt 12ラウンド、パスワード複雑性要件、自己削除防止）、API設計（RESTful、認証必須、BigIntシリアライズ）、リポジトリパターン（関心の分離、型安全性）、バリデーション（メール形式、重複チェック）、テストカバレッジ（61件）を確認しLGTM。                                                             |
 
 ---
 

@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態          |
 | ----------- | --------------------------------------------------------------- | ------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (8/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (9/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手        |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手        |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手        |
@@ -310,6 +310,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **Issue #8 完了**: NextAuth.js認証機能実装。NextAuth.js v5 (beta) + Credentials Provider、JWTセッション戦略、Prismaスキーマ拡張（Account, Session, VerificationToken）、ログインページ、認証ミドルウェア、セッション対応ヘッダー。PR #187 作成。                           |
 | 2026-05-23 | **PR #187 レビュー完了**: NextAuth.js認証PRのコードレビュー実施。Prismaスキーマ設計、認証設定、Credentialsプロバイダー、JWTセッション、ルート保護、型拡張、セキュリティ考慮を確認しLGTM。                                                                                  |
 | 2026-05-23 | **PR #187 マージ完了**: NextAuth.js認証PRをmasterにマージ。Issue #8自動クローズ。                                                                                                                                                                                          |
+| 2026-05-23 | **Issue #9 完了**: パスワードリセット機能実装。forgot-passwordページ、reset-passwordページ、リセットトークンAPI、PasswordResetTokenモデル追加。トークン有効期限1時間、セキュリティ対策実装。PR #188 作成。                                                                 |
 
 ---
 

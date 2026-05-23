@@ -308,6 +308,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **PR #186 レビュー完了**: 共通レイアウト実装PRのコードレビュー実施。コンポーネント設計、状態管理（Cookie永続化）、レスポンシブ対応、アクセシビリティ、TypeScript型安全性を確認しLGTM。                                                                                     |
 | 2026-05-23 | **PR #186 マージ完了**: 共通レイアウト実装PRをmasterにマージ。Issue #7自動クローズ。                                                                                                                                                                                       |
 | 2026-05-23 | **Issue #8 完了**: NextAuth.js認証機能実装。NextAuth.js v5 (beta) + Credentials Provider、JWTセッション戦略、Prismaスキーマ拡張（Account, Session, VerificationToken）、ログインページ、認証ミドルウェア、セッション対応ヘッダー。PR #187 作成。                           |
+| 2026-05-23 | **PR #187 レビュー完了**: NextAuth.js認証PRのコードレビュー実施。Prismaスキーマ設計、認証設定、Credentialsプロバイダー、JWTセッション、ルート保護、型拡張、セキュリティ考慮を確認しLGTM。                                                                                  |
 
 ---
 

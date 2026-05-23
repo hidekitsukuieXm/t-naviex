@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import {
+  getRoles,
+  createRole,
+  isRoleNameTaken,
+  type CreateRoleData,
+} from '@/lib/repositories/role-repository';
+import { validateRoleName, isSystemRole } from '@/types/role';
 
 // GET /api/roles - ロール一覧取得
 export async function GET() {
@@ -11,25 +17,76 @@ export async function GET() {
       return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
     }
 
-    const roles = await prisma.role.findMany({
-      select: {
-        id: true,
-        name: true,
-        permissions: true,
-      },
-      orderBy: { name: 'asc' },
-    });
+    const result = await getRoles();
 
-    // BigInt を文字列に変換
-    const serializedRoles = roles.map((role) => ({
-      id: role.id.toString(),
-      name: role.name,
-      permissions: role.permissions as Record<string, boolean>,
-    }));
-
-    return NextResponse.json(serializedRoles);
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Roles fetch error:', error);
-    return NextResponse.json({ error: 'ロールの取得に失敗しました。' }, { status: 500 });
+    console.error('Get roles error:', error);
+    return NextResponse.json({ error: 'ロール一覧の取得に失敗しました。' }, { status: 500 });
+  }
+}
+
+// POST /api/roles - ロール作成
+export async function POST(request: Request) {
+  try {
+    const session = await auth();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
+    }
+
+    const body = await request.json();
+
+    // バリデーション
+    if (!body.name || !body.displayName) {
+      return NextResponse.json({ error: 'ロール名と表示名は必須です。' }, { status: 400 });
+    }
+
+    // ロール名のバリデーション
+    const nameValidation = validateRoleName(body.name);
+    if (!nameValidation.valid) {
+      return NextResponse.json({ error: nameValidation.error }, { status: 400 });
+    }
+
+    // システムロール名は使用不可
+    if (isSystemRole(body.name)) {
+      return NextResponse.json(
+        { error: 'このロール名はシステムで予約されています。' },
+        { status: 400 }
+      );
+    }
+
+    // ロール名の重複チェック
+    const nameTaken = await isRoleNameTaken(body.name);
+    if (nameTaken) {
+      return NextResponse.json({ error: 'このロール名は既に使用されています。' }, { status: 400 });
+    }
+
+    // 表示名の長さチェック
+    if (body.displayName.length > 100) {
+      return NextResponse.json(
+        { error: '表示名は100文字以内で入力してください。' },
+        { status: 400 }
+      );
+    }
+
+    // 説明の長さチェック
+    if (body.description && body.description.length > 500) {
+      return NextResponse.json({ error: '説明は500文字以内で入力してください。' }, { status: 400 });
+    }
+
+    const createData: CreateRoleData = {
+      name: body.name,
+      displayName: body.displayName,
+      description: body.description,
+      permissions: body.permissions || {},
+    };
+
+    const role = await createRole(createData);
+
+    return NextResponse.json(role, { status: 201 });
+  } catch (error) {
+    console.error('Create role error:', error);
+    return NextResponse.json({ error: 'ロールの作成に失敗しました。' }, { status: 500 });
   }
 }

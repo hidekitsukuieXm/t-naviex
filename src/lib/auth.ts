@@ -68,15 +68,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async authorized({ auth, request }) {
       const isLoggedIn = !!auth?.user;
-      const isOnDashboard = request.nextUrl.pathname.startsWith('/dashboard');
-      const isOnLoginPage = request.nextUrl.pathname === '/login';
+      const pathname = request.nextUrl.pathname;
+      const isOnDashboard = pathname.startsWith('/dashboard');
+      const isOnAuthPage =
+        pathname === '/login' || pathname === '/forgot-password' || pathname === '/reset-password';
 
       if (isOnDashboard) {
         if (isLoggedIn) return true;
         return false; // Redirect to login page
       }
 
-      if (isOnLoginPage && isLoggedIn) {
+      // Redirect logged-in users away from auth pages
+      if (isOnAuthPage && isLoggedIn) {
         return Response.redirect(new URL('/dashboard', request.nextUrl));
       }
 

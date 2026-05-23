@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態           |
 | ----------- | --------------------------------------------------------------- | -------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (12/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (13/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手         |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手         |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手         |
@@ -331,6 +331,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **Issue #15 実装完了**: ロール・権限テーブル実装。Prismaスキーマ拡張（displayName, description, isSystemRole）、包括的ロールタイプ定義（src/types/role.ts）、ロールリポジトリ（CRUD操作、権限チェック）、ロールAPI（GET/POST /api/roles、GET/PUT/DELETE /api/roles/[id]）、4つのデフォルトシステムロール（システム管理者、プロジェクト管理者、メンバー、ゲスト）、システムロール保護機能（削除・名前変更不可）、単体テスト67件追加（合計171件）。PR #194 作成。 |
 | 2026-05-23 | **PR #194 レビュー完了**: ロール・権限テーブル実装PRのコードレビュー実施。Prismaスキーマ設計（displayName/isSystemRole/JsonB）、型定義設計（PermissionAction/ResourceType/ヘルパー関数）、リポジトリパターン（BigIntシリアライズ/システムロール保護）、API設計（RESTful/認証/バリデーション）、権限マトリックス（4段階階層）、テストカバレッジ（67件）を確認しLGTM。                                                                                            |
 | 2026-05-23 | **PR #194 マージ完了**: ロール・権限テーブル実装PRをmasterにマージ。Issue #15自動クローズ。                                                                                                                                                                                                                                                                                                                                                                     |
+| 2026-05-23 | **Issue #16 実装完了**: RBACミドルウェア実装。エラークラス（UnauthorizedError/ForbiddenError/PermissionDeniedError）、権限チェックミドルウェア（withPermission/requirePermission/checkPermission）、ReactのPermissionGateコンポーネント、ヘルパー関数（canPerform/canPerformAll/canPerformAny）、プロジェクト・システムレベル両対応、単体テスト50件追加（合計221件）。PR #195 作成。                                                                            |
+| 2026-05-23 | **PR #195 レビュー完了**: RBACミドルウェア実装PRのコードレビュー実施。エラークラス設計（3種類/日本語メッセージ）、ミドルウェア設計（HOF/例外/結果ベース3種API）、Reactコンポーネント（PermissionGate/ヘルパー関数）、HTTPステータスコード（400/401/403/500）、テストカバレッジ（50件）を確認しLGTM。                                                                                                                                                            |
+| 2026-05-23 | **PR #195 マージ完了**: RBACミドルウェア実装PRをmasterにマージ。Issue #16自動クローズ。                                                                                                                                                                                                                                                                                                                                                                         |
 
 ---
 

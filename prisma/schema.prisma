@@ -16,17 +16,21 @@ datasource db {
 
 /// ユーザー
 model User {
-  id           BigInt     @id @default(autoincrement())
-  email        String     @unique @db.VarChar(255)
-  name         String     @db.VarChar(255)
-  passwordHash String?    @map("password_hash") @db.VarChar(255)
-  status       UserStatus @default(ACTIVE)
-  mfaEnabled   Boolean    @default(false) @map("mfa_enabled")
-  mfaType      String?    @map("mfa_type") @db.VarChar(50)
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  id            BigInt     @id @default(autoincrement())
+  email         String     @unique @db.VarChar(255)
+  name          String     @db.VarChar(255)
+  passwordHash  String?    @map("password_hash") @db.VarChar(255)
+  emailVerified DateTime?  @map("email_verified")
+  image         String?    @db.VarChar(500)
+  status        UserStatus @default(ACTIVE)
+  mfaEnabled    Boolean    @default(false) @map("mfa_enabled")
+  mfaType       String?    @map("mfa_type") @db.VarChar(50)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
 
   // Relations
+  accounts       Account[]
+  sessions       Session[]
   userGroups     UserGroup[]
   projectMembers ProjectMember[]
   auditLogs      AuditLog[]
@@ -42,6 +46,53 @@ enum UserStatus {
   PENDING
 
   @@map("user_status")
+}
+
+/// NextAuth Account（OAuth連携用）
+model Account {
+  id                BigInt  @id @default(autoincrement())
+  userId            BigInt  @map("user_id")
+  type              String  @db.VarChar(255)
+  provider          String  @db.VarChar(255)
+  providerAccountId String  @map("provider_account_id") @db.VarChar(255)
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String? @db.VarChar(255)
+  scope             String? @db.VarChar(255)
+  id_token          String? @db.Text
+  session_state     String? @db.VarChar(255)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+/// NextAuth Session
+model Session {
+  id           BigInt   @id @default(autoincrement())
+  sessionToken String   @unique @map("session_token") @db.VarChar(255)
+  userId       BigInt   @map("user_id")
+  expires      DateTime
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+/// NextAuth VerificationToken（メール認証用）
+model VerificationToken {
+  identifier String   @db.VarChar(255)
+  token      String   @unique @db.VarChar(255)
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 /// グループ

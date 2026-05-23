@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import { Menu, Search, Bell, User, LogOut, Settings, HelpCircle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -24,7 +25,12 @@ interface HeaderProps {
 
 export function Header({ className }: HeaderProps) {
   const { toggleSidebar, isMobile } = useSidebar();
+  const { data: session } = useSession();
   const [searchQuery, setSearchQuery] = React.useState('');
+
+  const handleSignOut = () => {
+    signOut({ callbackUrl: '/login' });
+  };
 
   return (
     <header
@@ -125,8 +131,10 @@ export function Header({ className }: HeaderProps) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>
               <div className="flex flex-col gap-1">
-                <span className="font-medium">Administrator</span>
-                <span className="text-xs text-muted-foreground">admin@example.com</span>
+                <span className="font-medium">{session?.user?.name ?? 'ゲスト'}</span>
+                <span className="text-xs text-muted-foreground">
+                  {session?.user?.email ?? '未ログイン'}
+                </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -143,7 +151,10 @@ export function Header({ className }: HeaderProps) {
               ヘルプ
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={handleSignOut}
+            >
               <LogOut className="mr-2 size-4" />
               ログアウト
             </DropdownMenuItem>

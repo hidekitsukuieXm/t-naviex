@@ -324,6 +324,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-23 | **PR #191 マージ完了**: プロジェクトコピー機能PRをmasterにマージ。Issue #12自動クローズ。                                                                                                                                                                                                                                                        |
 | 2026-05-23 | **Issue #13 実装完了**: プロジェクト選択・切り替え機能実装。ProjectContextによるグローバル状態管理、ProjectSelectorコンポーネント、最近アクセスしたプロジェクト表示（localStorage永続化）、URLパラメータ連動（?projectId=...）、サイドバー・モバイルサイドバー更新、Command/Popover UIコンポーネント追加、単体テスト作成（12件）。PR #192 作成。 |
 | 2026-05-23 | **PR #192 レビュー完了**: プロジェクト選択・切り替え機能PRのコードレビュー実施。アーキテクチャ設計（Context/useMemo/useCallback）、データ永続化（localStorage/URL同期）、UIコンポーネント（Command/Popover）、コード品質、テストカバレッジ（12件）を確認しLGTM。                                                                                 |
+| 2026-05-23 | **PR #192 マージ完了**: プロジェクト選択・切り替え機能PRをmasterにマージ。Issue #13自動クローズ。                                                                                                                                                                                                                                                |
 
 ---
 

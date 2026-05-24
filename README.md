@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態           |
 | ----------- | --------------------------------------------------------------- | -------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (20/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (21/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手         |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手         |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手         |
@@ -382,6 +382,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-24 | **Issue #32 実装完了**: コンテキストメニュー実装。Base UI ContextMenuベースの汎用コンテキストメニューUIコンポーネント（context-menu.tsx）、SectionContextMenuコンポーネント（コピー/ペースト/削除/移動/リネーム/新規作成）、キーボードショートカットフック（useSectionKeyboardShortcuts：Ctrl+C/X/V、Delete、F2、Ctrl+N、Insert対応）、RenameDialog/DeleteDialogコンポーネント、SortableSectionTreeへの統合、toast通知、単体テスト58件追加（合計1041件）。PR #211 作成。                                                                                                                                |
 | 2026-05-24 | **PR #211 レビュー完了**: コンテキストメニュー実装PRのコードレビュー実施。コンポーネント設計（Base UIプリミティブ活用、dropdown-menuとの一貫性）、キーボードショートカット（入力フィールドでの無効化、Mac対応）、UX設計（削除確認ダイアログ、toast通知）、テストカバレッジ（58件）を確認しLGTM。                                                                                                                                                                                                                                                                                                        |
 | 2026-05-24 | **PR #211 マージ完了**: コンテキストメニュー実装PRをmasterにマージ。Issue #32自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 2026-05-24 | **Issue #33 実装完了**: テストケース作成フォーム実装。TestCaseFormコンポーネント（タイトル/説明/事前条件/優先度/テストタイプ/テスト技法/セクション/マトリクスチェックボックス）、TestCaseCreateDialogコンポーネント（ダイアログ+API統合）、TestCaseListへの作成ボタン統合（ロック時は非表示）、フォームバリデーション（既存バリデーション関数活用）、階層セクションセレクト、単体テスト30件追加（合計1070件）。PR #212 作成。                                                                                                                                                                           |
+| 2026-05-24 | **PR #212 レビュー完了**: テストケース作成フォーム実装PRのコードレビュー実施。コンポーネント設計（TestCaseForm/TestCaseCreateDialog分離）、既存パターン準拠（TestSpecForm/TestSpecCreateDialog）、フォームバリデーション、階層セクションセレクト（flattenSections）、テストカバレッジ（30件）を確認しLGTM。                                                                                                                                                                                                                                                                                             |
+| 2026-05-24 | **PR #212 マージ完了**: テストケース作成フォーム実装PRをmasterにマージ。Issue #33自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ---
 

@@ -148,6 +148,8 @@ export default function TestSpecDetailPage({ params }: TestSpecDetailPageProps) 
           <TestCaseList
             testSpecId={specId}
             selectedSectionId={selectedSectionId}
+            sections={sections}
+            isLocked={testSpec.isLocked}
             className="h-full"
           />
         </div>

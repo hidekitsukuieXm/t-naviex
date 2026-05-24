@@ -53,8 +53,9 @@ describe('TestCaseForm', () => {
     expect(screen.getByLabelText(/優先度/)).toBeDefined();
     expect(screen.getByLabelText(/テストタイプ/)).toBeDefined();
     expect(screen.getByLabelText(/テスト技法/)).toBeDefined();
-    expect(screen.getByLabelText(/説明/)).toBeDefined();
-    expect(screen.getByLabelText(/事前条件/)).toBeDefined();
+    // RichTextEditor fields are tested via placeholder text
+    expect(screen.getByPlaceholderText(/テストケースの説明を入力/)).toBeDefined();
+    expect(screen.getByPlaceholderText(/テスト実行前に必要な条件を入力/)).toBeDefined();
     expect(screen.getByLabelText(/マトリクステストとして作成/)).toBeDefined();
   });
 
@@ -93,9 +94,13 @@ describe('TestCaseForm', () => {
       />
     );
 
+    // Title is a regular input
     expect(screen.getByDisplayValue('Existing Test Case')).toBeDefined();
-    expect(screen.getByDisplayValue('Existing description')).toBeDefined();
-    expect(screen.getByDisplayValue('Existing preconditions')).toBeDefined();
+    // RichTextEditor fields render with mock textarea that has the value
+    const editors = screen.getAllByTestId('rich-text-editor') as HTMLTextAreaElement[];
+    expect(editors.length).toBeGreaterThan(0);
+    expect(editors[0].value).toBe('Existing description');
+    expect(editors[1].value).toBe('Existing preconditions');
   });
 
   it('should show error for empty title', async () => {
@@ -135,7 +140,7 @@ describe('TestCaseForm', () => {
     render(<TestCaseForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
 
     const titleInput = screen.getByLabelText(/テストケース名/);
-    const descriptionInput = screen.getByLabelText(/説明/);
+    const descriptionInput = screen.getByPlaceholderText(/テストケースの説明を入力/);
 
     fireEvent.change(titleInput, { target: { value: 'New Test Case' } });
     fireEvent.change(descriptionInput, { target: { value: 'New description' } });
@@ -185,7 +190,7 @@ describe('TestCaseForm', () => {
     render(<TestCaseForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} isLoading={true} />);
 
     const titleInput = screen.getByLabelText(/テストケース名/);
-    const descriptionInput = screen.getByLabelText(/説明/);
+    const descriptionInput = screen.getByPlaceholderText(/テストケースの説明を入力/);
 
     expect(titleInput.hasAttribute('disabled')).toBe(true);
     expect(descriptionInput.hasAttribute('disabled')).toBe(true);
@@ -359,11 +364,13 @@ describe('TestCaseForm', () => {
   it('should render new standard fields', () => {
     render(<TestCaseForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
 
-    expect(screen.getByLabelText(/期待結果/)).toBeDefined();
-    expect(screen.getByLabelText(/チェックポイント/)).toBeDefined();
-    expect(screen.getByLabelText(/シナリオ/)).toBeDefined();
-    expect(screen.getByLabelText(/テスト環境/)).toBeDefined();
-    expect(screen.getByLabelText(/特記事項/)).toBeDefined();
+    // RichTextEditor fields are tested via placeholder text
+    expect(screen.getByPlaceholderText(/期待される結果を入力/)).toBeDefined();
+    expect(screen.getByPlaceholderText(/確認すべきポイントを入力/)).toBeDefined();
+    expect(screen.getByPlaceholderText(/テストシナリオを入力/)).toBeDefined();
+    expect(screen.getByPlaceholderText(/テスト実行に必要な環境を入力/)).toBeDefined();
+    expect(screen.getByPlaceholderText(/その他の注意事項やメモを入力/)).toBeDefined();
+    // Regular input fields
     expect(screen.getByLabelText(/タグ/)).toBeDefined();
     expect(screen.getByLabelText(/分類/)).toBeDefined();
     expect(screen.getByLabelText(/参照ID/)).toBeDefined();

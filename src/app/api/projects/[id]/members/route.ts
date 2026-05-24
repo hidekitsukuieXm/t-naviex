@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logProjectMemberAdd } from '@/lib/audit';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -185,6 +186,13 @@ export async function POST(request: Request, { params }: RouteParams) {
         name: member.role.name,
       },
     };
+
+    // 監査ログを記録
+    await logProjectMemberAdd(session.user.id, id, userId, {
+      userName: member.user.name,
+      userEmail: member.user.email,
+      roleName: member.role.name,
+    });
 
     return NextResponse.json(serializedMember, { status: 201 });
   } catch (error) {

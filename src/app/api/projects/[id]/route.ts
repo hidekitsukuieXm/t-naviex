@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import {
+  getProjectById,
+  updateProject,
+  deleteProject,
+  isProjectNameTaken,
+} from '@/lib/repositories/project-repository';
+import { logProjectUpdate, logProjectDelete } from '@/lib/audit';
+import { validateProject, VALID_PROJECT_STATUSES } from '@/types/project';
 import { prisma } from '@/lib/prisma';
 
 interface RouteParams {
@@ -16,8 +24,15 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const projectId = BigInt(id);
 
+    let projectId: bigint;
+    try {
+      projectId = BigInt(id);
+    } catch {
+      return NextResponse.json({ error: '無効なプロジェクトIDです。' }, { status: 400 });
+    }
+
+    // メンバー情報を含む詳細を取得
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -49,11 +64,15 @@ export async function GET(request: Request, { params }: RouteParams) {
     const serializedProject = {
       ...project,
       id: project.id.toString(),
+      createdAt: project.createdAt.toISOString(),
+      updatedAt: project.updatedAt.toISOString(),
       projectMembers: project.projectMembers.map((member) => ({
         ...member,
         projectId: member.projectId.toString(),
         userId: member.userId.toString(),
         roleId: member.roleId.toString(),
+        createdAt: member.createdAt.toISOString(),
+        updatedAt: member.updatedAt.toISOString(),
         user: {
           ...member.user,
           id: member.user.id.toString(),
@@ -67,7 +86,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(serializedProject);
   } catch (error) {
-    console.error('Project fetch error:', error);
+    console.error('Get project error:', error);
     return NextResponse.json({ error: 'プロジェクトの取得に失敗しました。' }, { status: 500 });
   }
 }
@@ -82,47 +101,100 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const projectId = BigInt(id);
-    const body = await request.json();
-    const { name, description, projectType, targetVersion, status } = body;
 
-    // Check if project exists
-    const existingProject = await prisma.project.findUnique({
-      where: { id: projectId },
-    });
+    let projectId: bigint;
+    try {
+      projectId = BigInt(id);
+    } catch {
+      return NextResponse.json({ error: '無効なプロジェクトIDです。' }, { status: 400 });
+    }
 
+    // プロジェクトが存在するか確認
+    const existingProject = await getProjectById(projectId);
     if (!existingProject) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }
 
-    if (!name || name.trim() === '') {
+    const body = await request.json();
+
+    // 名前の必須チェック
+    if (body.name !== undefined && (!body.name || body.name.trim() === '')) {
       return NextResponse.json({ error: 'プロジェクト名は必須です。' }, { status: 400 });
     }
 
-    if (name.length > 255) {
-      return NextResponse.json(
-        { error: 'プロジェクト名は255文字以内で入力してください。' },
-        { status: 400 }
-      );
+    // バリデーション
+    const validation = validateProject({
+      name: body.name,
+      description: body.description,
+      status: body.status,
+      projectType: body.projectType,
+      targetVersion: body.targetVersion,
+    });
+
+    if (!validation.valid) {
+      return NextResponse.json({ error: validation.errors.join(' ') }, { status: 400 });
     }
 
-    const project = await prisma.project.update({
-      where: { id: projectId },
-      data: {
-        name: name.trim(),
-        description: description?.trim() || null,
-        projectType: projectType?.trim() || null,
-        targetVersion: targetVersion?.trim() || null,
-        status: status || existingProject.status,
-      },
+    // ステータスのバリデーション
+    if (body.status && !VALID_PROJECT_STATUSES.includes(body.status)) {
+      return NextResponse.json({ error: '無効なステータスです。' }, { status: 400 });
+    }
+
+    // プロジェクト名の重複チェック（自分自身は除外）
+    if (body.name) {
+      const nameTaken = await isProjectNameTaken(body.name.trim(), projectId);
+      if (nameTaken) {
+        return NextResponse.json(
+          { error: 'このプロジェクト名は既に使用されています。' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 更新データを構築
+    const updateData: {
+      name?: string;
+      description?: string | null;
+      status?: string;
+      projectType?: string | null;
+      targetVersion?: string | null;
+    } = {};
+
+    if (body.name !== undefined) {
+      updateData.name = body.name;
+    }
+
+    if (body.description !== undefined) {
+      updateData.description = body.description;
+    }
+
+    if (body.status !== undefined) {
+      updateData.status = body.status;
+    }
+
+    if (body.projectType !== undefined) {
+      updateData.projectType = body.projectType;
+    }
+
+    if (body.targetVersion !== undefined) {
+      updateData.targetVersion = body.targetVersion;
+    }
+
+    const project = await updateProject(projectId, updateData);
+
+    if (!project) {
+      return NextResponse.json({ error: 'プロジェクトの更新に失敗しました。' }, { status: 500 });
+    }
+
+    // 監査ログを記録
+    await logProjectUpdate(session.user.id, id, {
+      updatedFields: Object.keys(updateData),
+      projectName: project.name,
     });
 
-    return NextResponse.json({
-      ...project,
-      id: project.id.toString(),
-    });
+    return NextResponse.json(project);
   } catch (error) {
-    console.error('Project update error:', error);
+    console.error('Update project error:', error);
     return NextResponse.json({ error: 'プロジェクトの更新に失敗しました。' }, { status: 500 });
   }
 }
@@ -137,24 +209,37 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     }
 
     const { id } = await params;
-    const projectId = BigInt(id);
 
-    // Check if project exists
-    const existingProject = await prisma.project.findUnique({
-      where: { id: projectId },
-    });
+    let projectId: bigint;
+    try {
+      projectId = BigInt(id);
+    } catch {
+      return NextResponse.json({ error: '無効なプロジェクトIDです。' }, { status: 400 });
+    }
 
+    // プロジェクトが存在するか確認（監査ログ用）
+    const existingProject = await getProjectById(projectId);
     if (!existingProject) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }
 
-    await prisma.project.delete({
-      where: { id: projectId },
-    });
+    const result = await deleteProject(projectId);
 
-    return NextResponse.json({ message: 'プロジェクトを削除しました。' });
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+
+    // 監査ログを記録
+    await logProjectDelete(session.user.id, id);
+
+    return NextResponse.json({
+      message: 'プロジェクトを削除しました。',
+      deletedProject: {
+        name: existingProject.name,
+      },
+    });
   } catch (error) {
-    console.error('Project deletion error:', error);
+    console.error('Delete project error:', error);
     return NextResponse.json({ error: 'プロジェクトの削除に失敗しました。' }, { status: 500 });
   }
 }

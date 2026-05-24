@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { logProjectMemberUpdate, logProjectMemberRemove } from '@/lib/audit';
 
 interface RouteParams {
   params: Promise<{ id: string; userId: string }>;
@@ -108,6 +109,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
       },
     };
 
+    // 監査ログを記録
+    await logProjectMemberUpdate(session.user.id, id, userId, {
+      userName: member.user.name,
+      newRoleName: member.role.name,
+    });
+
     return NextResponse.json(serializedMember);
   } catch (error) {
     console.error('Project member role update error:', error);
@@ -163,6 +170,9 @@ export async function DELETE(request: Request, { params }: RouteParams) {
         },
       },
     });
+
+    // 監査ログを記録
+    await logProjectMemberRemove(session.user.id, id, userId);
 
     return NextResponse.json({ message: 'メンバーを削除しました。' });
   } catch (error) {

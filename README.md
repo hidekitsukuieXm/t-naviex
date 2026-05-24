@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態           |
 | ----------- | --------------------------------------------------------------- | -------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (17/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (18/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手         |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手         |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手         |
@@ -364,6 +364,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-24 | **Issue #26 実装完了**: テストケーステーブル（TEST_CASES）実装。TestCaseモデル追加（Prismaスキーマ、優先度・テストタイプ・テスト技法Enum）、テストケース型定義（TestCasePriority/TestType/TestTechnique/バリデーション関数）、テストケースリポジトリ（CRUD操作、ページネーション、フィルタリング、検索）、テストケースAPI（GET/POST /api/test-specs/[id]/cases、GET/PATCH/DELETE /api/test-specs/[id]/cases/[caseId]）、監査ログ追加（TEST_CASE_CREATE/UPDATE/DELETE）、単体テスト85件追加（合計725件）。PR #205 作成。                                                             |
 | 2026-05-24 | **PR #205 レビュー完了**: テストケーステーブル実装PRのコードレビュー実施。データモデル設計（Enum型による型安全性、インデックス設定）、API設計（RESTful、ページネーション、フィルタリング）、バリデーション（タイトル、説明、事前条件、優先度、テストタイプ、テスト技法）、監査ログ統合、テストカバレッジ（85件）を確認しLGTM。                                                                                                                                                                                                                                                      |
 | 2026-05-24 | **PR #205 マージ完了**: テストケーステーブル実装PRをmasterにマージ。Issue #26自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-05-24 | **Issue #27 実装完了**: テスト手順テーブル（TEST_STEPS）実装。TestStepモデル追加（Prismaスキーマ、ユニーク制約(testCaseId, stepNo)）、テスト手順型定義（バリデーション関数/ヘルパー関数）、テスト手順リポジトリ（CRUD操作、一括作成、並び替え、自動番号調整）、テスト手順API（GET/POST /api/test-specs/[id]/cases/[caseId]/steps、GET/PATCH/DELETE /api/test-specs/[id]/cases/[caseId]/steps/[stepId]、PUT /reorder）、監査ログ追加（TEST_STEP_CREATE/UPDATE/DELETE/REORDER）、Markdown対応、手順数上限100件、単体テスト99件追加（合計824件）。PR #206 作成。                       |
+| 2026-05-24 | **PR #206 レビュー完了**: テスト手順テーブル実装PRのコードレビュー実施。データモデル設計（ユニーク制約、インデックス設定）、API設計（RESTful、一括作成、並び替え）、バリデーション（操作手順、期待結果、手順番号）、トランザクション処理（並び替え、削除後の自動番号調整）、監査ログ統合、テストカバレッジ（99件）を確認しLGTM。                                                                                                                                                                                                                                                    |
+| 2026-05-24 | **PR #206 マージ完了**: テスト手順テーブル実装PRをmasterにマージ。Issue #27自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ---
 

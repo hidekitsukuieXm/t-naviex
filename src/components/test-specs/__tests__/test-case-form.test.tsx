@@ -66,6 +66,15 @@ describe('TestCaseForm', () => {
       title: 'Existing Test Case',
       description: 'Existing description',
       preconditions: 'Existing preconditions',
+      expectedResult: 'Expected result',
+      checkpoint: 'Checkpoint',
+      scenario: 'Scenario',
+      testEnvironment: 'Test environment',
+      notes: 'Notes',
+      tags: ['tag1', 'tag2'],
+      classification: 'Classification',
+      referenceId: 'REF-001',
+      estimatedTime: 30,
       priority: 'HIGH',
       testType: 'FUNCTIONAL',
       testTechnique: 'BOUNDARY_VALUE_ANALYSIS',
@@ -139,6 +148,15 @@ describe('TestCaseForm', () => {
         title: 'New Test Case',
         description: 'New description',
         preconditions: '',
+        expectedResult: '',
+        checkpoint: '',
+        scenario: '',
+        testEnvironment: '',
+        notes: '',
+        tags: [],
+        classification: '',
+        referenceId: '',
+        estimatedTime: null,
         priority: 'MEDIUM',
         testType: 'FUNCTIONAL',
         testTechnique: 'OTHER',
@@ -181,6 +199,15 @@ describe('TestCaseForm', () => {
       title: 'Existing Test Case',
       description: null,
       preconditions: null,
+      expectedResult: null,
+      checkpoint: null,
+      scenario: null,
+      testEnvironment: null,
+      notes: null,
+      tags: [],
+      classification: null,
+      referenceId: null,
+      estimatedTime: null,
       priority: 'MEDIUM',
       testType: 'FUNCTIONAL',
       testTechnique: 'OTHER',
@@ -317,15 +344,29 @@ describe('TestCaseForm', () => {
     });
   });
 
-  it('should show character count for description', () => {
+  it('should show character counts for text fields', () => {
     render(<TestCaseForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
 
-    expect(screen.getByText(/0 \/ 10,000文字/)).toBeDefined();
+    // Multiple fields have 10,000 character limit (description, expectedResult, scenario)
+    const tenThousandCharCounts = screen.getAllByText(/0 \/ 10,000文字/);
+    expect(tenThousandCharCounts.length).toBe(3);
+
+    // Multiple fields have 5,000 character limit (preconditions, checkpoint, testEnvironment, notes)
+    const fiveThousandCharCounts = screen.getAllByText(/0 \/ 5,000文字/);
+    expect(fiveThousandCharCounts.length).toBe(4);
   });
 
-  it('should show character count for preconditions', () => {
+  it('should render new standard fields', () => {
     render(<TestCaseForm onSubmit={mockOnSubmit} onCancel={mockOnCancel} />);
 
-    expect(screen.getByText(/0 \/ 5,000文字/)).toBeDefined();
+    expect(screen.getByLabelText(/期待結果/)).toBeDefined();
+    expect(screen.getByLabelText(/チェックポイント/)).toBeDefined();
+    expect(screen.getByLabelText(/シナリオ/)).toBeDefined();
+    expect(screen.getByLabelText(/テスト環境/)).toBeDefined();
+    expect(screen.getByLabelText(/特記事項/)).toBeDefined();
+    expect(screen.getByLabelText(/タグ/)).toBeDefined();
+    expect(screen.getByLabelText(/分類/)).toBeDefined();
+    expect(screen.getByLabelText(/参照ID/)).toBeDefined();
+    expect(screen.getByLabelText(/推定時間/)).toBeDefined();
   });
 });

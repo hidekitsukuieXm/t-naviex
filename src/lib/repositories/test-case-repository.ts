@@ -26,6 +26,15 @@ const testCaseSelect = {
   title: true,
   description: true,
   preconditions: true,
+  expectedResult: true,
+  checkpoint: true,
+  scenario: true,
+  testEnvironment: true,
+  notes: true,
+  tags: true,
+  classification: true,
+  referenceId: true,
+  estimatedTime: true,
   priority: true,
   testType: true,
   testTechnique: true,
@@ -62,6 +71,15 @@ interface DbTestCase {
   title: string;
   description: string | null;
   preconditions: string | null;
+  expectedResult: string | null;
+  checkpoint: string | null;
+  scenario: string | null;
+  testEnvironment: string | null;
+  notes: string | null;
+  tags: string[];
+  classification: string | null;
+  referenceId: string | null;
+  estimatedTime: number | null;
   priority: string;
   testType: string;
   testTechnique: string;
@@ -90,6 +108,15 @@ function serializeTestCase(testCase: DbTestCase): TestCase {
     title: testCase.title,
     description: testCase.description,
     preconditions: testCase.preconditions,
+    expectedResult: testCase.expectedResult,
+    checkpoint: testCase.checkpoint,
+    scenario: testCase.scenario,
+    testEnvironment: testCase.testEnvironment,
+    notes: testCase.notes,
+    tags: testCase.tags,
+    classification: testCase.classification,
+    referenceId: testCase.referenceId,
+    estimatedTime: testCase.estimatedTime,
     priority: testCase.priority as TestCasePriority,
     testType: testCase.testType as TestType,
     testTechnique: testCase.testTechnique as TestTechnique,
@@ -108,6 +135,15 @@ function serializeTestCaseDetail(testCase: DbTestCaseDetail): TestCaseDetail {
     title: testCase.title,
     description: testCase.description,
     preconditions: testCase.preconditions,
+    expectedResult: testCase.expectedResult,
+    checkpoint: testCase.checkpoint,
+    scenario: testCase.scenario,
+    testEnvironment: testCase.testEnvironment,
+    notes: testCase.notes,
+    tags: testCase.tags,
+    classification: testCase.classification,
+    referenceId: testCase.referenceId,
+    estimatedTime: testCase.estimatedTime,
     priority: testCase.priority as TestCasePriority,
     testType: testCase.testType as TestType,
     testTechnique: testCase.testTechnique as TestTechnique,
@@ -160,6 +196,15 @@ export async function createTestCase(input: CreateTestCaseInput): Promise<TestCa
       title: trimmedTitle,
       description: input.description?.trim() || null,
       preconditions: input.preconditions?.trim() || null,
+      expectedResult: input.expectedResult?.trim() || null,
+      checkpoint: input.checkpoint?.trim() || null,
+      scenario: input.scenario?.trim() || null,
+      testEnvironment: input.testEnvironment?.trim() || null,
+      notes: input.notes?.trim() || null,
+      tags: input.tags || [],
+      classification: input.classification?.trim() || null,
+      referenceId: input.referenceId?.trim() || null,
+      estimatedTime: input.estimatedTime ?? null,
       priority: input.priority || 'MEDIUM',
       testType: input.testType || 'FUNCTIONAL',
       testTechnique: input.testTechnique || 'OTHER',
@@ -300,6 +345,15 @@ export async function updateTestCase(
     title?: string;
     description?: string | null;
     preconditions?: string | null;
+    expectedResult?: string | null;
+    checkpoint?: string | null;
+    scenario?: string | null;
+    testEnvironment?: string | null;
+    notes?: string | null;
+    tags?: string[];
+    classification?: string | null;
+    referenceId?: string | null;
+    estimatedTime?: number | null;
     priority?: TestCasePriority;
     testType?: TestType;
     testTechnique?: TestTechnique;
@@ -321,6 +375,42 @@ export async function updateTestCase(
 
   if (input.preconditions !== undefined) {
     updateData.preconditions = input.preconditions?.trim() || null;
+  }
+
+  if (input.expectedResult !== undefined) {
+    updateData.expectedResult = input.expectedResult?.trim() || null;
+  }
+
+  if (input.checkpoint !== undefined) {
+    updateData.checkpoint = input.checkpoint?.trim() || null;
+  }
+
+  if (input.scenario !== undefined) {
+    updateData.scenario = input.scenario?.trim() || null;
+  }
+
+  if (input.testEnvironment !== undefined) {
+    updateData.testEnvironment = input.testEnvironment?.trim() || null;
+  }
+
+  if (input.notes !== undefined) {
+    updateData.notes = input.notes?.trim() || null;
+  }
+
+  if (input.tags !== undefined) {
+    updateData.tags = input.tags;
+  }
+
+  if (input.classification !== undefined) {
+    updateData.classification = input.classification?.trim() || null;
+  }
+
+  if (input.referenceId !== undefined) {
+    updateData.referenceId = input.referenceId?.trim() || null;
+  }
+
+  if (input.estimatedTime !== undefined) {
+    updateData.estimatedTime = input.estimatedTime;
   }
 
   if (input.priority !== undefined) {

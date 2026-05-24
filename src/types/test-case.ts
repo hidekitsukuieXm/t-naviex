@@ -45,6 +45,15 @@ export interface TestCase {
   title: string;
   description: string | null;
   preconditions: string | null;
+  expectedResult: string | null;
+  checkpoint: string | null;
+  scenario: string | null;
+  testEnvironment: string | null;
+  notes: string | null;
+  tags: string[];
+  classification: string | null;
+  referenceId: string | null;
+  estimatedTime: number | null;
   priority: TestCasePriority;
   testType: TestType;
   testTechnique: TestTechnique;
@@ -81,6 +90,15 @@ export interface CreateTestCaseInput {
   title: string;
   description?: string | null;
   preconditions?: string | null;
+  expectedResult?: string | null;
+  checkpoint?: string | null;
+  scenario?: string | null;
+  testEnvironment?: string | null;
+  notes?: string | null;
+  tags?: string[];
+  classification?: string | null;
+  referenceId?: string | null;
+  estimatedTime?: number | null;
   priority?: TestCasePriority;
   testType?: TestType;
   testTechnique?: TestTechnique;
@@ -96,6 +114,15 @@ export interface UpdateTestCaseInput {
   title?: string;
   description?: string | null;
   preconditions?: string | null;
+  expectedResult?: string | null;
+  checkpoint?: string | null;
+  scenario?: string | null;
+  testEnvironment?: string | null;
+  notes?: string | null;
+  tags?: string[];
+  classification?: string | null;
+  referenceId?: string | null;
+  estimatedTime?: number | null;
   priority?: TestCasePriority;
   testType?: TestType;
   testTechnique?: TestTechnique;
@@ -347,6 +374,185 @@ export function validateSortOrder(sortOrder: number | undefined): {
 }
 
 /**
+ * 期待結果のバリデーション
+ */
+export function validateExpectedResult(expectedResult: string | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (expectedResult === null || expectedResult === undefined) {
+    return { valid: true };
+  }
+
+  if (expectedResult.length > 10000) {
+    return { valid: false, error: '期待結果は10000文字以内で入力してください。' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * チェックポイントのバリデーション
+ */
+export function validateCheckpoint(checkpoint: string | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (checkpoint === null || checkpoint === undefined) {
+    return { valid: true };
+  }
+
+  if (checkpoint.length > 5000) {
+    return { valid: false, error: 'チェックポイントは5000文字以内で入力してください。' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * シナリオのバリデーション
+ */
+export function validateScenario(scenario: string | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (scenario === null || scenario === undefined) {
+    return { valid: true };
+  }
+
+  if (scenario.length > 10000) {
+    return { valid: false, error: 'シナリオは10000文字以内で入力してください。' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * テスト環境のバリデーション
+ */
+export function validateTestEnvironment(testEnvironment: string | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (testEnvironment === null || testEnvironment === undefined) {
+    return { valid: true };
+  }
+
+  if (testEnvironment.length > 5000) {
+    return { valid: false, error: 'テスト環境は5000文字以内で入力してください。' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * 特記事項のバリデーション
+ */
+export function validateNotes(notes: string | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (notes === null || notes === undefined) {
+    return { valid: true };
+  }
+
+  if (notes.length > 5000) {
+    return { valid: false, error: '特記事項は5000文字以内で入力してください。' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * タグのバリデーション
+ */
+export function validateTags(tags: string[] | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (tags === undefined || tags.length === 0) {
+    return { valid: true };
+  }
+
+  if (tags.length > 20) {
+    return { valid: false, error: 'タグは20個以内で指定してください。' };
+  }
+
+  for (const tag of tags) {
+    if (tag.length > 50) {
+      return { valid: false, error: '各タグは50文字以内で入力してください。' };
+    }
+    if (tag.trim() === '') {
+      return { valid: false, error: '空のタグは指定できません。' };
+    }
+  }
+
+  return { valid: true };
+}
+
+/**
+ * 分類のバリデーション
+ */
+export function validateClassification(classification: string | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (classification === null || classification === undefined) {
+    return { valid: true };
+  }
+
+  if (classification.length > 100) {
+    return { valid: false, error: '分類は100文字以内で入力してください。' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * 参照IDのバリデーション
+ */
+export function validateReferenceId(referenceId: string | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (referenceId === null || referenceId === undefined) {
+    return { valid: true };
+  }
+
+  if (referenceId.length > 100) {
+    return { valid: false, error: '参照IDは100文字以内で入力してください。' };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * 推定時間のバリデーション
+ */
+export function validateEstimatedTime(estimatedTime: number | null | undefined): {
+  valid: boolean;
+  error?: string;
+} {
+  if (estimatedTime === null || estimatedTime === undefined) {
+    return { valid: true };
+  }
+
+  if (!Number.isInteger(estimatedTime)) {
+    return { valid: false, error: '推定時間は整数で指定してください。' };
+  }
+
+  if (estimatedTime < 0) {
+    return { valid: false, error: '推定時間は0以上の値を指定してください。' };
+  }
+
+  if (estimatedTime > 99999) {
+    return { valid: false, error: '推定時間は99999分以内で指定してください。' };
+  }
+
+  return { valid: true };
+}
+
+/**
  * テストケース作成入力のバリデーション
  */
 export function validateCreateTestCaseInput(input: CreateTestCaseInput): {
@@ -376,6 +582,60 @@ export function validateCreateTestCaseInput(input: CreateTestCaseInput): {
   const preconditionsValidation = validatePreconditions(input.preconditions);
   if (!preconditionsValidation.valid && preconditionsValidation.error) {
     errors.push(preconditionsValidation.error);
+  }
+
+  // 期待結果
+  const expectedResultValidation = validateExpectedResult(input.expectedResult);
+  if (!expectedResultValidation.valid && expectedResultValidation.error) {
+    errors.push(expectedResultValidation.error);
+  }
+
+  // チェックポイント
+  const checkpointValidation = validateCheckpoint(input.checkpoint);
+  if (!checkpointValidation.valid && checkpointValidation.error) {
+    errors.push(checkpointValidation.error);
+  }
+
+  // シナリオ
+  const scenarioValidation = validateScenario(input.scenario);
+  if (!scenarioValidation.valid && scenarioValidation.error) {
+    errors.push(scenarioValidation.error);
+  }
+
+  // テスト環境
+  const testEnvironmentValidation = validateTestEnvironment(input.testEnvironment);
+  if (!testEnvironmentValidation.valid && testEnvironmentValidation.error) {
+    errors.push(testEnvironmentValidation.error);
+  }
+
+  // 特記事項
+  const notesValidation = validateNotes(input.notes);
+  if (!notesValidation.valid && notesValidation.error) {
+    errors.push(notesValidation.error);
+  }
+
+  // タグ
+  const tagsValidation = validateTags(input.tags);
+  if (!tagsValidation.valid && tagsValidation.error) {
+    errors.push(tagsValidation.error);
+  }
+
+  // 分類
+  const classificationValidation = validateClassification(input.classification);
+  if (!classificationValidation.valid && classificationValidation.error) {
+    errors.push(classificationValidation.error);
+  }
+
+  // 参照ID
+  const referenceIdValidation = validateReferenceId(input.referenceId);
+  if (!referenceIdValidation.valid && referenceIdValidation.error) {
+    errors.push(referenceIdValidation.error);
+  }
+
+  // 推定時間
+  const estimatedTimeValidation = validateEstimatedTime(input.estimatedTime);
+  if (!estimatedTimeValidation.valid && estimatedTimeValidation.error) {
+    errors.push(estimatedTimeValidation.error);
   }
 
   // 優先度
@@ -435,6 +695,60 @@ export function validateUpdateTestCaseInput(input: UpdateTestCaseInput): {
   const preconditionsValidation = validatePreconditions(input.preconditions);
   if (!preconditionsValidation.valid && preconditionsValidation.error) {
     errors.push(preconditionsValidation.error);
+  }
+
+  // 期待結果
+  const expectedResultValidation = validateExpectedResult(input.expectedResult);
+  if (!expectedResultValidation.valid && expectedResultValidation.error) {
+    errors.push(expectedResultValidation.error);
+  }
+
+  // チェックポイント
+  const checkpointValidation = validateCheckpoint(input.checkpoint);
+  if (!checkpointValidation.valid && checkpointValidation.error) {
+    errors.push(checkpointValidation.error);
+  }
+
+  // シナリオ
+  const scenarioValidation = validateScenario(input.scenario);
+  if (!scenarioValidation.valid && scenarioValidation.error) {
+    errors.push(scenarioValidation.error);
+  }
+
+  // テスト環境
+  const testEnvironmentValidation = validateTestEnvironment(input.testEnvironment);
+  if (!testEnvironmentValidation.valid && testEnvironmentValidation.error) {
+    errors.push(testEnvironmentValidation.error);
+  }
+
+  // 特記事項
+  const notesValidation = validateNotes(input.notes);
+  if (!notesValidation.valid && notesValidation.error) {
+    errors.push(notesValidation.error);
+  }
+
+  // タグ
+  const tagsValidation = validateTags(input.tags);
+  if (!tagsValidation.valid && tagsValidation.error) {
+    errors.push(tagsValidation.error);
+  }
+
+  // 分類
+  const classificationValidation = validateClassification(input.classification);
+  if (!classificationValidation.valid && classificationValidation.error) {
+    errors.push(classificationValidation.error);
+  }
+
+  // 参照ID
+  const referenceIdValidation = validateReferenceId(input.referenceId);
+  if (!referenceIdValidation.valid && referenceIdValidation.error) {
+    errors.push(referenceIdValidation.error);
+  }
+
+  // 推定時間
+  const estimatedTimeValidation = validateEstimatedTime(input.estimatedTime);
+  if (!estimatedTimeValidation.valid && estimatedTimeValidation.error) {
+    errors.push(estimatedTimeValidation.error);
   }
 
   // 優先度

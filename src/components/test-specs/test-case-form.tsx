@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -13,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, X, Plus } from 'lucide-react';
 import {
   type TestCase,
   type TestCasePriority,
@@ -28,6 +29,15 @@ import {
   validateTestCaseTitle,
   validateDescription,
   validatePreconditions,
+  validateExpectedResult,
+  validateCheckpoint,
+  validateScenario,
+  validateTestEnvironment,
+  validateNotes,
+  validateTags,
+  validateClassification,
+  validateReferenceId,
+  validateEstimatedTime,
 } from '@/types/test-case';
 import { type TestSectionWithChildren } from '@/types/test-section';
 
@@ -39,6 +49,15 @@ export interface TestCaseFormData {
   title: string;
   description: string;
   preconditions: string;
+  expectedResult: string;
+  checkpoint: string;
+  scenario: string;
+  testEnvironment: string;
+  notes: string;
+  tags: string[];
+  classification: string;
+  referenceId: string;
+  estimatedTime: number | null;
   priority: TestCasePriority;
   testType: TestType;
   testTechnique: TestTechnique;
@@ -92,12 +111,22 @@ export function TestCaseForm({
     title: testCase?.title ?? '',
     description: testCase?.description ?? '',
     preconditions: testCase?.preconditions ?? '',
+    expectedResult: testCase?.expectedResult ?? '',
+    checkpoint: testCase?.checkpoint ?? '',
+    scenario: testCase?.scenario ?? '',
+    testEnvironment: testCase?.testEnvironment ?? '',
+    notes: testCase?.notes ?? '',
+    tags: testCase?.tags ?? [],
+    classification: testCase?.classification ?? '',
+    referenceId: testCase?.referenceId ?? '',
+    estimatedTime: testCase?.estimatedTime ?? null,
     priority: testCase?.priority ?? 'MEDIUM',
     testType: testCase?.testType ?? 'FUNCTIONAL',
     testTechnique: testCase?.testTechnique ?? 'OTHER',
     sectionId: testCase?.sectionId ?? defaultSectionId,
     isMatrix: testCase?.isMatrix ?? false,
   });
+  const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const flatSections = flattenSections(sections);
@@ -121,6 +150,60 @@ export function TestCaseForm({
     const preconditionsValidation = validatePreconditions(formData.preconditions || null);
     if (!preconditionsValidation.valid && preconditionsValidation.error) {
       newErrors.preconditions = preconditionsValidation.error;
+    }
+
+    // 期待結果
+    const expectedResultValidation = validateExpectedResult(formData.expectedResult || null);
+    if (!expectedResultValidation.valid && expectedResultValidation.error) {
+      newErrors.expectedResult = expectedResultValidation.error;
+    }
+
+    // チェックポイント
+    const checkpointValidation = validateCheckpoint(formData.checkpoint || null);
+    if (!checkpointValidation.valid && checkpointValidation.error) {
+      newErrors.checkpoint = checkpointValidation.error;
+    }
+
+    // シナリオ
+    const scenarioValidation = validateScenario(formData.scenario || null);
+    if (!scenarioValidation.valid && scenarioValidation.error) {
+      newErrors.scenario = scenarioValidation.error;
+    }
+
+    // テスト環境
+    const testEnvironmentValidation = validateTestEnvironment(formData.testEnvironment || null);
+    if (!testEnvironmentValidation.valid && testEnvironmentValidation.error) {
+      newErrors.testEnvironment = testEnvironmentValidation.error;
+    }
+
+    // 特記事項
+    const notesValidation = validateNotes(formData.notes || null);
+    if (!notesValidation.valid && notesValidation.error) {
+      newErrors.notes = notesValidation.error;
+    }
+
+    // タグ
+    const tagsValidation = validateTags(formData.tags);
+    if (!tagsValidation.valid && tagsValidation.error) {
+      newErrors.tags = tagsValidation.error;
+    }
+
+    // 分類
+    const classificationValidation = validateClassification(formData.classification || null);
+    if (!classificationValidation.valid && classificationValidation.error) {
+      newErrors.classification = classificationValidation.error;
+    }
+
+    // 参照ID
+    const referenceIdValidation = validateReferenceId(formData.referenceId || null);
+    if (!referenceIdValidation.valid && referenceIdValidation.error) {
+      newErrors.referenceId = referenceIdValidation.error;
+    }
+
+    // 推定時間
+    const estimatedTimeValidation = validateEstimatedTime(formData.estimatedTime);
+    if (!estimatedTimeValidation.valid && estimatedTimeValidation.error) {
+      newErrors.estimatedTime = estimatedTimeValidation.error;
     }
 
     setErrors(newErrors);
@@ -319,6 +402,260 @@ export function TestCaseForm({
         <p className="text-xs text-muted-foreground">
           {formData.preconditions.length.toLocaleString()} / 5,000文字
         </p>
+      </div>
+
+      {/* 期待結果 */}
+      <div className="space-y-2">
+        <Label htmlFor="expectedResult">期待結果</Label>
+        <Textarea
+          id="expectedResult"
+          value={formData.expectedResult}
+          onChange={(e) => setFormData({ ...formData, expectedResult: e.target.value })}
+          placeholder="期待される結果を入力"
+          disabled={isLoading}
+          rows={3}
+          aria-invalid={!!errors.expectedResult}
+          aria-describedby={errors.expectedResult ? 'expectedResult-error' : undefined}
+        />
+        {errors.expectedResult && (
+          <p id="expectedResult-error" className="text-sm text-destructive">
+            {errors.expectedResult}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {formData.expectedResult.length.toLocaleString()} / 10,000文字
+        </p>
+      </div>
+
+      {/* チェックポイント */}
+      <div className="space-y-2">
+        <Label htmlFor="checkpoint">チェックポイント</Label>
+        <Textarea
+          id="checkpoint"
+          value={formData.checkpoint}
+          onChange={(e) => setFormData({ ...formData, checkpoint: e.target.value })}
+          placeholder="確認すべきポイントを入力"
+          disabled={isLoading}
+          rows={2}
+          aria-invalid={!!errors.checkpoint}
+          aria-describedby={errors.checkpoint ? 'checkpoint-error' : undefined}
+        />
+        {errors.checkpoint && (
+          <p id="checkpoint-error" className="text-sm text-destructive">
+            {errors.checkpoint}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {formData.checkpoint.length.toLocaleString()} / 5,000文字
+        </p>
+      </div>
+
+      {/* シナリオ */}
+      <div className="space-y-2">
+        <Label htmlFor="scenario">シナリオ</Label>
+        <Textarea
+          id="scenario"
+          value={formData.scenario}
+          onChange={(e) => setFormData({ ...formData, scenario: e.target.value })}
+          placeholder="テストシナリオを入力"
+          disabled={isLoading}
+          rows={3}
+          aria-invalid={!!errors.scenario}
+          aria-describedby={errors.scenario ? 'scenario-error' : undefined}
+        />
+        {errors.scenario && (
+          <p id="scenario-error" className="text-sm text-destructive">
+            {errors.scenario}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {formData.scenario.length.toLocaleString()} / 10,000文字
+        </p>
+      </div>
+
+      {/* テスト環境 */}
+      <div className="space-y-2">
+        <Label htmlFor="testEnvironment">テスト環境</Label>
+        <Textarea
+          id="testEnvironment"
+          value={formData.testEnvironment}
+          onChange={(e) => setFormData({ ...formData, testEnvironment: e.target.value })}
+          placeholder="テスト実行に必要な環境を入力"
+          disabled={isLoading}
+          rows={2}
+          aria-invalid={!!errors.testEnvironment}
+          aria-describedby={errors.testEnvironment ? 'testEnvironment-error' : undefined}
+        />
+        {errors.testEnvironment && (
+          <p id="testEnvironment-error" className="text-sm text-destructive">
+            {errors.testEnvironment}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {formData.testEnvironment.length.toLocaleString()} / 5,000文字
+        </p>
+      </div>
+
+      {/* 特記事項 */}
+      <div className="space-y-2">
+        <Label htmlFor="notes">特記事項</Label>
+        <Textarea
+          id="notes"
+          value={formData.notes}
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          placeholder="その他の注意事項やメモを入力"
+          disabled={isLoading}
+          rows={2}
+          aria-invalid={!!errors.notes}
+          aria-describedby={errors.notes ? 'notes-error' : undefined}
+        />
+        {errors.notes && (
+          <p id="notes-error" className="text-sm text-destructive">
+            {errors.notes}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {formData.notes.length.toLocaleString()} / 5,000文字
+        </p>
+      </div>
+
+      {/* タグ */}
+      <div className="space-y-2">
+        <Label htmlFor="tags">タグ</Label>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {formData.tags.map((tag, index) => (
+            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+              {tag}
+              <button
+                type="button"
+                onClick={() => {
+                  const newTags = formData.tags.filter((_, i) => i !== index);
+                  setFormData({ ...formData, tags: newTags });
+                }}
+                disabled={isLoading}
+                className="ml-1 rounded-full hover:bg-muted-foreground/20"
+              >
+                <X className="size-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            id="tags"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            placeholder="タグを入力してEnterまたは追加ボタン"
+            disabled={isLoading || formData.tags.length >= 20}
+            maxLength={50}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const trimmed = tagInput.trim();
+                if (trimmed && !formData.tags.includes(trimmed) && formData.tags.length < 20) {
+                  setFormData({ ...formData, tags: [...formData.tags, trimmed] });
+                  setTagInput('');
+                }
+              }
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled={
+              isLoading ||
+              !tagInput.trim() ||
+              formData.tags.includes(tagInput.trim()) ||
+              formData.tags.length >= 20
+            }
+            onClick={() => {
+              const trimmed = tagInput.trim();
+              if (trimmed && !formData.tags.includes(trimmed)) {
+                setFormData({ ...formData, tags: [...formData.tags, trimmed] });
+                setTagInput('');
+              }
+            }}
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
+        {errors.tags && (
+          <p id="tags-error" className="text-sm text-destructive">
+            {errors.tags}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {formData.tags.length} / 20タグ（各タグ最大50文字）
+        </p>
+      </div>
+
+      {/* 分類・参照ID・推定時間（3列レイアウト） */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* 分類 */}
+        <div className="space-y-2">
+          <Label htmlFor="classification">分類</Label>
+          <Input
+            id="classification"
+            value={formData.classification}
+            onChange={(e) => setFormData({ ...formData, classification: e.target.value })}
+            placeholder="分類を入力"
+            disabled={isLoading}
+            maxLength={100}
+            aria-invalid={!!errors.classification}
+            aria-describedby={errors.classification ? 'classification-error' : undefined}
+          />
+          {errors.classification && (
+            <p id="classification-error" className="text-sm text-destructive">
+              {errors.classification}
+            </p>
+          )}
+        </div>
+
+        {/* 参照ID */}
+        <div className="space-y-2">
+          <Label htmlFor="referenceId">参照ID</Label>
+          <Input
+            id="referenceId"
+            value={formData.referenceId}
+            onChange={(e) => setFormData({ ...formData, referenceId: e.target.value })}
+            placeholder="関連する外部IDを入力"
+            disabled={isLoading}
+            maxLength={100}
+            aria-invalid={!!errors.referenceId}
+            aria-describedby={errors.referenceId ? 'referenceId-error' : undefined}
+          />
+          {errors.referenceId && (
+            <p id="referenceId-error" className="text-sm text-destructive">
+              {errors.referenceId}
+            </p>
+          )}
+        </div>
+
+        {/* 推定時間 */}
+        <div className="space-y-2">
+          <Label htmlFor="estimatedTime">推定時間（分）</Label>
+          <Input
+            id="estimatedTime"
+            type="number"
+            min={0}
+            max={99999}
+            value={formData.estimatedTime ?? ''}
+            onChange={(e) => {
+              const value = e.target.value === '' ? null : parseInt(e.target.value, 10);
+              setFormData({ ...formData, estimatedTime: value });
+            }}
+            placeholder="分単位で入力"
+            disabled={isLoading}
+            aria-invalid={!!errors.estimatedTime}
+            aria-describedby={errors.estimatedTime ? 'estimatedTime-error' : undefined}
+          />
+          {errors.estimatedTime && (
+            <p id="estimatedTime-error" className="text-sm text-destructive">
+              {errors.estimatedTime}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* マトリクステスト */}

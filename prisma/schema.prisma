@@ -409,19 +409,28 @@ enum TestTechnique {
 
 /// テストケース
 model TestCase {
-  id            BigInt           @id @default(autoincrement())
-  testSpecId    BigInt           @map("test_spec_id")
-  sectionId     BigInt?          @map("section_id")
-  title         String           @db.VarChar(500)
-  description   String?          @db.Text
-  preconditions String?          @db.Text
-  priority      TestCasePriority @default(MEDIUM)
-  testType      TestType         @default(FUNCTIONAL) @map("test_type")
-  testTechnique TestTechnique    @default(OTHER) @map("test_technique")
-  isMatrix      Boolean          @default(false) @map("is_matrix")
-  sortOrder     Int              @default(0) @map("sort_order")
-  createdAt     DateTime         @default(now()) @map("created_at")
-  updatedAt     DateTime         @updatedAt @map("updated_at")
+  id              BigInt           @id @default(autoincrement())
+  testSpecId      BigInt           @map("test_spec_id")
+  sectionId       BigInt?          @map("section_id")
+  title           String           @db.VarChar(500)
+  description     String?          @db.Text
+  preconditions   String?          @db.Text
+  expectedResult  String?          @map("expected_result") @db.Text
+  checkpoint      String?          @db.Text
+  scenario        String?          @db.Text
+  testEnvironment String?          @map("test_environment") @db.Text
+  notes           String?          @db.Text
+  tags            String[]         @default([])
+  classification  String?          @db.VarChar(100)
+  referenceId     String?          @map("reference_id") @db.VarChar(100)
+  estimatedTime   Int?             @map("estimated_time")
+  priority        TestCasePriority @default(MEDIUM)
+  testType        TestType         @default(FUNCTIONAL) @map("test_type")
+  testTechnique   TestTechnique    @default(OTHER) @map("test_technique")
+  isMatrix        Boolean          @default(false) @map("is_matrix")
+  sortOrder       Int              @default(0) @map("sort_order")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
 
   // Relations
   testSpec  TestSpec     @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
@@ -433,6 +442,8 @@ model TestCase {
   @@index([priority])
   @@index([testType])
   @@index([sortOrder])
+  @@index([classification])
+  @@index([referenceId])
   @@map("test_cases")
 }
 

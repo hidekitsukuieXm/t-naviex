@@ -424,8 +424,9 @@ model TestCase {
   updatedAt     DateTime         @updatedAt @map("updated_at")
 
   // Relations
-  testSpec TestSpec     @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
-  section  TestSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  testSpec  TestSpec     @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
+  section   TestSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  testSteps TestStep[]
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -433,4 +434,23 @@ model TestCase {
   @@index([testType])
   @@index([sortOrder])
   @@map("test_cases")
+}
+
+/// テスト手順
+model TestStep {
+  id         BigInt   @id @default(autoincrement())
+  testCaseId BigInt   @map("test_case_id")
+  stepNo     Int      @map("step_no")
+  actionMd   String   @map("action_md") @db.Text
+  expectedMd String?  @map("expected_md") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([testCaseId, stepNo])
+  @@index([testCaseId])
+  @@index([stepNo])
+  @@map("test_steps")
 }

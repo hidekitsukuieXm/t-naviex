@@ -41,6 +41,11 @@ export type AuditAction =
   | 'TEST_CASE_CREATE'
   | 'TEST_CASE_UPDATE'
   | 'TEST_CASE_DELETE'
+  // テスト手順関連
+  | 'TEST_STEP_CREATE'
+  | 'TEST_STEP_UPDATE'
+  | 'TEST_STEP_DELETE'
+  | 'TEST_STEP_REORDER'
   // 設定関連
   | 'PASSWORD_POLICY_UPDATE'
   | 'SESSION_SETTINGS_UPDATE'
@@ -56,6 +61,7 @@ export type AuditTargetType =
   | 'TEST_SPEC'
   | 'TEST_SECTION'
   | 'TEST_CASE'
+  | 'TEST_STEP'
   | 'PASSWORD_POLICY'
   | 'SESSION_SETTINGS'
   | 'AUDIT_LOG'
@@ -154,6 +160,11 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   TEST_CASE_CREATE: 'テストケース作成',
   TEST_CASE_UPDATE: 'テストケース更新',
   TEST_CASE_DELETE: 'テストケース削除',
+  // テスト手順関連
+  TEST_STEP_CREATE: 'テスト手順作成',
+  TEST_STEP_UPDATE: 'テスト手順更新',
+  TEST_STEP_DELETE: 'テスト手順削除',
+  TEST_STEP_REORDER: 'テスト手順並び替え',
   // 設定関連
   PASSWORD_POLICY_UPDATE: 'パスワードポリシー更新',
   SESSION_SETTINGS_UPDATE: 'セッション設定更新',
@@ -170,6 +181,7 @@ export const AUDIT_TARGET_TYPE_LABELS: Record<AuditTargetType, string> = {
   TEST_SPEC: 'テスト仕様書',
   TEST_SECTION: 'テストセクション',
   TEST_CASE: 'テストケース',
+  TEST_STEP: 'テスト手順',
   PASSWORD_POLICY: 'パスワードポリシー',
   SESSION_SETTINGS: 'セッション設定',
   AUDIT_LOG: '監査ログ',
@@ -185,6 +197,7 @@ export type AuditActionCategory =
   | 'test_spec'
   | 'test_section'
   | 'test_case'
+  | 'test_step'
   | 'settings'
   | 'other';
 
@@ -248,6 +261,14 @@ export function getActionCategory(action: AuditAction): AuditActionCategory {
   ) {
     return 'test_case';
   }
+  if (
+    action === 'TEST_STEP_CREATE' ||
+    action === 'TEST_STEP_UPDATE' ||
+    action === 'TEST_STEP_DELETE' ||
+    action === 'TEST_STEP_REORDER'
+  ) {
+    return 'test_step';
+  }
   if (action === 'PASSWORD_POLICY_UPDATE' || action === 'SESSION_SETTINGS_UPDATE') {
     return 'settings';
   }
@@ -263,6 +284,7 @@ export const AUDIT_ACTION_CATEGORY_LABELS: Record<AuditActionCategory, string> =
   test_spec: 'テスト仕様書',
   test_section: 'テストセクション',
   test_case: 'テストケース',
+  test_step: 'テスト手順',
   settings: '設定',
   other: 'その他',
 };

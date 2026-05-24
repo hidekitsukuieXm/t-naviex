@@ -112,7 +112,8 @@ describe('SectionTree', () => {
     );
 
     // Find toggle button (first one which belongs to section-1)
-    const toggleButton = screen.getByLabelText('セクションを閉じる');
+    // TreeView uses '折りたたむ' for expanded items
+    const toggleButton = screen.getByRole('button', { name: '折りたたむ' });
     fireEvent.click(toggleButton);
 
     // Child sections should be hidden

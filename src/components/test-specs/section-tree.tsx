@@ -1,107 +1,41 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { type TestSectionWithChildren } from '@/types/test-section';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, FileText } from 'lucide-react';
+import { Folder, FolderOpen, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  TreeView,
+  TreeItem,
+  TreeViewToolbar,
+  TreeViewLabel,
+  TreeViewActions,
+  TreeViewAction,
+  collectAllIds,
+  type TreeNode,
+} from '@/components/ui/tree-view';
 
 interface SectionTreeItemProps {
   section: TestSectionWithChildren;
-  selectedId: string | null;
-  expandedIds: Set<string>;
-  onSelect: (id: string | null) => void;
-  onToggle: (id: string) => void;
-  depth: number;
+  depth?: number;
 }
 
-function SectionTreeItem({
-  section,
-  selectedId,
-  expandedIds,
-  onSelect,
-  onToggle,
-  depth,
-}: SectionTreeItemProps) {
+function SectionTreeItem({ section, depth = 0 }: SectionTreeItemProps) {
   const hasChildren = section.children.length > 0;
-  const isExpanded = expandedIds.has(section.id);
-  const isSelected = selectedId === section.id;
-
-  const handleToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggle(section.id);
-  };
 
   return (
-    <div>
-      <div
-        role="treeitem"
-        aria-selected={isSelected}
-        aria-expanded={hasChildren ? isExpanded : undefined}
-        tabIndex={0}
-        className={cn(
-          'flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted/50',
-          isSelected && 'bg-primary/10 text-primary hover:bg-primary/15',
-          depth > 0 && 'ml-4'
-        )}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
-        onClick={() => onSelect(section.id)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onSelect(section.id);
-          }
-          if (e.key === 'ArrowRight' && hasChildren && !isExpanded) {
-            e.preventDefault();
-            onToggle(section.id);
-          }
-          if (e.key === 'ArrowLeft' && hasChildren && isExpanded) {
-            e.preventDefault();
-            onToggle(section.id);
-          }
-        }}
-      >
-        {hasChildren ? (
-          <button
-            type="button"
-            className="flex size-5 shrink-0 items-center justify-center rounded hover:bg-muted"
-            onClick={handleToggle}
-            aria-label={isExpanded ? 'セクションを閉じる' : 'セクションを開く'}
-          >
-            {isExpanded ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
-          </button>
-        ) : (
-          <span className="size-5 shrink-0" />
-        )}
-
-        {hasChildren ? (
-          isExpanded ? (
-            <FolderOpen className="size-4 shrink-0 text-amber-500" />
-          ) : (
-            <Folder className="size-4 shrink-0 text-amber-500" />
-          )
-        ) : (
-          <FileText className="size-4 shrink-0 text-muted-foreground" />
-        )}
-
-        <span className="truncate">{section.name}</span>
-      </div>
-
-      {hasChildren && isExpanded && (
-        <div role="group">
-          {section.children.map((child) => (
-            <SectionTreeItem
-              key={child.id}
-              section={child}
-              selectedId={selectedId}
-              expandedIds={expandedIds}
-              onSelect={onSelect}
-              onToggle={onToggle}
-              depth={depth + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
+    <TreeItem
+      id={section.id}
+      label={section.name}
+      icon={hasChildren ? undefined : <FileText className="size-4 text-muted-foreground" />}
+      expandedIcon={<FolderOpen className="size-4 text-amber-500" />}
+      collapsedIcon={<Folder className="size-4 text-amber-500" />}
+      depth={depth}
+    >
+      {section.children.map((child) => (
+        <SectionTreeItem key={child.id} section={child} />
+      ))}
+    </TreeItem>
   );
 }
 
@@ -118,40 +52,45 @@ export function SectionTree({
   onSelectSection,
   className,
 }: SectionTreeProps) {
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    // Initially expand root sections
-    return new Set(sections.map((s) => s.id));
-  });
-
-  const handleToggle = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
+  // Convert sections to tree nodes for utility functions
+  const treeNodes = useMemo((): TreeNode[] => {
+    const convertToTreeNode = (section: TestSectionWithChildren): TreeNode => ({
+      id: section.id,
+      label: section.name,
+      children: section.children.map(convertToTreeNode),
     });
-  };
+    return sections.map(convertToTreeNode);
+  }, [sections]);
 
-  const handleExpandAll = () => {
-    const collectAllIds = (sections: TestSectionWithChildren[]): string[] => {
-      const ids: string[] = [];
-      sections.forEach((section) => {
-        ids.push(section.id);
-        if (section.children.length > 0) {
-          ids.push(...collectAllIds(section.children));
-        }
-      });
-      return ids;
-    };
-    setExpandedIds(new Set(collectAllIds(sections)));
-  };
+  // Calculate all IDs for expand all functionality
+  const allIds = useMemo(() => collectAllIds(treeNodes), [treeNodes]);
 
-  const handleCollapseAll = () => {
-    setExpandedIds(new Set());
-  };
+  // Initially expand root sections
+  const defaultExpandedIds = useMemo(() => sections.map((s) => s.id), [sections]);
+
+  // Handle selection change
+  const handleSelectedIdsChange = useCallback(
+    (ids: string[]) => {
+      // If the special "all" item is selected or no selection, pass null
+      if (ids.includes('__all__') || ids.length === 0) {
+        onSelectSection(null);
+      } else {
+        onSelectSection(ids[0] ?? null);
+      }
+    },
+    [onSelectSection]
+  );
+
+  // Track expanded IDs internally for expand/collapse all
+  const [expandedIds, setExpandedIds] = useState<string[]>(defaultExpandedIds);
+
+  const handleExpandAll = useCallback(() => {
+    setExpandedIds(allIds);
+  }, [allIds]);
+
+  const handleCollapseAll = useCallback(() => {
+    setExpandedIds([]);
+  }, []);
 
   if (sections.length === 0) {
     return (
@@ -162,61 +101,33 @@ export function SectionTree({
   }
 
   return (
-    <div className={cn('flex flex-col', className)}>
-      <div className="mb-2 flex items-center justify-between border-b pb-2">
-        <span className="text-sm font-medium">セクション</span>
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={handleExpandAll}
-            className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            全て展開
-          </button>
-          <button
-            type="button"
-            onClick={handleCollapseAll}
-            className="rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            全て閉じる
-          </button>
-        </div>
-      </div>
+    <div className={cn('flex flex-col h-full', className)}>
+      <TreeViewToolbar>
+        <TreeViewLabel>セクション</TreeViewLabel>
+        <TreeViewActions>
+          <TreeViewAction onClick={handleExpandAll}>全て展開</TreeViewAction>
+          <TreeViewAction onClick={handleCollapseAll}>全て閉じる</TreeViewAction>
+        </TreeViewActions>
+      </TreeViewToolbar>
 
-      <div role="tree" aria-label="テストセクション" className="flex-1 overflow-auto">
-        <div
-          role="treeitem"
-          aria-selected={selectedSectionId === null}
-          tabIndex={0}
-          className={cn(
-            'flex cursor-pointer items-center gap-1 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-muted/50 mb-1',
-            selectedSectionId === null && 'bg-primary/10 text-primary hover:bg-primary/15'
-          )}
-          onClick={() => onSelectSection(null)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onSelectSection(null);
-            }
-          }}
-        >
-          <span className="size-5 shrink-0" />
-          <Folder className="size-4 shrink-0 text-blue-500" />
-          <span className="truncate font-medium">全てのテストケース</span>
-        </div>
+      <TreeView
+        selectedIds={selectedSectionId === null ? ['__all__'] : [selectedSectionId]}
+        expandedIds={expandedIds}
+        onSelectedIdsChange={handleSelectedIdsChange}
+        onExpandedIdsChange={setExpandedIds}
+        aria-label="テストセクション"
+        className="flex-1 overflow-auto"
+      >
+        <TreeItem
+          id="__all__"
+          label="全てのテストケース"
+          icon={<Folder className="size-4 text-blue-500" />}
+        />
 
         {sections.map((section) => (
-          <SectionTreeItem
-            key={section.id}
-            section={section}
-            selectedId={selectedSectionId}
-            expandedIds={expandedIds}
-            onSelect={onSelectSection}
-            onToggle={handleToggle}
-            depth={0}
-          />
+          <SectionTreeItem key={section.id} section={section} />
         ))}
-      </div>
+      </TreeView>
     </div>
   );
 }

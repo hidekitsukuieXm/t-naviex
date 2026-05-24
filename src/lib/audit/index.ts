@@ -502,6 +502,49 @@ export async function logTestSectionReorder(
   });
 }
 
+// テストケースイベント用ショートカット関数
+export async function logTestCaseCreate(
+  actorUserId: bigint | string,
+  testCaseId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_CASE_CREATE',
+    targetType: 'TEST_CASE',
+    targetId: testCaseId,
+    details,
+  });
+}
+
+export async function logTestCaseUpdate(
+  actorUserId: bigint | string,
+  testCaseId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_CASE_UPDATE',
+    targetType: 'TEST_CASE',
+    targetId: testCaseId,
+    details,
+  });
+}
+
+export async function logTestCaseDelete(
+  actorUserId: bigint | string,
+  testCaseId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_CASE_DELETE',
+    targetType: 'TEST_CASE',
+    targetId: testCaseId,
+    details,
+  });
+}
+
 // その他イベント用ショートカット関数
 export async function logAuditLogExport(
   actorUserId: bigint | string,

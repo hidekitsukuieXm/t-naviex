@@ -7,6 +7,7 @@ import {
   isEmailTaken,
   type UpdateUserInput,
 } from '@/lib/repositories/user-repository';
+import { logUserUpdate, logUserDelete } from '@/lib/audit';
 import { validatePassword, type UserStatus } from '@/types/user';
 
 interface RouteParams {
@@ -136,6 +137,13 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     const user = await updateUser(userId, updateData);
 
+    // 監査ログを記録
+    await logUserUpdate(session.user.id, id, {
+      updatedFields: Object.keys(updateData),
+      userName: user.name,
+      userEmail: user.email,
+    });
+
     return NextResponse.json(user);
   } catch (error) {
     console.error('Update user error:', error);
@@ -172,9 +180,18 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: '自分自身を削除することはできません。' }, { status: 400 });
     }
 
+    // 監査ログ用に削除前の情報を保存
+    const deletedUserInfo = { name: existingUser.name, email: existingUser.email };
+
     await deleteUser(userId);
 
-    return NextResponse.json({ message: 'ユーザーを削除しました。' });
+    // 監査ログを記録
+    await logUserDelete(session.user.id, id);
+
+    return NextResponse.json({
+      message: 'ユーザーを削除しました。',
+      deletedUser: deletedUserInfo,
+    });
   } catch (error) {
     console.error('Delete user error:', error);
     return NextResponse.json({ error: 'ユーザーの削除に失敗しました。' }, { status: 500 });

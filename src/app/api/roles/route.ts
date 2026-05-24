@@ -6,6 +6,7 @@ import {
   isRoleNameTaken,
   type CreateRoleData,
 } from '@/lib/repositories/role-repository';
+import { logRoleCreate } from '@/lib/audit';
 import { validateRoleName, isSystemRole } from '@/types/role';
 
 // GET /api/roles - ロール一覧取得
@@ -83,6 +84,12 @@ export async function POST(request: Request) {
     };
 
     const role = await createRole(createData);
+
+    // 監査ログを記録
+    await logRoleCreate(session.user.id, role.id, {
+      roleName: role.name,
+      displayName: role.displayName,
+    });
 
     return NextResponse.json(role, { status: 201 });
   } catch (error) {

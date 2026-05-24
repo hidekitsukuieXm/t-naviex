@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態           |
 | ----------- | --------------------------------------------------------------- | -------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (18/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (19/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手         |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手         |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手         |
@@ -367,6 +367,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-24 | **Issue #27 実装完了**: テスト手順テーブル（TEST_STEPS）実装。TestStepモデル追加（Prismaスキーマ、ユニーク制約(testCaseId, stepNo)）、テスト手順型定義（バリデーション関数/ヘルパー関数）、テスト手順リポジトリ（CRUD操作、一括作成、並び替え、自動番号調整）、テスト手順API（GET/POST /api/test-specs/[id]/cases/[caseId]/steps、GET/PATCH/DELETE /api/test-specs/[id]/cases/[caseId]/steps/[stepId]、PUT /reorder）、監査ログ追加（TEST_STEP_CREATE/UPDATE/DELETE/REORDER）、Markdown対応、手順数上限100件、単体テスト99件追加（合計824件）。PR #206 作成。                       |
 | 2026-05-24 | **PR #206 レビュー完了**: テスト手順テーブル実装PRのコードレビュー実施。データモデル設計（ユニーク制約、インデックス設定）、API設計（RESTful、一括作成、並び替え）、バリデーション（操作手順、期待結果、手順番号）、トランザクション処理（並び替え、削除後の自動番号調整）、監査ログ統合、テストカバレッジ（99件）を確認しLGTM。                                                                                                                                                                                                                                                    |
 | 2026-05-24 | **PR #206 マージ完了**: テスト手順テーブル実装PRをmasterにマージ。Issue #27自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 2026-05-24 | **Issue #28 実装完了**: テスト仕様書一覧画面実装。テスト仕様書一覧ページ（/projects/:id/test-specs）、TestSpecStatusBadgeコンポーネント（DRAFT/REVIEW/APPROVED/ARCHIVED）、TestSpecCardコンポーネント（カード形式表示、ステータス、バージョン、ロックインジケーター）、TestSpecFormコンポーネント（作成・編集フォーム）、TestSpecCreateDialogコンポーネント（新規作成ダイアログ）、表示モード切替（カード/テーブル）、ステータスフィルタリング、検索機能、ソート機能（名前/日付/ステータス/バージョン）、ページネーション、単体テスト46件追加（合計893件）。PR #207 作成。          |
+| 2026-05-24 | **PR #207 レビュー完了**: テスト仕様書一覧画面実装PRのコードレビュー実施。コンポーネント設計（TestSpecStatusBadge/TestSpecCard/TestSpecForm/TestSpecCreateDialog）、パターン一貫性（ProjectsPage準拠）、UX設計（カード/テーブル切替、ステータスバッジ配色、ロック表示）、パフォーマンス最適化（クライアントサイドキャッシュ）、テストカバレッジ（46件）を確認しLGTM。                                                                                                                                                                                                               |
+| 2026-05-24 | **PR #207 マージ完了**: テスト仕様書一覧画面実装PRをmasterにマージ。Issue #28自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ---
 

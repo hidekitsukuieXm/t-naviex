@@ -431,6 +431,77 @@ export async function logTestSpecUnlock(
   });
 }
 
+// テストセクションイベント用ショートカット関数
+export async function logTestSectionCreate(
+  actorUserId: bigint | string,
+  sectionId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SECTION_CREATE',
+    targetType: 'TEST_SECTION',
+    targetId: sectionId,
+    details,
+  });
+}
+
+export async function logTestSectionUpdate(
+  actorUserId: bigint | string,
+  sectionId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SECTION_UPDATE',
+    targetType: 'TEST_SECTION',
+    targetId: sectionId,
+    details,
+  });
+}
+
+export async function logTestSectionDelete(
+  actorUserId: bigint | string,
+  sectionId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SECTION_DELETE',
+    targetType: 'TEST_SECTION',
+    targetId: sectionId,
+    details,
+  });
+}
+
+export async function logTestSectionMove(
+  actorUserId: bigint | string,
+  sectionId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SECTION_MOVE',
+    targetType: 'TEST_SECTION',
+    targetId: sectionId,
+    details,
+  });
+}
+
+export async function logTestSectionReorder(
+  actorUserId: bigint | string,
+  testSpecId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SECTION_REORDER',
+    targetType: 'TEST_SECTION',
+    targetId: testSpecId,
+    details,
+  });
+}
+
 // その他イベント用ショートカット関数
 export async function logAuditLogExport(
   actorUserId: bigint | string,

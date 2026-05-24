@@ -321,9 +321,10 @@ model TestSpec {
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
   // Relations
-  project  Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  versions TestSpecVersion[]
-  sections TestSection[]
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions  TestSpecVersion[]
+  sections  TestSection[]
+  testCases TestCase[]
 
   @@index([projectId])
   @@index([status])
@@ -359,12 +360,77 @@ model TestSection {
   updatedAt  DateTime @updatedAt @map("updated_at")
 
   // Relations
-  testSpec TestSpec      @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
-  parent   TestSection?  @relation("SectionHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children TestSection[] @relation("SectionHierarchy")
+  testSpec  TestSpec      @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
+  parent    TestSection?  @relation("SectionHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  TestSection[] @relation("SectionHierarchy")
+  testCases TestCase[]
 
   @@index([testSpecId])
   @@index([parentId])
   @@index([sortOrder])
   @@map("test_sections")
+}
+
+/// テストケース優先度
+enum TestCasePriority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+
+  @@map("test_case_priority")
+}
+
+/// テストタイプ
+enum TestType {
+  FUNCTIONAL
+  INTEGRATION
+  E2E
+  PERFORMANCE
+  SECURITY
+  USABILITY
+  OTHER
+
+  @@map("test_type")
+}
+
+/// テスト技法
+enum TestTechnique {
+  EQUIVALENCE_PARTITIONING
+  BOUNDARY_VALUE_ANALYSIS
+  DECISION_TABLE
+  STATE_TRANSITION
+  EXPLORATORY
+  REGRESSION
+  OTHER
+
+  @@map("test_technique")
+}
+
+/// テストケース
+model TestCase {
+  id            BigInt           @id @default(autoincrement())
+  testSpecId    BigInt           @map("test_spec_id")
+  sectionId     BigInt?          @map("section_id")
+  title         String           @db.VarChar(500)
+  description   String?          @db.Text
+  preconditions String?          @db.Text
+  priority      TestCasePriority @default(MEDIUM)
+  testType      TestType         @default(FUNCTIONAL) @map("test_type")
+  testTechnique TestTechnique    @default(OTHER) @map("test_technique")
+  isMatrix      Boolean          @default(false) @map("is_matrix")
+  sortOrder     Int              @default(0) @map("sort_order")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  testSpec TestSpec     @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
+  section  TestSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@index([testSpecId])
+  @@index([sectionId])
+  @@index([priority])
+  @@index([testType])
+  @@index([sortOrder])
+  @@map("test_cases")
 }

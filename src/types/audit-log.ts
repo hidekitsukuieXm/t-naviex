@@ -31,6 +31,12 @@ export type AuditAction =
   | 'TEST_SPEC_VERSION_CREATE'
   | 'TEST_SPEC_LOCK'
   | 'TEST_SPEC_UNLOCK'
+  // テストセクション関連
+  | 'TEST_SECTION_CREATE'
+  | 'TEST_SECTION_UPDATE'
+  | 'TEST_SECTION_DELETE'
+  | 'TEST_SECTION_MOVE'
+  | 'TEST_SECTION_REORDER'
   // 設定関連
   | 'PASSWORD_POLICY_UPDATE'
   | 'SESSION_SETTINGS_UPDATE'
@@ -44,6 +50,7 @@ export type AuditTargetType =
   | 'PROJECT'
   | 'PROJECT_MEMBER'
   | 'TEST_SPEC'
+  | 'TEST_SECTION'
   | 'PASSWORD_POLICY'
   | 'SESSION_SETTINGS'
   | 'AUDIT_LOG'
@@ -132,6 +139,12 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   TEST_SPEC_VERSION_CREATE: 'テスト仕様書バージョン作成',
   TEST_SPEC_LOCK: 'テスト仕様書ロック',
   TEST_SPEC_UNLOCK: 'テスト仕様書ロック解除',
+  // テストセクション関連
+  TEST_SECTION_CREATE: 'テストセクション作成',
+  TEST_SECTION_UPDATE: 'テストセクション更新',
+  TEST_SECTION_DELETE: 'テストセクション削除',
+  TEST_SECTION_MOVE: 'テストセクション移動',
+  TEST_SECTION_REORDER: 'テストセクション並び替え',
   // 設定関連
   PASSWORD_POLICY_UPDATE: 'パスワードポリシー更新',
   SESSION_SETTINGS_UPDATE: 'セッション設定更新',
@@ -146,6 +159,7 @@ export const AUDIT_TARGET_TYPE_LABELS: Record<AuditTargetType, string> = {
   PROJECT: 'プロジェクト',
   PROJECT_MEMBER: 'プロジェクトメンバー',
   TEST_SPEC: 'テスト仕様書',
+  TEST_SECTION: 'テストセクション',
   PASSWORD_POLICY: 'パスワードポリシー',
   SESSION_SETTINGS: 'セッション設定',
   AUDIT_LOG: '監査ログ',
@@ -159,6 +173,7 @@ export type AuditActionCategory =
   | 'role'
   | 'project'
   | 'test_spec'
+  | 'test_section'
   | 'settings'
   | 'other';
 
@@ -206,6 +221,15 @@ export function getActionCategory(action: AuditAction): AuditActionCategory {
   ) {
     return 'test_spec';
   }
+  if (
+    action === 'TEST_SECTION_CREATE' ||
+    action === 'TEST_SECTION_UPDATE' ||
+    action === 'TEST_SECTION_DELETE' ||
+    action === 'TEST_SECTION_MOVE' ||
+    action === 'TEST_SECTION_REORDER'
+  ) {
+    return 'test_section';
+  }
   if (action === 'PASSWORD_POLICY_UPDATE' || action === 'SESSION_SETTINGS_UPDATE') {
     return 'settings';
   }
@@ -219,6 +243,7 @@ export const AUDIT_ACTION_CATEGORY_LABELS: Record<AuditActionCategory, string> =
   role: 'ロール',
   project: 'プロジェクト',
   test_spec: 'テスト仕様書',
+  test_section: 'テストセクション',
   settings: '設定',
   other: 'その他',
 };

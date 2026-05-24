@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/mdx-editor';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -361,15 +361,13 @@ export function TestCaseForm({
       {/* 説明 */}
       <div className="space-y-2">
         <Label htmlFor="description">説明</Label>
-        <Textarea
-          id="description"
+        <RichTextEditor
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="テストケースの説明を入力"
+          onChange={(value) => setFormData({ ...formData, description: value })}
+          placeholder="テストケースの説明を入力（Markdownで記述可能）"
           disabled={isLoading}
-          rows={3}
-          aria-invalid={!!errors.description}
-          aria-describedby={errors.description ? 'description-error' : undefined}
+          maxLength={10000}
+          error={!!errors.description}
         />
         {errors.description && (
           <p id="description-error" className="text-sm text-destructive">
@@ -384,15 +382,14 @@ export function TestCaseForm({
       {/* 事前条件 */}
       <div className="space-y-2">
         <Label htmlFor="preconditions">事前条件</Label>
-        <Textarea
-          id="preconditions"
+        <RichTextEditor
           value={formData.preconditions}
-          onChange={(e) => setFormData({ ...formData, preconditions: e.target.value })}
-          placeholder="テスト実行前に必要な条件を入力"
+          onChange={(value) => setFormData({ ...formData, preconditions: value })}
+          placeholder="テスト実行前に必要な条件を入力（Markdownで記述可能）"
           disabled={isLoading}
-          rows={2}
-          aria-invalid={!!errors.preconditions}
-          aria-describedby={errors.preconditions ? 'preconditions-error' : undefined}
+          maxLength={5000}
+          enableImages={false}
+          error={!!errors.preconditions}
         />
         {errors.preconditions && (
           <p id="preconditions-error" className="text-sm text-destructive">
@@ -407,15 +404,13 @@ export function TestCaseForm({
       {/* 期待結果 */}
       <div className="space-y-2">
         <Label htmlFor="expectedResult">期待結果</Label>
-        <Textarea
-          id="expectedResult"
+        <RichTextEditor
           value={formData.expectedResult}
-          onChange={(e) => setFormData({ ...formData, expectedResult: e.target.value })}
-          placeholder="期待される結果を入力"
+          onChange={(value) => setFormData({ ...formData, expectedResult: value })}
+          placeholder="期待される結果を入力（Markdownで記述可能）"
           disabled={isLoading}
-          rows={3}
-          aria-invalid={!!errors.expectedResult}
-          aria-describedby={errors.expectedResult ? 'expectedResult-error' : undefined}
+          maxLength={10000}
+          error={!!errors.expectedResult}
         />
         {errors.expectedResult && (
           <p id="expectedResult-error" className="text-sm text-destructive">
@@ -430,15 +425,14 @@ export function TestCaseForm({
       {/* チェックポイント */}
       <div className="space-y-2">
         <Label htmlFor="checkpoint">チェックポイント</Label>
-        <Textarea
-          id="checkpoint"
+        <RichTextEditor
           value={formData.checkpoint}
-          onChange={(e) => setFormData({ ...formData, checkpoint: e.target.value })}
-          placeholder="確認すべきポイントを入力"
+          onChange={(value) => setFormData({ ...formData, checkpoint: value })}
+          placeholder="確認すべきポイントを入力（Markdownで記述可能）"
           disabled={isLoading}
-          rows={2}
-          aria-invalid={!!errors.checkpoint}
-          aria-describedby={errors.checkpoint ? 'checkpoint-error' : undefined}
+          maxLength={5000}
+          enableImages={false}
+          error={!!errors.checkpoint}
         />
         {errors.checkpoint && (
           <p id="checkpoint-error" className="text-sm text-destructive">
@@ -453,15 +447,13 @@ export function TestCaseForm({
       {/* シナリオ */}
       <div className="space-y-2">
         <Label htmlFor="scenario">シナリオ</Label>
-        <Textarea
-          id="scenario"
+        <RichTextEditor
           value={formData.scenario}
-          onChange={(e) => setFormData({ ...formData, scenario: e.target.value })}
-          placeholder="テストシナリオを入力"
+          onChange={(value) => setFormData({ ...formData, scenario: value })}
+          placeholder="テストシナリオを入力（Markdownで記述可能）"
           disabled={isLoading}
-          rows={3}
-          aria-invalid={!!errors.scenario}
-          aria-describedby={errors.scenario ? 'scenario-error' : undefined}
+          maxLength={10000}
+          error={!!errors.scenario}
         />
         {errors.scenario && (
           <p id="scenario-error" className="text-sm text-destructive">
@@ -476,15 +468,14 @@ export function TestCaseForm({
       {/* テスト環境 */}
       <div className="space-y-2">
         <Label htmlFor="testEnvironment">テスト環境</Label>
-        <Textarea
-          id="testEnvironment"
+        <RichTextEditor
           value={formData.testEnvironment}
-          onChange={(e) => setFormData({ ...formData, testEnvironment: e.target.value })}
-          placeholder="テスト実行に必要な環境を入力"
+          onChange={(value) => setFormData({ ...formData, testEnvironment: value })}
+          placeholder="テスト実行に必要な環境を入力（Markdownで記述可能）"
           disabled={isLoading}
-          rows={2}
-          aria-invalid={!!errors.testEnvironment}
-          aria-describedby={errors.testEnvironment ? 'testEnvironment-error' : undefined}
+          maxLength={5000}
+          enableImages={false}
+          error={!!errors.testEnvironment}
         />
         {errors.testEnvironment && (
           <p id="testEnvironment-error" className="text-sm text-destructive">
@@ -499,15 +490,14 @@ export function TestCaseForm({
       {/* 特記事項 */}
       <div className="space-y-2">
         <Label htmlFor="notes">特記事項</Label>
-        <Textarea
-          id="notes"
+        <RichTextEditor
           value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-          placeholder="その他の注意事項やメモを入力"
+          onChange={(value) => setFormData({ ...formData, notes: value })}
+          placeholder="その他の注意事項やメモを入力（Markdownで記述可能）"
           disabled={isLoading}
-          rows={2}
-          aria-invalid={!!errors.notes}
-          aria-describedby={errors.notes ? 'notes-error' : undefined}
+          maxLength={5000}
+          enableImages={false}
+          error={!!errors.notes}
         />
         {errors.notes && (
           <p id="notes-error" className="text-sm text-destructive">

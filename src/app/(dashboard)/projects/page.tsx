@@ -4,6 +4,14 @@ import { useCallback, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -13,8 +21,24 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ProjectCreateDialog } from '@/components/projects/project-create-dialog';
-import { type Project, type ProjectStatus, PROJECT_STATUS_LABELS } from '@/types/project';
-import { Pencil, Trash2, Loader2, FolderOpen } from 'lucide-react';
+import { ProjectCard } from '@/components/projects/project-card';
+import {
+  type Project,
+  type ProjectStatus,
+  type ProjectListResponse,
+  PROJECT_STATUS_LABELS,
+} from '@/types/project';
+import {
+  Pencil,
+  Trash2,
+  Loader2,
+  FolderOpen,
+  Search,
+  X,
+  LayoutGrid,
+  List,
+  ArrowUpDown,
+} from 'lucide-react';
 
 const STATUS_COLORS: Record<ProjectStatus, string> = {
   ACTIVE: 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400',
@@ -23,36 +47,107 @@ const STATUS_COLORS: Record<ProjectStatus, string> = {
   PLANNING: 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400',
 };
 
-// Cache for initial project fetch
-const projectsCache = new Map<string, { projects: Project[]; timestamp: number }>();
-const CACHE_KEY = 'projects';
+type ViewMode = 'card' | 'table';
+type SortField = 'name' | 'createdAt' | 'updatedAt' | 'status';
+type SortOrder = 'asc' | 'desc';
 
-function getInitialState(): { projects: Project[]; isLoading: boolean; error: string | null } {
-  const cached = projectsCache.get(CACHE_KEY);
-  if (cached && Date.now() - cached.timestamp < 60000) {
-    return { projects: cached.projects, isLoading: false, error: null };
-  }
-  return { projects: [], isLoading: true, error: null };
+// Cache for project fetch
+const projectsCache = new Map<string, { data: ProjectListResponse; timestamp: number }>();
+const CACHE_DURATION = 60000; // 1 minute
+
+// Export for testing purposes
+export function clearProjectsCache() {
+  projectsCache.clear();
+}
+
+function getCacheKey(
+  query: string,
+  status: string,
+  sortBy: string,
+  sortOrder: string,
+  page: number
+): string {
+  return `${query}-${status}-${sortBy}-${sortOrder}-${page}`;
 }
 
 export default function ProjectsPage() {
-  const initialState = getInitialState();
-  const [projects, setProjects] = useState<Project[]>(initialState.projects);
-  const [isLoading, setIsLoading] = useState(initialState.isLoading);
-  const [error, setError] = useState<string | null>(initialState.error);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
+  // View mode
+  const [viewMode, setViewMode] = useState<ViewMode>('card');
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // Sort state
+  const [sortBy, setSortBy] = useState<SortField>('updatedAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 12;
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setCurrentPage(1); // Reset to first page on search
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const fetchProjects = useCallback(async () => {
-    try {
-      const response = await fetch('/api/projects');
-      if (!response.ok) {
-        throw new Error('プロジェクトの取得に失敗しました。');
-      }
-      const data = await response.json();
-      projectsCache.set(CACHE_KEY, { projects: data, timestamp: Date.now() });
+    const cacheKey = getCacheKey(debouncedQuery, statusFilter, sortBy, sortOrder, currentPage);
+    const cached = projectsCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       startTransition(() => {
-        setProjects(data);
+        setProjects(cached.data.projects);
+        setTotalPages(cached.data.totalPages);
+        setTotal(cached.data.total);
+        setIsLoading(false);
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const params = new URLSearchParams();
+      params.set('page', currentPage.toString());
+      params.set('limit', limit.toString());
+      params.set('sortBy', sortBy);
+      params.set('sortOrder', sortOrder);
+
+      if (debouncedQuery) {
+        params.set('query', debouncedQuery);
+      }
+
+      if (statusFilter !== 'all') {
+        params.set('status', statusFilter);
+      }
+
+      const response = await fetch(`/api/projects?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('プロジェクト一覧の取得に失敗しました。');
+      }
+
+      const data: ProjectListResponse = await response.json();
+      projectsCache.set(cacheKey, { data, timestamp: Date.now() });
+
+      startTransition(() => {
+        setProjects(data.projects);
+        setTotalPages(data.totalPages);
+        setTotal(data.total);
         setError(null);
         setIsLoading(false);
       });
@@ -62,14 +157,17 @@ export default function ProjectsPage() {
         setIsLoading(false);
       });
     }
-  }, []);
+  }, [debouncedQuery, statusFilter, sortBy, sortOrder, currentPage]);
 
   useEffect(() => {
-    const cached = projectsCache.get(CACHE_KEY);
-    if (!cached || Date.now() - cached.timestamp >= 60000) {
-      fetchProjects();
-    }
+    fetchProjects();
   }, [fetchProjects]);
+
+  const handleRefresh = () => {
+    // Clear cache and refetch
+    projectsCache.clear();
+    fetchProjects();
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('このプロジェクトを削除してもよろしいですか？')) {
@@ -87,7 +185,9 @@ export default function ProjectsPage() {
         throw new Error(errorData.error || 'プロジェクトの削除に失敗しました。');
       }
 
-      setProjects((prev) => prev.filter((p) => p.id !== id));
+      // Clear cache and refetch
+      projectsCache.clear();
+      fetchProjects();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'エラーが発生しました。');
     } finally {
@@ -103,6 +203,24 @@ export default function ProjectsPage() {
     });
   };
 
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setCurrentPage(1);
+  };
+
+  const handleSortChange = (field: SortField) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setCurrentPage(1);
+  };
+
+  const hasFilters = searchQuery || statusFilter !== 'all';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -110,36 +228,171 @@ export default function ProjectsPage() {
           <h1 className="text-2xl font-bold tracking-tight">プロジェクト一覧</h1>
           <p className="text-muted-foreground">プロジェクトの管理・作成ができます。</p>
         </div>
-        <ProjectCreateDialog onSuccess={fetchProjects} />
+        <ProjectCreateDialog onSuccess={handleRefresh} />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>プロジェクト</CardTitle>
-          <CardDescription>登録されているプロジェクトの一覧です。</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>プロジェクト</CardTitle>
+              <CardDescription>
+                登録されているプロジェクトの一覧です。{total > 0 && `（全${total}件）`}
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'card' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('card')}
+                aria-label="カード表示"
+              >
+                <LayoutGrid className="size-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+                aria-label="テーブル表示"
+              >
+                <List className="size-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
+          {/* Search, Filter, and Sort */}
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="プロジェクト名または説明で検索..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setStatusFilter(value as ProjectStatus | 'all');
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="ステータス" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">すべて</SelectItem>
+                  {(Object.entries(PROJECT_STATUS_LABELS) as [ProjectStatus, string][]).map(
+                    ([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    )
+                  )}
+                </SelectContent>
+              </Select>
+              <Select
+                value={`${sortBy}-${sortOrder}`}
+                onValueChange={(value) => {
+                  const [field, order] = value.split('-') as [SortField, SortOrder];
+                  setSortBy(field);
+                  setSortOrder(order);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-40">
+                  <ArrowUpDown className="mr-2 size-4" />
+                  <SelectValue placeholder="並び順" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="updatedAt-desc">更新日（新しい順）</SelectItem>
+                  <SelectItem value="updatedAt-asc">更新日（古い順）</SelectItem>
+                  <SelectItem value="createdAt-desc">作成日（新しい順）</SelectItem>
+                  <SelectItem value="createdAt-asc">作成日（古い順）</SelectItem>
+                  <SelectItem value="name-asc">名前（A-Z）</SelectItem>
+                  <SelectItem value="name-desc">名前（Z-A）</SelectItem>
+                </SelectContent>
+              </Select>
+              {hasFilters && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <X className="mr-1 size-4" />
+                  クリア
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-12">
               <Loader2 className="size-8 animate-spin text-muted-foreground" />
             </div>
           ) : error ? (
-            <div className="py-8 text-center text-destructive">{error}</div>
+            <div className="py-12 text-center text-destructive">{error}</div>
           ) : projects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-              <FolderOpen className="mb-4 size-12" />
-              <p>プロジェクトがありません。</p>
-              <p className="text-sm">「新規プロジェクト」ボタンから作成してください。</p>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <FolderOpen className="mb-4 size-16" />
+              {hasFilters ? (
+                <>
+                  <p className="text-lg">検索条件に一致するプロジェクトがありません。</p>
+                  <Button variant="link" onClick={clearFilters} className="mt-2">
+                    フィルターをクリア
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg">プロジェクトがありません。</p>
+                  <p className="text-sm">「新規プロジェクト」ボタンから作成してください。</p>
+                </>
+              )}
+            </div>
+          ) : viewMode === 'card' ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  onDelete={handleDelete}
+                  isDeleting={deletingId === project.id}
+                />
+              ))}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>プロジェクト名</TableHead>
-                  <TableHead>ステータス</TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSortChange('name')}
+                  >
+                    <div className="flex items-center gap-1">
+                      プロジェクト名
+                      {sortBy === 'name' && <ArrowUpDown className="size-3" />}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSortChange('status')}
+                  >
+                    <div className="flex items-center gap-1">
+                      ステータス
+                      {sortBy === 'status' && <ArrowUpDown className="size-3" />}
+                    </div>
+                  </TableHead>
                   <TableHead>タイプ</TableHead>
                   <TableHead>対象バージョン</TableHead>
-                  <TableHead>作成日</TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSortChange('createdAt')}
+                  >
+                    <div className="flex items-center gap-1">
+                      作成日
+                      {sortBy === 'createdAt' && <ArrowUpDown className="size-3" />}
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -195,6 +448,37 @@ export default function ProjectsPage() {
                 ))}
               </TableBody>
             </Table>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                {total}件中 {(currentPage - 1) * limit + 1}-{Math.min(currentPage * limit, total)}
+                件を表示
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  前へ
+                </Button>
+                <span className="text-sm">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  次へ
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

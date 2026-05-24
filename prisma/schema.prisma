@@ -170,6 +170,7 @@ model Project {
 
   // Relations
   projectMembers ProjectMember[]
+  testSpecs      TestSpec[]
 
   @@map("projects")
 }
@@ -291,4 +292,57 @@ model SessionSettings {
   updatedAt             DateTime @updatedAt @map("updated_at")
 
   @@map("session_settings")
+}
+
+// ============================================
+// テスト仕様書系モデル
+// ============================================
+
+/// テスト仕様書ステータス
+enum TestSpecStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  ARCHIVED
+
+  @@map("test_spec_status")
+}
+
+/// テスト仕様書
+model TestSpec {
+  id          BigInt         @id @default(autoincrement())
+  projectId   BigInt         @map("project_id")
+  name        String         @db.VarChar(255)
+  description String?        @db.Text
+  status      TestSpecStatus @default(DRAFT)
+  version     String         @default("1.0.0") @db.VarChar(50)
+  isLocked    Boolean        @default(false) @map("is_locked")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  project  Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions TestSpecVersion[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("test_specs")
+}
+
+/// テスト仕様書バージョン履歴
+model TestSpecVersion {
+  id         BigInt   @id @default(autoincrement())
+  testSpecId BigInt   @map("test_spec_id")
+  version    String   @db.VarChar(50)
+  changeNote String?  @map("change_note") @db.Text
+  createdBy  BigInt?  @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  testSpec TestSpec @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
+
+  @@index([testSpecId])
+  @@index([createdAt])
+  @@map("test_spec_versions")
 }

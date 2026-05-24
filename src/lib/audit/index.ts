@@ -352,6 +352,85 @@ export async function logSessionSettingsUpdate(
   });
 }
 
+// テスト仕様書イベント用ショートカット関数
+export async function logTestSpecCreate(
+  actorUserId: bigint | string,
+  testSpecId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SPEC_CREATE',
+    targetType: 'TEST_SPEC',
+    targetId: testSpecId,
+    details,
+  });
+}
+
+export async function logTestSpecUpdate(
+  actorUserId: bigint | string,
+  testSpecId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SPEC_UPDATE',
+    targetType: 'TEST_SPEC',
+    targetId: testSpecId,
+    details,
+  });
+}
+
+export async function logTestSpecDelete(
+  actorUserId: bigint | string,
+  testSpecId: bigint | string
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SPEC_DELETE',
+    targetType: 'TEST_SPEC',
+    targetId: testSpecId,
+  });
+}
+
+export async function logTestSpecVersionCreate(
+  actorUserId: bigint | string,
+  testSpecId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SPEC_VERSION_CREATE',
+    targetType: 'TEST_SPEC',
+    targetId: testSpecId,
+    details,
+  });
+}
+
+export async function logTestSpecLock(
+  actorUserId: bigint | string,
+  testSpecId: bigint | string
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SPEC_LOCK',
+    targetType: 'TEST_SPEC',
+    targetId: testSpecId,
+  });
+}
+
+export async function logTestSpecUnlock(
+  actorUserId: bigint | string,
+  testSpecId: bigint | string
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_SPEC_UNLOCK',
+    targetType: 'TEST_SPEC',
+    targetId: testSpecId,
+  });
+}
+
 // その他イベント用ショートカット関数
 export async function logAuditLogExport(
   actorUserId: bigint | string,

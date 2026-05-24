@@ -24,6 +24,13 @@ export type AuditAction =
   | 'PROJECT_MEMBER_ADD'
   | 'PROJECT_MEMBER_UPDATE'
   | 'PROJECT_MEMBER_REMOVE'
+  // テスト仕様書関連
+  | 'TEST_SPEC_CREATE'
+  | 'TEST_SPEC_UPDATE'
+  | 'TEST_SPEC_DELETE'
+  | 'TEST_SPEC_VERSION_CREATE'
+  | 'TEST_SPEC_LOCK'
+  | 'TEST_SPEC_UNLOCK'
   // 設定関連
   | 'PASSWORD_POLICY_UPDATE'
   | 'SESSION_SETTINGS_UPDATE'
@@ -36,6 +43,7 @@ export type AuditTargetType =
   | 'ROLE'
   | 'PROJECT'
   | 'PROJECT_MEMBER'
+  | 'TEST_SPEC'
   | 'PASSWORD_POLICY'
   | 'SESSION_SETTINGS'
   | 'AUDIT_LOG'
@@ -117,6 +125,13 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   PROJECT_MEMBER_ADD: 'プロジェクトメンバー追加',
   PROJECT_MEMBER_UPDATE: 'プロジェクトメンバー更新',
   PROJECT_MEMBER_REMOVE: 'プロジェクトメンバー削除',
+  // テスト仕様書関連
+  TEST_SPEC_CREATE: 'テスト仕様書作成',
+  TEST_SPEC_UPDATE: 'テスト仕様書更新',
+  TEST_SPEC_DELETE: 'テスト仕様書削除',
+  TEST_SPEC_VERSION_CREATE: 'テスト仕様書バージョン作成',
+  TEST_SPEC_LOCK: 'テスト仕様書ロック',
+  TEST_SPEC_UNLOCK: 'テスト仕様書ロック解除',
   // 設定関連
   PASSWORD_POLICY_UPDATE: 'パスワードポリシー更新',
   SESSION_SETTINGS_UPDATE: 'セッション設定更新',
@@ -130,6 +145,7 @@ export const AUDIT_TARGET_TYPE_LABELS: Record<AuditTargetType, string> = {
   ROLE: 'ロール',
   PROJECT: 'プロジェクト',
   PROJECT_MEMBER: 'プロジェクトメンバー',
+  TEST_SPEC: 'テスト仕様書',
   PASSWORD_POLICY: 'パスワードポリシー',
   SESSION_SETTINGS: 'セッション設定',
   AUDIT_LOG: '監査ログ',
@@ -137,7 +153,14 @@ export const AUDIT_TARGET_TYPE_LABELS: Record<AuditTargetType, string> = {
 };
 
 // アクションカテゴリ
-export type AuditActionCategory = 'auth' | 'user' | 'role' | 'project' | 'settings' | 'other';
+export type AuditActionCategory =
+  | 'auth'
+  | 'user'
+  | 'role'
+  | 'project'
+  | 'test_spec'
+  | 'settings'
+  | 'other';
 
 // アクションのカテゴリを取得
 export function getActionCategory(action: AuditAction): AuditActionCategory {
@@ -173,6 +196,16 @@ export function getActionCategory(action: AuditAction): AuditActionCategory {
   ) {
     return 'project';
   }
+  if (
+    action === 'TEST_SPEC_CREATE' ||
+    action === 'TEST_SPEC_UPDATE' ||
+    action === 'TEST_SPEC_DELETE' ||
+    action === 'TEST_SPEC_VERSION_CREATE' ||
+    action === 'TEST_SPEC_LOCK' ||
+    action === 'TEST_SPEC_UNLOCK'
+  ) {
+    return 'test_spec';
+  }
   if (action === 'PASSWORD_POLICY_UPDATE' || action === 'SESSION_SETTINGS_UPDATE') {
     return 'settings';
   }
@@ -185,6 +218,7 @@ export const AUDIT_ACTION_CATEGORY_LABELS: Record<AuditActionCategory, string> =
   user: 'ユーザー',
   role: 'ロール',
   project: 'プロジェクト',
+  test_spec: 'テスト仕様書',
   settings: '設定',
   other: 'その他',
 };

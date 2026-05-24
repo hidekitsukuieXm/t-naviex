@@ -4,6 +4,7 @@ import {
   getPasswordPolicy,
   updatePasswordPolicy,
 } from '@/lib/repositories/password-policy-repository';
+import { logPasswordPolicyUpdate } from '@/lib/audit';
 import { validatePasswordPolicySettings } from '@/types/password-policy';
 
 // GET /api/password-policy - パスワードポリシー取得
@@ -45,6 +46,11 @@ export async function PUT(request: Request) {
     }
 
     const policy = await updatePasswordPolicy(body);
+
+    // 監査ログを記録
+    await logPasswordPolicyUpdate(session.user.id, {
+      updatedSettings: body,
+    });
 
     return NextResponse.json(policy);
   } catch (error) {

@@ -4,6 +4,7 @@ import {
   getSessionSettings,
   updateSessionSettings,
 } from '@/lib/repositories/session-settings-repository';
+import { logSessionSettingsUpdate } from '@/lib/audit';
 import { validateSessionSettings } from '@/types/session-settings';
 
 // GET /api/session-settings - セッション設定取得
@@ -42,6 +43,11 @@ export async function PUT(request: Request) {
     }
 
     const settings = await updateSessionSettings(body);
+
+    // 監査ログを記録
+    await logSessionSettingsUpdate(session.user.id, {
+      updatedSettings: body,
+    });
 
     return NextResponse.json(settings);
   } catch (error) {

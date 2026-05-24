@@ -7,6 +7,7 @@ import {
   isRoleNameTaken,
   type UpdateRoleData,
 } from '@/lib/repositories/role-repository';
+import { logRoleUpdate, logRoleDelete } from '@/lib/audit';
 import { validateRoleName, isSystemRole } from '@/types/role';
 
 interface RouteParams {
@@ -141,6 +142,12 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     const role = await updateRole(roleId, updateData);
 
+    // 監査ログを記録
+    await logRoleUpdate(session.user.id, id, {
+      roleName: role.name,
+      updatedFields: Object.keys(updateData),
+    });
+
     return NextResponse.json(role);
   } catch (error) {
     console.error('Update role error:', error);
@@ -174,6 +181,9 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
+
+    // 監査ログを記録
+    await logRoleDelete(session.user.id, id);
 
     return NextResponse.json({ message: 'ロールを削除しました。' });
   } catch (error) {

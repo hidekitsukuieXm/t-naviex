@@ -7,6 +7,7 @@ import {
   type CreateUserInput,
   type UserSearchParams,
 } from '@/lib/repositories/user-repository';
+import { logUserCreate } from '@/lib/audit';
 import { validatePassword, type UserStatus } from '@/types/user';
 
 // GET /api/users - ユーザー一覧取得
@@ -95,6 +96,12 @@ export async function POST(request: Request) {
     };
 
     const user = await createUser(createData);
+
+    // 監査ログを記録
+    await logUserCreate(session.user.id, user.id, {
+      userName: user.name,
+      userEmail: user.email,
+    });
 
     return NextResponse.json(user, { status: 201 });
   } catch (error) {

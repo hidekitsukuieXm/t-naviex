@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, use } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TestSpecHeader } from '@/components/test-specs/test-spec-header';
-import { SectionTree } from '@/components/test-specs/section-tree';
+import { SortableSectionTree } from '@/components/test-specs/sortable-section-tree';
 import { TestCaseList } from '@/components/test-specs/test-case-list';
 import { type TestSpec } from '@/types/test-spec';
 import { type TestSectionWithChildren } from '@/types/test-section';
@@ -49,6 +49,37 @@ export default function TestSpecDetailPage({ params }: TestSpecDetailPageProps) 
       throw err;
     }
   }, [specId]);
+
+  const handleMoveSection = useCallback(
+    async (sectionId: string, newParentId: string | null, newSortOrder: number) => {
+      try {
+        const response = await fetch(`/api/test-specs/${specId}/sections/${sectionId}/move`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parentId: newParentId,
+            sortOrder: newSortOrder,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'セクションの移動に失敗しました。');
+        }
+
+        // Refetch sections to ensure consistency
+        await fetchSections();
+      } catch (err) {
+        console.error('Failed to move section:', err);
+        throw err;
+      }
+    },
+    [specId, fetchSections]
+  );
+
+  const handleSectionsChange = useCallback((newSections: TestSectionWithChildren[]) => {
+    setSections(newSections);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,10 +130,14 @@ export default function TestSpecDetailPage({ params }: TestSpecDetailPageProps) 
         {/* Left Pane - Section Tree */}
         <Card className="w-72 shrink-0 overflow-hidden">
           <CardContent className="h-full p-4">
-            <SectionTree
+            <SortableSectionTree
               sections={sections}
+              testSpecId={specId}
               selectedSectionId={selectedSectionId}
               onSelectSection={setSelectedSectionId}
+              onSectionsChange={handleSectionsChange}
+              onMoveSection={handleMoveSection}
+              disabled={testSpec.isLocked}
               className="h-full"
             />
           </CardContent>

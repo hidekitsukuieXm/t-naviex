@@ -3,6 +3,15 @@ import {
   validateTestCaseTitle,
   validateDescription,
   validatePreconditions,
+  validateExpectedResult,
+  validateCheckpoint,
+  validateScenario,
+  validateTestEnvironment,
+  validateNotes,
+  validateTags,
+  validateClassification,
+  validateReferenceId,
+  validateEstimatedTime,
   validatePriority,
   validateTestType,
   validateTestTechnique,
@@ -96,6 +105,256 @@ describe('Test Case Types', () => {
       const result = validatePreconditions(longPreconditions);
       expect(result.valid).toBe(false);
       expect(result.error).toBe('事前条件は5000文字以内で入力してください。');
+    });
+  });
+
+  describe('validateExpectedResult', () => {
+    it('should return valid for null expectedResult', () => {
+      const result = validateExpectedResult(null);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for undefined expectedResult', () => {
+      const result = validateExpectedResult(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for short expectedResult', () => {
+      const result = validateExpectedResult('期待結果');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for expectedResult exceeding 10000 characters', () => {
+      const longExpectedResult = 'a'.repeat(10001);
+      const result = validateExpectedResult(longExpectedResult);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('期待結果は10000文字以内で入力してください。');
+    });
+  });
+
+  describe('validateCheckpoint', () => {
+    it('should return valid for null checkpoint', () => {
+      const result = validateCheckpoint(null);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for undefined checkpoint', () => {
+      const result = validateCheckpoint(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for short checkpoint', () => {
+      const result = validateCheckpoint('チェックポイント');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for checkpoint exceeding 5000 characters', () => {
+      const longCheckpoint = 'a'.repeat(5001);
+      const result = validateCheckpoint(longCheckpoint);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('チェックポイントは5000文字以内で入力してください。');
+    });
+  });
+
+  describe('validateScenario', () => {
+    it('should return valid for null scenario', () => {
+      const result = validateScenario(null);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for undefined scenario', () => {
+      const result = validateScenario(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for short scenario', () => {
+      const result = validateScenario('シナリオ');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for scenario exceeding 10000 characters', () => {
+      const longScenario = 'a'.repeat(10001);
+      const result = validateScenario(longScenario);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('シナリオは10000文字以内で入力してください。');
+    });
+  });
+
+  describe('validateTestEnvironment', () => {
+    it('should return valid for null testEnvironment', () => {
+      const result = validateTestEnvironment(null);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for undefined testEnvironment', () => {
+      const result = validateTestEnvironment(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for short testEnvironment', () => {
+      const result = validateTestEnvironment('テスト環境');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for testEnvironment exceeding 5000 characters', () => {
+      const longTestEnvironment = 'a'.repeat(5001);
+      const result = validateTestEnvironment(longTestEnvironment);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('テスト環境は5000文字以内で入力してください。');
+    });
+  });
+
+  describe('validateNotes', () => {
+    it('should return valid for null notes', () => {
+      const result = validateNotes(null);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for undefined notes', () => {
+      const result = validateNotes(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for short notes', () => {
+      const result = validateNotes('特記事項');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for notes exceeding 5000 characters', () => {
+      const longNotes = 'a'.repeat(5001);
+      const result = validateNotes(longNotes);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('特記事項は5000文字以内で入力してください。');
+    });
+  });
+
+  describe('validateTags', () => {
+    it('should return valid for undefined tags', () => {
+      const result = validateTags(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for empty tags array', () => {
+      const result = validateTags([]);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for valid tags', () => {
+      const result = validateTags(['tag1', 'tag2', 'tag3']);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for more than 20 tags', () => {
+      const manyTags = Array.from({ length: 21 }, (_, i) => `tag${i}`);
+      const result = validateTags(manyTags);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('タグは20個以内で指定してください。');
+    });
+
+    it('should return invalid for tag exceeding 50 characters', () => {
+      const longTag = 'a'.repeat(51);
+      const result = validateTags([longTag]);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('各タグは50文字以内で入力してください。');
+    });
+
+    it('should return valid for tag at max 50 characters', () => {
+      const maxTag = 'a'.repeat(50);
+      const result = validateTags([maxTag]);
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe('validateClassification', () => {
+    it('should return valid for null classification', () => {
+      const result = validateClassification(null);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for undefined classification', () => {
+      const result = validateClassification(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for short classification', () => {
+      const result = validateClassification('分類');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for classification exceeding 100 characters', () => {
+      const longClassification = 'a'.repeat(101);
+      const result = validateClassification(longClassification);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('分類は100文字以内で入力してください。');
+    });
+  });
+
+  describe('validateReferenceId', () => {
+    it('should return valid for null referenceId', () => {
+      const result = validateReferenceId(null);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for undefined referenceId', () => {
+      const result = validateReferenceId(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for short referenceId', () => {
+      const result = validateReferenceId('REF-001');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for referenceId exceeding 100 characters', () => {
+      const longReferenceId = 'a'.repeat(101);
+      const result = validateReferenceId(longReferenceId);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('参照IDは100文字以内で入力してください。');
+    });
+  });
+
+  describe('validateEstimatedTime', () => {
+    it('should return valid for null estimatedTime', () => {
+      const result = validateEstimatedTime(null);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for undefined estimatedTime', () => {
+      const result = validateEstimatedTime(undefined);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for 0 estimatedTime', () => {
+      const result = validateEstimatedTime(0);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return valid for valid estimatedTime', () => {
+      const result = validateEstimatedTime(60);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for negative estimatedTime', () => {
+      const result = validateEstimatedTime(-1);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('推定時間は0以上の値を指定してください。');
+    });
+
+    it('should return invalid for non-integer estimatedTime', () => {
+      const result = validateEstimatedTime(1.5);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('推定時間は整数で指定してください。');
+    });
+
+    it('should return invalid for estimatedTime exceeding 99999', () => {
+      const result = validateEstimatedTime(100000);
+      expect(result.valid).toBe(false);
+      expect(result.error).toBe('推定時間は99999分以内で指定してください。');
+    });
+
+    it('should return valid for max estimatedTime (99999)', () => {
+      const result = validateEstimatedTime(99999);
+      expect(result.valid).toBe(true);
     });
   });
 

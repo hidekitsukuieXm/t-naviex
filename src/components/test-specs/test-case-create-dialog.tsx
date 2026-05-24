@@ -45,6 +45,15 @@ export function TestCaseCreateDialog({
           title: data.title,
           description: data.description || null,
           preconditions: data.preconditions || null,
+          expectedResult: data.expectedResult || null,
+          checkpoint: data.checkpoint || null,
+          scenario: data.scenario || null,
+          testEnvironment: data.testEnvironment || null,
+          notes: data.notes || null,
+          tags: data.tags,
+          classification: data.classification || null,
+          referenceId: data.referenceId || null,
+          estimatedTime: data.estimatedTime,
           priority: data.priority,
           testType: data.testType,
           testTechnique: data.testTechnique,
@@ -76,7 +85,7 @@ export function TestCaseCreateDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={trigger || defaultTrigger} />
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>新規テストケース作成</DialogTitle>
           <DialogDescription>新しいテストケースの情報を入力してください。</DialogDescription>

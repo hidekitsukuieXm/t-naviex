@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態           |
 | ----------- | --------------------------------------------------------------- | -------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (16/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (17/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手         |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手         |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手         |
@@ -358,6 +358,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-24 | **Issue #24 実装完了**: テスト仕様書テーブル（TEST_SPECS）実装。TestSpec/TestSpecVersionモデル追加（Prismaスキーマ）、テスト仕様書型定義（TestSpecStatus/バリデーション関数/バージョン比較・インクリメント関数）、テスト仕様書リポジトリ（CRUD操作、バージョン管理）、テスト仕様書API（GET/POST /api/test-specs、GET/PUT/DELETE /api/test-specs/[id]、GET/POST /api/test-specs/[id]/versions）、監査ログ追加（TEST_SPEC_CREATE/UPDATE/DELETE/VERSION_CREATE/LOCK/UNLOCK）、単体テスト82件追加（合計532件）。PR #203 作成。                                                          |
 | 2026-05-24 | **PR #203 レビュー完了**: テスト仕様書テーブル実装PRのコードレビュー実施。Prismaスキーマ設計（リレーション、カスケード削除、インデックス）、バージョン管理ロジック（セマンティックバージョニング）、バリデーション（名前長、バージョン形式）、セキュリティ（認証、ロック機能）、監査ログ統合、テストカバレッジ（82件）を確認しLGTM。                                                                                                                                                                                                                                                |
 | 2026-05-24 | **PR #203 マージ完了**: テスト仕様書テーブル実装PRをmasterにマージ。Issue #24自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-05-24 | **Issue #25 実装完了**: テストセクションテーブル（TEST_SECTIONS）実装。TestSectionモデル追加（Prismaスキーマ、自己参照リレーション）、テストセクション型定義（バリデーション関数/ツリーヘルパー関数/循環参照検出）、テストセクションリポジトリ（CRUD操作、移動、並び替え）、テストセクションAPI（GET/POST /api/test-specs/[id]/sections、GET/PUT/DELETE /api/test-specs/[id]/sections/[sectionId]、PUT /move、PUT /reorder）、監査ログ追加（TEST_SECTION_CREATE/UPDATE/DELETE/MOVE/REORDER）、単体テスト108件追加（合計640件）。PR #204 作成。                                      |
+| 2026-05-24 | **PR #204 レビュー完了**: テストセクションテーブル実装PRのコードレビュー実施。階層構造設計（自己参照リレーション）、ツリー操作ロジック（build/flatten/descendants/ancestors）、循環参照防止、並び順管理、同一階層内名前重複チェック、監査ログ統合、テストカバレッジ（108件）を確認しLGTM。                                                                                                                                                                                                                                                                                          |
+| 2026-05-24 | **PR #204 マージ完了**: テストセクションテーブル実装PRをmasterにマージ。Issue #25自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 ---
 

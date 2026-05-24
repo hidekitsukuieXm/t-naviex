@@ -3,6 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TestCaseList, TestCasePriorityBadge } from '../test-case-list';
 import type { TestCaseListResponse } from '@/types/test-case';
 
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: vi.fn(),
+  }),
+}));
+
 // Mock fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;

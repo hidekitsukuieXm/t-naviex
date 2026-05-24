@@ -27,6 +27,7 @@ import {
   PRIORITY_LABELS,
   TEST_TYPE_LABELS,
 } from '@/types/test-case';
+import { type TestSectionWithChildren } from '@/types/test-section';
 import {
   Search,
   X,
@@ -37,8 +38,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TestCaseCreateDialog } from './test-case-create-dialog';
 
 // Priority badge colors
 const PRIORITY_COLORS: Record<TestCasePriority, string> = {
@@ -80,10 +83,18 @@ type SortOrder = 'asc' | 'desc';
 interface TestCaseListProps {
   testSpecId: string;
   selectedSectionId: string | null;
+  sections?: TestSectionWithChildren[];
+  isLocked?: boolean;
   className?: string;
 }
 
-export function TestCaseList({ testSpecId, selectedSectionId, className }: TestCaseListProps) {
+export function TestCaseList({
+  testSpecId,
+  selectedSectionId,
+  sections = [],
+  isLocked = false,
+  className,
+}: TestCaseListProps) {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -219,10 +230,28 @@ export function TestCaseList({ testSpecId, selectedSectionId, className }: TestC
   return (
     <Card className={cn('flex flex-col h-full', className)}>
       <CardHeader className="pb-4">
-        <CardTitle>{getSectionTitle()}</CardTitle>
-        <CardDescription>
-          {total > 0 ? `${total}件のテストケース` : 'テストケースがありません'}
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>{getSectionTitle()}</CardTitle>
+            <CardDescription>
+              {total > 0 ? `${total}件のテストケース` : 'テストケースがありません'}
+            </CardDescription>
+          </div>
+          {!isLocked && (
+            <TestCaseCreateDialog
+              testSpecId={testSpecId}
+              sections={sections}
+              defaultSectionId={selectedSectionId}
+              onSuccess={() => void fetchTestCases()}
+              trigger={
+                <Button size="sm">
+                  <Plus className="mr-2 size-4" />
+                  新規テストケース
+                </Button>
+              }
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
         {/* Search and Filter */}

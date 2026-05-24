@@ -545,6 +545,63 @@ export async function logTestCaseDelete(
   });
 }
 
+// テスト手順イベント用ショートカット関数
+export async function logTestStepCreate(
+  actorUserId: bigint | string,
+  testStepId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_STEP_CREATE',
+    targetType: 'TEST_STEP',
+    targetId: testStepId,
+    details,
+  });
+}
+
+export async function logTestStepUpdate(
+  actorUserId: bigint | string,
+  testStepId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_STEP_UPDATE',
+    targetType: 'TEST_STEP',
+    targetId: testStepId,
+    details,
+  });
+}
+
+export async function logTestStepDelete(
+  actorUserId: bigint | string,
+  testStepId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_STEP_DELETE',
+    targetType: 'TEST_STEP',
+    targetId: testStepId,
+    details,
+  });
+}
+
+export async function logTestStepReorder(
+  actorUserId: bigint | string,
+  testCaseId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_STEP_REORDER',
+    targetType: 'TEST_STEP',
+    targetId: testCaseId,
+    details,
+  });
+}
+
 // その他イベント用ショートカット関数
 export async function logAuditLogExport(
   actorUserId: bigint | string,

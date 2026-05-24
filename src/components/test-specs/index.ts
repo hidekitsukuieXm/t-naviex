@@ -6,3 +6,11 @@ export { TestSpecCard } from './test-spec-card';
 export { TestSpecHeader } from './test-spec-header';
 export { SectionTree } from './section-tree';
 export { TestCaseList, TestCasePriorityBadge } from './test-case-list';
+export { SectionContextMenu, RenameDialog } from './section-context-menu';
+export type {
+  ClipboardData,
+  SectionContextMenuProps,
+  RenameDialogProps,
+} from './section-context-menu';
+export { SortableSectionTree } from './sortable-section-tree';
+export type { SectionOperationHandlers } from './sortable-section-tree';

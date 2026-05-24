@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,6 +72,7 @@ interface TestCaseFormProps {
   onCancel: () => void;
   isLoading?: boolean;
   defaultSectionId?: string | null;
+  onChange?: (data: TestCaseFormData) => void;
 }
 
 // ============================================
@@ -106,6 +107,7 @@ export function TestCaseForm({
   onCancel,
   isLoading = false,
   defaultSectionId = null,
+  onChange,
 }: TestCaseFormProps) {
   const [formData, setFormData] = useState<TestCaseFormData>({
     title: testCase?.title ?? '',
@@ -128,6 +130,11 @@ export function TestCaseForm({
   });
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // フォームデータの変更を親に通知
+  useEffect(() => {
+    onChange?.(formData);
+  }, [formData, onChange]);
 
   const flatSections = flattenSections(sections);
 

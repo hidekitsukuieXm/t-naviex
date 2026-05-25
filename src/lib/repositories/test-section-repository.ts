@@ -456,3 +456,50 @@ export async function getDescendantCount(id: bigint): Promise<number> {
 
   return getDescendantIds(id.toString(), allSections).length;
 }
+
+/**
+ * セクション名でセクションを検索または作成
+ */
+export async function findOrCreateSection(
+  testSpecId: bigint,
+  sectionName: string
+): Promise<TestSection> {
+  const trimmedName = sectionName.trim();
+
+  // 既存のセクションを検索（ルートレベル）
+  const existing = await prisma.testSection.findFirst({
+    where: {
+      testSpecId,
+      parentId: null,
+      name: trimmedName,
+    },
+    select: testSectionSelect,
+  });
+
+  if (existing) {
+    return serializeTestSection(existing);
+  }
+
+  // 新規作成
+  const maxSortOrder = await prisma.testSection.aggregate({
+    where: {
+      testSpecId,
+      parentId: null,
+    },
+    _max: {
+      sortOrder: true,
+    },
+  });
+
+  const section = await prisma.testSection.create({
+    data: {
+      testSpecId,
+      parentId: null,
+      name: trimmedName,
+      sortOrder: (maxSortOrder._max.sortOrder ?? -1) + 1,
+    },
+    select: testSectionSelect,
+  });
+
+  return serializeTestSection(section);
+}

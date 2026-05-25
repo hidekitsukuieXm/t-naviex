@@ -517,6 +517,7 @@ export default function TestRunsPage({ params }: TestRunsPageProps) {
               {testRuns.map((testRun) => (
                 <TestRunCard
                   key={testRun.id}
+                  projectId={projectId}
                   testRun={testRun}
                   onEdit={handleEdit}
                   onDelete={handleDelete}

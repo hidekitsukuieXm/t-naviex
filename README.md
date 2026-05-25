@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態           |
 | ----------- | --------------------------------------------------------------- | -------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (25/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (26/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手         |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手         |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手         |
@@ -415,6 +415,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-25 | **Issue #43 実装完了**: テストケース全文検索機能実装。全文検索型定義（FullTextSearchParams/FullTextSearchResponse/TestCaseSearchResult/SearchableField）、LIKE検索によるPostgreSQL日本語対応、重み付きフィールドスコアリング（タイトル10/説明5/事前条件3/その他1）、検索APIエンドポイント（GET /api/test-specs/[id]/cases/search）、検索ダイアログコンポーネント（デバウンス300ms/フィールド選択/ハイライト表示/ページネーション）、Prisma.$queryRaw活用、単体テスト23件追加（合計1342件）。PR #222 作成。                                                                                              |
 | 2026-05-25 | **PR #222 レビュー完了**: テストケース全文検索PRのコードレビュー実施。LIKE検索による日本語対応、重み付きスコアリング、Prisma.sqlによるSQL インジェクション防止、デバウンス検索、フィールド選択UI、ハイライトスニペット生成、テストカバレッジ（23件）を確認しLGTM。                                                                                                                                                                                                                                                                                                                                      |
 | 2026-05-25 | **PR #222 マージ完了**: テストケース全文検索PRをmasterにマージ。Issue #43自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-05-25 | **Issue #44 実装完了**: テストタイプ・技法・観点マスタ実装。Prismaスキーマ追加（TestTypeMaster/TestTechniqueMaster/TestPerspective）、プロジェクトスコープのマスタテーブル、デフォルト値シード（テストタイプ7/技法7/観点9）、マスタ型定義とバリデーション、マスタリポジトリ（CRUD/初期化）、REST API（GET/POST/PUT/DELETE /api/projects/[id]/masters/[masterType]）、UIコンポーネント（MasterManagementDialog/MasterItemForm/MasterSelect）、単体テスト68件追加（合計1410件）。PR #223 作成。                                                                                                           |
+| 2026-05-25 | **PR #223 レビュー完了**: テストタイプ・技法・観点マスタPRのコードレビュー実施。Prismaスキーマ設計（プロジェクトスコープ、ユニーク制約）、遅延初期化（initialize=true）、コード自動大文字化、イベント駆動データ取得、テストカバレッジ（68件）を確認しLGTM。                                                                                                                                                                                                                                                                                                                                             |
+| 2026-05-25 | **PR #223 マージ完了**: テストタイプ・技法・観点マスタPRをmasterにマージ。Issue #44自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ---
 

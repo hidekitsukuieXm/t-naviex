@@ -248,4 +248,101 @@ describe('GanttChart', () => {
     expect(screen.getByText('Task 2')).toBeInTheDocument();
     expect(screen.getByText('Milestone 1')).toBeInTheDocument();
   });
+
+  describe('Display Options', () => {
+    it('should render task list toggle button', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} />);
+
+      expect(screen.getByRole('button', { name: 'タスク一覧' })).toBeInTheDocument();
+    });
+
+    it('should render dependency toggle button', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} />);
+
+      expect(screen.getByRole('button', { name: '依存関係' })).toBeInTheDocument();
+    });
+
+    it('should toggle task list visibility', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} />);
+
+      const taskListButton = screen.getByRole('button', { name: 'タスク一覧' });
+      // Default is enabled
+      expect(taskListButton).toHaveClass('bg-primary');
+
+      // Click to disable
+      fireEvent.click(taskListButton);
+      expect(taskListButton).not.toHaveClass('bg-primary');
+    });
+
+    it('should toggle dependency visibility', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} />);
+
+      const dependencyButton = screen.getByRole('button', { name: '依存関係' });
+      // Default is enabled
+      expect(dependencyButton).toHaveClass('bg-primary');
+
+      // Click to disable
+      fireEvent.click(dependencyButton);
+      expect(dependencyButton).not.toHaveClass('bg-primary');
+    });
+
+    it('should show dependency legend when dependencies are shown', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} showDependencies={true} />);
+
+      // Both button and legend should be visible when dependencies are shown
+      const dependencyTexts = screen.getAllByText('依存関係');
+      // Button + legend = 2 elements
+      expect(dependencyTexts.length).toBe(2);
+    });
+
+    it('should hide dependency legend when dependencies are hidden', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} showDependencies={false} />);
+
+      // The legend item should not be visible (only the button is visible)
+      const dependencyTexts = screen.getAllByText('依存関係');
+      // Only the button should be present
+      expect(dependencyTexts.length).toBe(1);
+    });
+  });
+
+  describe('Drag and Drop', () => {
+    it('should show D&D instructions when enabled', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} enableDragAndDrop={true} />);
+
+      expect(screen.getByText('操作:')).toBeInTheDocument();
+      expect(screen.getByText('タスクバーをドラッグ → 期間移動')).toBeInTheDocument();
+      expect(screen.getByText('タスクバーの端をドラッグ → 期間変更')).toBeInTheDocument();
+      expect(screen.getByText('進捗バーをドラッグ → 進捗変更')).toBeInTheDocument();
+    });
+
+    it('should hide D&D instructions when disabled', () => {
+      render(
+        <GanttChart tasks={mockTasks} milestones={mockMilestones} enableDragAndDrop={false} />
+      );
+
+      expect(screen.queryByText('操作:')).not.toBeInTheDocument();
+    });
+
+    it('should have D&D enabled by default', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} />);
+
+      expect(screen.getByText('操作:')).toBeInTheDocument();
+    });
+  });
+
+  describe('Initial State Props', () => {
+    it('should respect showDependencies initial value', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} showDependencies={false} />);
+
+      const dependencyButton = screen.getByRole('button', { name: '依存関係' });
+      expect(dependencyButton).not.toHaveClass('bg-primary');
+    });
+
+    it('should respect showTaskList initial value', () => {
+      render(<GanttChart tasks={mockTasks} milestones={mockMilestones} showTaskList={false} />);
+
+      const taskListButton = screen.getByRole('button', { name: 'タスク一覧' });
+      expect(taskListButton).not.toHaveClass('bg-primary');
+    });
+  });
 });

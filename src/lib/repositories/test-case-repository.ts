@@ -42,6 +42,7 @@ const testCaseSelect = {
   sortOrder: true,
   createdAt: true,
   updatedAt: true,
+  deletedAt: true,
 };
 
 const testCaseDetailSelect = {
@@ -87,6 +88,7 @@ interface DbTestCase {
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 }
 
 interface DbTestCaseDetail extends DbTestCase {
@@ -124,6 +126,7 @@ function serializeTestCase(testCase: DbTestCase): TestCase {
     sortOrder: testCase.sortOrder,
     createdAt: testCase.createdAt.toISOString(),
     updatedAt: testCase.updatedAt.toISOString(),
+    deletedAt: testCase.deletedAt?.toISOString() ?? null,
   };
 }
 
@@ -151,6 +154,7 @@ function serializeTestCaseDetail(testCase: DbTestCaseDetail): TestCaseDetail {
     sortOrder: testCase.sortOrder,
     createdAt: testCase.createdAt.toISOString(),
     updatedAt: testCase.updatedAt.toISOString(),
+    deletedAt: testCase.deletedAt?.toISOString() ?? null,
     section: testCase.section
       ? {
           id: testCase.section.id.toString(),
@@ -255,9 +259,10 @@ export async function getTestCases(params: TestCaseSearchParams): Promise<TestCa
 
   const skip = (page - 1) * limit;
 
-  // 検索条件を構築
+  // 検索条件を構築（削除済みを除外）
   const where: {
     testSpecId: bigint;
+    deletedAt: null;
     sectionId?: bigint | null;
     priority?: TestCasePriority;
     testType?: TestType;
@@ -271,6 +276,7 @@ export async function getTestCases(params: TestCaseSearchParams): Promise<TestCa
     >;
   } = {
     testSpecId: BigInt(testSpecId),
+    deletedAt: null,
   };
 
   // セクションID指定
@@ -457,9 +463,36 @@ export async function updateTestCase(
 }
 
 /**
- * テストケース削除
+ * テストケース削除（ソフトデリート）
  */
 export async function deleteTestCase(id: bigint): Promise<{ success: boolean; error?: string }> {
+  const existing = await prisma.testCase.findUnique({
+    where: { id },
+    select: { id: true, deletedAt: true },
+  });
+
+  if (!existing) {
+    return { success: false, error: 'テストケースが見つかりません。' };
+  }
+
+  if (existing.deletedAt) {
+    return { success: false, error: 'テストケースは既に削除されています。' };
+  }
+
+  await prisma.testCase.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+
+  return { success: true };
+}
+
+/**
+ * テストケース完全削除（ハードデリート）
+ */
+export async function hardDeleteTestCase(
+  id: bigint
+): Promise<{ success: boolean; error?: string }> {
   const existing = await prisma.testCase.findUnique({
     where: { id },
     select: { id: true },
@@ -474,6 +507,230 @@ export async function deleteTestCase(id: bigint): Promise<{ success: boolean; er
   });
 
   return { success: true };
+}
+
+/**
+ * テストケース復元
+ */
+export async function restoreTestCase(id: bigint): Promise<TestCase | null> {
+  const existing = await prisma.testCase.findUnique({
+    where: { id },
+    select: { id: true, deletedAt: true },
+  });
+
+  if (!existing) {
+    return null;
+  }
+
+  if (!existing.deletedAt) {
+    return null; // 削除されていないため復元不要
+  }
+
+  const testCase = await prisma.testCase.update({
+    where: { id },
+    data: { deletedAt: null },
+    select: testCaseSelect,
+  });
+
+  return serializeTestCase(testCase);
+}
+
+/**
+ * テストケースコピー
+ */
+export async function copyTestCase(
+  id: bigint,
+  targetTestSpecId?: string,
+  targetSectionId?: string | null
+): Promise<TestCase | null> {
+  // 元のテストケースを取得
+  const original = await prisma.testCase.findUnique({
+    where: { id },
+    include: {
+      testSteps: {
+        orderBy: { stepNo: 'asc' },
+      },
+    },
+  });
+
+  if (!original || original.deletedAt) {
+    return null;
+  }
+
+  // コピー先のテスト仕様書IDとセクションIDを決定
+  const destTestSpecId = targetTestSpecId ? BigInt(targetTestSpecId) : original.testSpecId;
+  const destSectionId =
+    targetSectionId !== undefined
+      ? targetSectionId
+        ? BigInt(targetSectionId)
+        : null
+      : original.sectionId;
+
+  // コピー先での並び順を決定
+  const maxSortOrder = await prisma.testCase.aggregate({
+    where: {
+      testSpecId: destTestSpecId,
+      sectionId: destSectionId,
+      deletedAt: null,
+    },
+    _max: {
+      sortOrder: true,
+    },
+  });
+  const sortOrder = (maxSortOrder._max.sortOrder ?? -1) + 1;
+
+  // タイトルの重複を避けるためにサフィックスを追加
+  let newTitle = `${original.title} (コピー)`;
+  let counter = 1;
+  while (await isTestCaseTitleTaken(destTestSpecId, destSectionId, newTitle)) {
+    counter++;
+    newTitle = `${original.title} (コピー ${counter})`;
+  }
+
+  // テストケースをコピー
+  const copiedTestCase = await prisma.testCase.create({
+    data: {
+      testSpecId: destTestSpecId,
+      sectionId: destSectionId,
+      title: newTitle,
+      description: original.description,
+      preconditions: original.preconditions,
+      expectedResult: original.expectedResult,
+      checkpoint: original.checkpoint,
+      scenario: original.scenario,
+      testEnvironment: original.testEnvironment,
+      notes: original.notes,
+      tags: original.tags,
+      classification: original.classification,
+      referenceId: null, // 参照IDはコピーしない
+      estimatedTime: original.estimatedTime,
+      priority: original.priority,
+      testType: original.testType,
+      testTechnique: original.testTechnique,
+      isMatrix: original.isMatrix,
+      sortOrder,
+      testSteps: {
+        create: original.testSteps.map((step) => ({
+          stepNo: step.stepNo,
+          actionMd: step.actionMd,
+          expectedMd: step.expectedMd,
+        })),
+      },
+    },
+    select: testCaseSelect,
+  });
+
+  return serializeTestCase(copiedTestCase);
+}
+
+/**
+ * テストケース移動
+ */
+export async function moveTestCase(
+  id: bigint,
+  targetTestSpecId?: string,
+  targetSectionId?: string | null
+): Promise<TestCase | null> {
+  // 元のテストケースを取得
+  const original = await prisma.testCase.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      testSpecId: true,
+      sectionId: true,
+      title: true,
+      deletedAt: true,
+    },
+  });
+
+  if (!original || original.deletedAt) {
+    return null;
+  }
+
+  // 移動先のテスト仕様書IDとセクションIDを決定
+  const destTestSpecId = targetTestSpecId ? BigInt(targetTestSpecId) : original.testSpecId;
+  const destSectionId =
+    targetSectionId !== undefined
+      ? targetSectionId
+        ? BigInt(targetSectionId)
+        : null
+      : original.sectionId;
+
+  // 同じ場所への移動は何もしない
+  if (destTestSpecId === original.testSpecId && destSectionId === original.sectionId) {
+    const testCase = await prisma.testCase.findUnique({
+      where: { id },
+      select: testCaseSelect,
+    });
+    return testCase ? serializeTestCase(testCase) : null;
+  }
+
+  // タイトルの重複チェック
+  const titleTaken = await isTestCaseTitleTaken(destTestSpecId, destSectionId, original.title, id);
+
+  if (titleTaken) {
+    return null; // タイトルが重複している場合は移動できない
+  }
+
+  // 移動先での並び順を決定
+  const maxSortOrder = await prisma.testCase.aggregate({
+    where: {
+      testSpecId: destTestSpecId,
+      sectionId: destSectionId,
+      deletedAt: null,
+    },
+    _max: {
+      sortOrder: true,
+    },
+  });
+  const sortOrder = (maxSortOrder._max.sortOrder ?? -1) + 1;
+
+  // テストケースを移動
+  const movedTestCase = await prisma.testCase.update({
+    where: { id },
+    data: {
+      testSpecId: destTestSpecId,
+      sectionId: destSectionId,
+      sortOrder,
+    },
+    select: testCaseSelect,
+  });
+
+  return serializeTestCase(movedTestCase);
+}
+
+/**
+ * 削除済みテストケース一覧取得
+ */
+export async function getDeletedTestCases(
+  testSpecId: string,
+  page = 1,
+  limit = 20
+): Promise<TestCaseListResponse> {
+  const skip = (page - 1) * limit;
+
+  const where = {
+    testSpecId: BigInt(testSpecId),
+    deletedAt: { not: null },
+  };
+
+  const total = await prisma.testCase.count({ where });
+
+  const testCases = await prisma.testCase.findMany({
+    where,
+    select: testCaseSelect,
+    skip,
+    take: limit,
+    orderBy: { deletedAt: 'desc' },
+  });
+
+  return {
+    testCases: testCases.map(serializeTestCase),
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 // ============================================

@@ -545,6 +545,48 @@ export async function logTestCaseDelete(
   });
 }
 
+export async function logTestCaseCopy(
+  actorUserId: bigint | string,
+  testCaseId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_CASE_COPY',
+    targetType: 'TEST_CASE',
+    targetId: testCaseId,
+    details,
+  });
+}
+
+export async function logTestCaseMove(
+  actorUserId: bigint | string,
+  testCaseId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_CASE_MOVE',
+    targetType: 'TEST_CASE',
+    targetId: testCaseId,
+    details,
+  });
+}
+
+export async function logTestCaseRestore(
+  actorUserId: bigint | string,
+  testCaseId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TEST_CASE_RESTORE',
+    targetType: 'TEST_CASE',
+    targetId: testCaseId,
+    details,
+  });
+}
+
 // テスト手順イベント用ショートカット関数
 export async function logTestStepCreate(
   actorUserId: bigint | string,

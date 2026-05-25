@@ -431,6 +431,7 @@ model TestCase {
   sortOrder       Int              @default(0) @map("sort_order")
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
+  deletedAt       DateTime?        @map("deleted_at")
 
   // Relations
   testSpec  TestSpec     @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
@@ -444,6 +445,7 @@ model TestCase {
   @@index([sortOrder])
   @@index([classification])
   @@index([referenceId])
+  @@index([deletedAt])
   @@map("test_cases")
 }
 

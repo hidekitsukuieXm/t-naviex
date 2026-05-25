@@ -9,6 +9,7 @@ import {
   type ColumnDef,
   type SortingState,
   type ColumnResizeMode,
+  type VisibilityState,
 } from '@tanstack/react-table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,14 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TestCaseCreateDialog } from './test-case-create-dialog';
+import {
+  ColumnVisibilityDialog,
+  type ColumnConfig,
+  GRID_COLUMN_LABELS,
+  loadColumnVisibility,
+  saveColumnVisibility,
+  DEFAULT_COLUMN_VISIBILITY,
+} from './column-visibility-dialog';
 
 // ============================================
 // Types
@@ -343,6 +352,9 @@ export function TestCaseGrid({
   // Table state
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnResizeMode] = useState<ColumnResizeMode>('onChange');
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() =>
+    loadColumnVisibility()
+  );
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ rowId: string; columnId: string } | null>(
     null
@@ -490,12 +502,15 @@ export function TestCaseGrid({
         }
       }
 
-      // Arrow key navigation
+      // Arrow key navigation - use only visible columns
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && !editingCell) {
         e.preventDefault();
         const currentRowIndex = testCases.findIndex((tc) => tc.id === selectedCell.rowId);
-        const columns = ['title', 'priority', 'testType', 'description'];
-        const currentColIndex = columns.indexOf(selectedCell.columnId);
+        // Get visible column IDs dynamically
+        const visibleColumns = ['title', 'priority', 'testType', 'description', 'updatedAt'].filter(
+          (colId) => columnVisibility[colId] !== false
+        );
+        const currentColIndex = visibleColumns.indexOf(selectedCell.columnId);
 
         let newRowIndex = currentRowIndex;
         let newColIndex = currentColIndex;
@@ -511,14 +526,14 @@ export function TestCaseGrid({
             newColIndex = Math.max(0, currentColIndex - 1);
             break;
           case 'ArrowRight':
-            newColIndex = Math.min(columns.length - 1, currentColIndex + 1);
+            newColIndex = Math.min(visibleColumns.length - 1, currentColIndex + 1);
             break;
         }
 
-        if (testCases[newRowIndex]) {
+        if (testCases[newRowIndex] && visibleColumns[newColIndex]) {
           setSelectedCell({
             rowId: testCases[newRowIndex].id,
-            columnId: columns[newColIndex],
+            columnId: visibleColumns[newColIndex],
           });
         }
       }
@@ -526,7 +541,7 @@ export function TestCaseGrid({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCell, editingCell, testCases, isLocked, copiedValue, updateCell]);
+  }, [selectedCell, editingCell, testCases, isLocked, copiedValue, updateCell, columnVisibility]);
 
   // Column definitions
   const columns = useMemo<ColumnDef<TestCase>[]>(
@@ -534,6 +549,7 @@ export function TestCaseGrid({
       {
         id: 'title',
         accessorKey: 'title',
+        enableHiding: false, // Title is required
         header: ({ column }) => (
           <div
             className="flex cursor-pointer items-center gap-1"
@@ -740,14 +756,40 @@ export function TestCaseGrid({
     [editingCell, selectedCell, isLocked, updateCell]
   );
 
+  // Handle column visibility change with persistence
+  const handleColumnVisibilityChange = useCallback(
+    (updaterOrValue: VisibilityState | ((prev: VisibilityState) => VisibilityState)) => {
+      setColumnVisibility((prev) => {
+        const newValue =
+          typeof updaterOrValue === 'function' ? updaterOrValue(prev) : updaterOrValue;
+        saveColumnVisibility(newValue);
+        return newValue;
+      });
+    },
+    []
+  );
+
+  // Column configs for the visibility dialog
+  const columnConfigs = useMemo<ColumnConfig[]>(
+    () =>
+      columns.map((col) => ({
+        id: col.id!,
+        label: GRID_COLUMN_LABELS[col.id!] || col.id!,
+        canHide: col.enableHiding !== false,
+      })),
+    [columns]
+  );
+
   // Table instance
   const table = useReactTable({
     data: testCases,
     columns,
     state: {
       sorting,
+      columnVisibility,
     },
     onSortingChange: setSorting,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     columnResizeMode,
@@ -786,20 +828,28 @@ export function TestCaseGrid({
               {!isLocked && ' - ダブルクリックで編集、Ctrl+C/Vでコピー＆ペースト'}
             </CardDescription>
           </div>
-          {!isLocked && (
-            <TestCaseCreateDialog
-              testSpecId={testSpecId}
-              sections={sections}
-              defaultSectionId={selectedSectionId}
-              onSuccess={() => void fetchTestCases()}
-              trigger={
-                <Button size="sm">
-                  <Plus className="mr-2 size-4" />
-                  新規テストケース
-                </Button>
-              }
+          <div className="flex items-center gap-2">
+            <ColumnVisibilityDialog
+              columns={columnConfigs}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={handleColumnVisibilityChange}
+              onReset={() => handleColumnVisibilityChange(DEFAULT_COLUMN_VISIBILITY)}
             />
-          )}
+            {!isLocked && (
+              <TestCaseCreateDialog
+                testSpecId={testSpecId}
+                sections={sections}
+                defaultSectionId={selectedSectionId}
+                onSuccess={() => void fetchTestCases()}
+                trigger={
+                  <Button size="sm">
+                    <Plus className="mr-2 size-4" />
+                    新規テストケース
+                  </Button>
+                }
+              />
+            )}
+          </div>
         </div>
       </CardHeader>
 

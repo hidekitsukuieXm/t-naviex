@@ -245,6 +245,8 @@ export async function getTestCases(params: TestCaseSearchParams): Promise<TestCa
     testType,
     testTechnique,
     isMatrix,
+    tags,
+    classification,
     page = 1,
     limit = 20,
     sortBy = 'sortOrder',
@@ -261,6 +263,8 @@ export async function getTestCases(params: TestCaseSearchParams): Promise<TestCa
     testType?: TestType;
     testTechnique?: TestTechnique;
     isMatrix?: boolean;
+    tags?: { hasSome: string[] };
+    classification?: { contains: string; mode: 'insensitive' };
     OR?: Array<
       | { title: { contains: string; mode: 'insensitive' } }
       | { description: { contains: string; mode: 'insensitive' } }
@@ -292,6 +296,16 @@ export async function getTestCases(params: TestCaseSearchParams): Promise<TestCa
   // マトリクスフィルタ
   if (isMatrix !== undefined) {
     where.isMatrix = isMatrix;
+  }
+
+  // タグフィルタ（いずれかのタグを含む）
+  if (tags && tags.length > 0) {
+    where.tags = { hasSome: tags };
+  }
+
+  // 分類フィルタ（部分一致）
+  if (classification?.trim()) {
+    where.classification = { contains: classification.trim(), mode: 'insensitive' };
   }
 
   // 検索クエリ

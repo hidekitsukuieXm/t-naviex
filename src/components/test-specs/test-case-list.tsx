@@ -3,14 +3,6 @@
 import { useState, useCallback, useEffect, useRef, useTransition } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -22,15 +14,13 @@ import {
 import {
   type TestCase,
   type TestCasePriority,
-  type TestType,
   type TestCaseListResponse,
+  type TestCaseFilterState,
   PRIORITY_LABELS,
   TEST_TYPE_LABELS,
 } from '@/types/test-case';
 import { type TestSectionWithChildren } from '@/types/test-section';
 import {
-  Search,
-  X,
   Loader2,
   FileText,
   ArrowUpDown,
@@ -42,6 +32,17 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TestCaseCreateDialog } from './test-case-create-dialog';
+import {
+  TestCaseFilterPanel,
+  DEFAULT_FILTER_STATE,
+  hasActiveFilters,
+} from './test-case-filter-panel';
+import {
+  TestCaseSortDropdown,
+  type SortField,
+  type SortState,
+  DEFAULT_SORT_STATE,
+} from './test-case-sort-panel';
 
 // Priority badge colors
 const PRIORITY_COLORS: Record<TestCasePriority, string> = {
@@ -77,9 +78,6 @@ function TestCasePriorityBadge({ priority }: TestCasePriorityBadgeProps) {
   );
 }
 
-type SortField = 'title' | 'priority' | 'sortOrder' | 'createdAt' | 'updatedAt';
-type SortOrder = 'asc' | 'desc';
-
 interface TestCaseListProps {
   testSpecId: string;
   selectedSectionId: string | null;
@@ -100,15 +98,13 @@ export function TestCaseList({
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  // Search and filter state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState<TestCasePriority | 'all'>('all');
-  const [testTypeFilter, setTestTypeFilter] = useState<TestType | 'all'>('all');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  // Filter state
+  const [filters, setFilters] = useState<TestCaseFilterState>(DEFAULT_FILTER_STATE);
+  const [debouncedFilters, setDebouncedFilters] =
+    useState<TestCaseFilterState>(DEFAULT_FILTER_STATE);
 
   // Sort state
-  const [sortBy, setSortBy] = useState<SortField>('sortOrder');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -116,20 +112,23 @@ export function TestCaseList({
   const [total, setTotal] = useState(0);
   const limit = 20;
 
+  // Available tags for filter suggestions
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+
   // Track previous sectionId to reset page
   const prevSectionIdRef = useRef<string | null>(selectedSectionId);
 
-  // Debounce search query
+  // Debounce filter changes
   useEffect(() => {
     const timer = setTimeout(() => {
       startTransition(() => {
-        setDebouncedQuery(searchQuery);
+        setDebouncedFilters(filters);
         setCurrentPage(1);
       });
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [filters]);
 
   const fetchTestCases = useCallback(async () => {
     // Reset page if sectionId changed
@@ -145,23 +144,39 @@ export function TestCaseList({
       const params = new URLSearchParams();
       params.set('page', pageToUse.toString());
       params.set('limit', limit.toString());
-      params.set('sortBy', sortBy);
-      params.set('sortOrder', sortOrder);
+      params.set('sortBy', sortState.field);
+      params.set('sortOrder', sortState.order);
 
       if (selectedSectionId !== null) {
         params.set('sectionId', selectedSectionId);
       }
 
-      if (debouncedQuery) {
-        params.set('query', debouncedQuery);
+      if (debouncedFilters.query) {
+        params.set('query', debouncedFilters.query);
       }
 
-      if (priorityFilter !== 'all') {
-        params.set('priority', priorityFilter);
+      if (debouncedFilters.priority !== 'all') {
+        params.set('priority', debouncedFilters.priority);
       }
 
-      if (testTypeFilter !== 'all') {
-        params.set('testType', testTypeFilter);
+      if (debouncedFilters.testType !== 'all') {
+        params.set('testType', debouncedFilters.testType);
+      }
+
+      if (debouncedFilters.testTechnique !== 'all') {
+        params.set('testTechnique', debouncedFilters.testTechnique);
+      }
+
+      if (debouncedFilters.tags.length > 0) {
+        params.set('tags', debouncedFilters.tags.join(','));
+      }
+
+      if (debouncedFilters.classification) {
+        params.set('classification', debouncedFilters.classification);
+      }
+
+      if (debouncedFilters.isMatrix !== 'all') {
+        params.set('isMatrix', debouncedFilters.isMatrix.toString());
       }
 
       const response = await fetch(`/api/test-specs/${testSpecId}/cases?${params.toString()}`);
@@ -179,6 +194,18 @@ export function TestCaseList({
           setCurrentPage(1);
         }
         setIsLoading(false);
+
+        // 利用可能なタグを収集
+        const tagsSet = new Set<string>();
+        data.testCases.forEach((tc) => {
+          if (tc.tags && Array.isArray(tc.tags)) {
+            tc.tags.forEach((tag) => tagsSet.add(tag));
+          }
+        });
+        setAvailableTags((prev) => {
+          const combined = new Set([...prev, ...tagsSet]);
+          return Array.from(combined).sort();
+        });
       });
     } catch (err) {
       startTransition(() => {
@@ -186,39 +213,30 @@ export function TestCaseList({
         setIsLoading(false);
       });
     }
-  }, [
-    testSpecId,
-    selectedSectionId,
-    debouncedQuery,
-    priorityFilter,
-    testTypeFilter,
-    sortBy,
-    sortOrder,
-    currentPage,
-  ]);
+  }, [testSpecId, selectedSectionId, debouncedFilters, sortState, currentPage]);
 
   useEffect(() => {
     void fetchTestCases();
   }, [fetchTestCases]);
 
-  const clearFilters = () => {
-    setSearchQuery('');
-    setPriorityFilter('all');
-    setTestTypeFilter('all');
-    setCurrentPage(1);
-  };
+  const handleFilterChange = useCallback((newFilters: TestCaseFilterState) => {
+    setFilters(newFilters);
+  }, []);
 
-  const handleSortChange = (field: SortField) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
+  const handleSortChange = useCallback((newSortState: SortState) => {
+    setSortState(newSortState);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const hasFilters = searchQuery || priorityFilter !== 'all' || testTypeFilter !== 'all';
+  const handleColumnSort = useCallback((field: SortField) => {
+    setSortState((prev) => ({
+      field,
+      order: prev.field === field && prev.order === 'asc' ? 'desc' : 'asc',
+    }));
+    setCurrentPage(1);
+  }, []);
+
+  const filtersActive = hasActiveFilters(filters);
 
   const getSectionTitle = () => {
     if (selectedSectionId === null) {
@@ -254,67 +272,18 @@ export function TestCaseList({
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
-        {/* Search and Filter */}
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="タイトルで検索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={priorityFilter}
-              onValueChange={(value) => {
-                setPriorityFilter(value as TestCasePriority | 'all');
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-28">
-                <SelectValue placeholder="優先度" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全て</SelectItem>
-                {(Object.entries(PRIORITY_LABELS) as [TestCasePriority, string][]).map(
-                  ([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-            <Select
-              value={testTypeFilter}
-              onValueChange={(value) => {
-                setTestTypeFilter(value as TestType | 'all');
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="テストタイプ" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全て</SelectItem>
-                {(Object.entries(TEST_TYPE_LABELS) as [TestType, string][]).map(
-                  ([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-            {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters}>
-                <X className="mr-1 size-4" />
-                クリア
-              </Button>
-            )}
-          </div>
+        {/* Filter Panel */}
+        <TestCaseFilterPanel
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          availableTags={availableTags}
+          className="mb-4"
+        />
+
+        {/* Sort Panel */}
+        <div className="mb-4 flex items-center justify-between">
+          <TestCaseSortDropdown sortState={sortState} onSortChange={handleSortChange} />
+          <span className="text-sm text-muted-foreground">{total}件のテストケース</span>
         </div>
 
         {/* Content */}
@@ -328,10 +297,14 @@ export function TestCaseList({
           ) : testCases.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <FileText className="mb-4 size-12" />
-              {hasFilters ? (
+              {filtersActive ? (
                 <>
                   <p>検索条件に一致するテストケースがありません。</p>
-                  <Button variant="link" onClick={clearFilters} className="mt-2">
+                  <Button
+                    variant="link"
+                    onClick={() => handleFilterChange(DEFAULT_FILTER_STATE)}
+                    className="mt-2"
+                  >
                     フィルターをクリア
                   </Button>
                 </>
@@ -345,30 +318,38 @@ export function TestCaseList({
                 <TableRow>
                   <TableHead
                     className="cursor-pointer hover:bg-muted/50 w-[50%]"
-                    onClick={() => handleSortChange('title')}
+                    onClick={() => handleColumnSort('title')}
                   >
                     <div className="flex items-center gap-1">
                       タイトル
-                      {sortBy === 'title' && <ArrowUpDown className="size-3" />}
+                      {sortState.field === 'title' && <ArrowUpDown className="size-3" />}
                     </div>
                   </TableHead>
                   <TableHead
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleSortChange('priority')}
+                    onClick={() => handleColumnSort('priority')}
                   >
                     <div className="flex items-center gap-1">
                       優先度
-                      {sortBy === 'priority' && <ArrowUpDown className="size-3" />}
+                      {sortState.field === 'priority' && <ArrowUpDown className="size-3" />}
                     </div>
                   </TableHead>
-                  <TableHead>テストタイプ</TableHead>
                   <TableHead
                     className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleSortChange('updatedAt')}
+                    onClick={() => handleColumnSort('testType')}
+                  >
+                    <div className="flex items-center gap-1">
+                      テストタイプ
+                      {sortState.field === 'testType' && <ArrowUpDown className="size-3" />}
+                    </div>
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleColumnSort('updatedAt')}
                   >
                     <div className="flex items-center gap-1">
                       更新日
-                      {sortBy === 'updatedAt' && <ArrowUpDown className="size-3" />}
+                      {sortState.field === 'updatedAt' && <ArrowUpDown className="size-3" />}
                     </div>
                   </TableHead>
                 </TableRow>

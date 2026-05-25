@@ -145,10 +145,32 @@ export interface TestCaseSearchParams {
   testType?: TestType;
   testTechnique?: TestTechnique;
   isMatrix?: boolean;
+  tags?: string[];
+  classification?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'title' | 'priority' | 'sortOrder' | 'createdAt' | 'updatedAt';
+  sortBy?:
+    | 'title'
+    | 'priority'
+    | 'sortOrder'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'testType'
+    | 'testTechnique';
   sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * テストケースフィルタ条件
+ */
+export interface TestCaseFilterState {
+  query: string;
+  priority: TestCasePriority | 'all';
+  testType: TestType | 'all';
+  testTechnique: TestTechnique | 'all';
+  tags: string[];
+  classification: string;
+  isMatrix: boolean | 'all';
 }
 
 /**

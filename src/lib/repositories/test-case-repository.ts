@@ -1189,3 +1189,180 @@ function createHighlightSnippet(text: string, query: string, maxLength = 150): s
 
   return snippet;
 }
+
+// ============================================
+// エクスポート用
+// ============================================
+
+import type { TestCaseExportData, TestStepExportData } from '@/lib/export/test-case-export';
+
+export interface TestCaseExportParams {
+  testSpecId: string;
+  sectionId?: string | null;
+  priority?: TestCasePriority;
+  testType?: TestType;
+  testTechnique?: TestTechnique;
+  isMatrix?: boolean;
+  tags?: string[];
+  classification?: string;
+  includeSteps?: boolean;
+}
+
+/**
+ * テストケースをエクスポート用に取得（ページネーションなし）
+ */
+export async function getTestCasesForExport(
+  params: TestCaseExportParams
+): Promise<TestCaseExportData[]> {
+  const {
+    testSpecId,
+    sectionId,
+    priority,
+    testType,
+    testTechnique,
+    isMatrix,
+    tags,
+    classification,
+    includeSteps = true,
+  } = params;
+
+  // 検索条件を構築（削除済みを除外）
+  const where: {
+    testSpecId: bigint;
+    deletedAt: null;
+    sectionId?: bigint | null;
+    priority?: TestCasePriority;
+    testType?: TestType;
+    testTechnique?: TestTechnique;
+    isMatrix?: boolean;
+    tags?: { hasSome: string[] };
+    classification?: { contains: string; mode: 'insensitive' };
+  } = {
+    testSpecId: BigInt(testSpecId),
+    deletedAt: null,
+  };
+
+  if (sectionId !== undefined) {
+    where.sectionId = sectionId === null ? null : BigInt(sectionId);
+  }
+
+  if (priority) {
+    where.priority = priority;
+  }
+
+  if (testType) {
+    where.testType = testType;
+  }
+
+  if (testTechnique) {
+    where.testTechnique = testTechnique;
+  }
+
+  if (isMatrix !== undefined) {
+    where.isMatrix = isMatrix;
+  }
+
+  if (tags && tags.length > 0) {
+    where.tags = { hasSome: tags };
+  }
+
+  if (classification?.trim()) {
+    where.classification = { contains: classification.trim(), mode: 'insensitive' };
+  }
+
+  // テストケース一覧を取得
+  const testCases = await prisma.testCase.findMany({
+    where,
+    include: {
+      section: {
+        select: {
+          id: true,
+          name: true,
+          parentId: true,
+        },
+      },
+      testSteps: includeSteps
+        ? {
+            select: {
+              stepNo: true,
+              actionMd: true,
+              expectedMd: true,
+            },
+            orderBy: { stepNo: 'asc' },
+          }
+        : false,
+    },
+    orderBy: [{ section: { sortOrder: 'asc' } }, { sortOrder: 'asc' }],
+    take: 10000, // エクスポート最大件数を制限
+  });
+
+  // セクションのマップを作成（パス構築用）
+  const allSections = await prisma.testSection.findMany({
+    where: { testSpecId: BigInt(testSpecId) },
+    select: { id: true, name: true, parentId: true },
+  });
+
+  const sectionsMap = new Map<string, { name: string; parentId: string | null }>();
+  for (const section of allSections) {
+    sectionsMap.set(section.id.toString(), {
+      name: section.name,
+      parentId: section.parentId?.toString() ?? null,
+    });
+  }
+
+  // セクションパスを構築
+  function buildSectionPath(sectionId: string | null): string {
+    if (!sectionId) return '';
+
+    const path: string[] = [];
+    let currentId: string | null = sectionId;
+
+    while (currentId) {
+      const section = sectionsMap.get(currentId);
+      if (!section) break;
+      path.unshift(section.name);
+      currentId = section.parentId;
+    }
+
+    return path.join(' > ');
+  }
+
+  // テストケースをエクスポート用形式に変換
+  return testCases.map((tc, index): TestCaseExportData => {
+    const sectionIdStr = tc.sectionId?.toString() ?? null;
+
+    const steps: TestStepExportData[] | undefined =
+      includeSteps && tc.testSteps
+        ? tc.testSteps.map((step) => ({
+            stepNo: step.stepNo,
+            action: step.actionMd,
+            expected: step.expectedMd,
+          }))
+        : undefined;
+
+    return {
+      id: tc.id.toString(),
+      testCaseNumber: `TC-${String(index + 1).padStart(4, '0')}`,
+      referenceId: tc.referenceId,
+      title: tc.title,
+      description: tc.description,
+      precondition: tc.preconditions,
+      expectedResult: tc.expectedResult,
+      checkpoint: tc.checkpoint,
+      scenario: tc.scenario,
+      testEnvironment: tc.testEnvironment,
+      notes: tc.notes,
+      priority: tc.priority,
+      testType: tc.testType,
+      testTechnique: tc.testTechnique,
+      classification: tc.classification,
+      estimatedTime: tc.estimatedTime,
+      tags: tc.tags,
+      sectionName: tc.section?.name ?? null,
+      sectionPath: buildSectionPath(sectionIdStr),
+      createdAt: tc.createdAt.toISOString(),
+      updatedAt: tc.updatedAt.toISOString(),
+      steps,
+    };
+  });
+}

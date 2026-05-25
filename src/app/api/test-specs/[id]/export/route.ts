@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { getTestCasesForExport, testSpecExists } from '@/lib/repositories/test-case-repository';
 import { generateCsv, createCsvResponse, generateExportFilename } from '@/lib/export/csv';
+import { generateTestSpecExcel, createExcelResponse } from '@/lib/export/excel';
 import {
   DEFAULT_COLUMNS,
   getColumnsByKeys,
@@ -14,6 +15,7 @@ import {
   getMaxStepCount,
 } from '@/lib/export/test-case-export';
 import type { TestCasePriority, TestType, TestTechnique } from '@/types/test-case';
+import { getTestSpecById } from '@/lib/repositories/test-spec-repository';
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -105,6 +107,33 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       const filename = generateExportFilename(filenamePrefix, 'csv');
 
       return createCsvResponse(csvContent, filename);
+    }
+
+    // Excelエクスポートの場合
+    if (format === 'xlsx' || format === 'excel') {
+      // カラムを決定
+      let columnKeys: string[];
+      if (columnsParam) {
+        columnKeys = columnsParam.split(',').filter(Boolean);
+      } else {
+        columnKeys = DEFAULT_COLUMNS;
+      }
+
+      // テスト仕様書名を取得
+      const testSpec = await getTestSpecById(BigInt(testSpecId));
+      const testSpecName = testSpec?.name || 'テスト仕様書';
+
+      // Excel生成
+      const wb = generateTestSpecExcel(testSpecName, testCases, {
+        columnKeys,
+        includeSteps: exportParams.includeSteps,
+        includeSummary: true,
+      });
+
+      // ファイル名生成
+      const filename = generateExportFilename(filenamePrefix, 'xlsx');
+
+      return createExcelResponse(wb, filename);
     }
 
     // JSON形式の場合

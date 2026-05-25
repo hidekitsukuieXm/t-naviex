@@ -74,7 +74,7 @@ docs/
 | Phase       | 内容                                                            | 状態          |
 | ----------- | --------------------------------------------------------------- | ------------- |
 | **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 完了 (50/50)  |
-| **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 進行中 (3/23) |
+| **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 進行中 (4/23) |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手        |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手        |
 | **Phase 5** | AI機能統合: Claude API、テストケース自動生成、AIレビュー        | 未着手        |
@@ -435,6 +435,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-25 | **Issue #51 実装完了**: マイルストーンテーブル（MILESTONES）実装。Prismaスキーマ追加（MilestoneモデルとMilestoneStatus enum）、マイルストーン型定義（Milestone/MilestoneWithProject/CreateMilestoneInput/UpdateMilestoneInput）、Zodバリデーション（名前/説明/ステータス/日付）、マイルストーンリポジトリ（CRUD操作/completedAt自動管理/並び順管理）、REST API（GET/POST /api/projects/[id]/milestones、GET/PUT/DELETE /api/projects/[id]/milestones/[milestoneId]）、プロジェクト内名前ユニーク制約、単体テスト66件追加（合計1752件）。PR #230 マージ完了。                                                                                                                                                        |
 | 2026-05-25 | **Issue #52 実装完了**: マイルストーン一覧・作成・編集画面実装。MilestoneStatusBadge/MilestoneCard/MilestoneFormコンポーネント、MilestoneCreateDialog/MilestoneEditDialogコンポーネント、MilestonesPage（カード/テーブル表示切替、ステータスフィルタリング、検索機能、ソート機能）、Progress UIコンポーネント（shadcn/ui）、@radix-ui/react-progress/@testing-library/jest-dom/@testing-library/user-eventパッケージ追加、期間設定（開始日/期限日）、進捗表示、期限超過インジケーター、クライアントサイドキャッシュ、単体テスト25件追加（合計1777件）。PR #231 マージ完了。                                                                                                                                         |
 | 2026-05-25 | **Issue #53 実装完了**: コンフィギュレーションテーブル（CONFIGURATIONS）実装。Prismaスキーマ追加（Configurationモデル、JSONB configParams）、コンフィギュレーション型定義（Configuration/ConfigParams/CreateConfigurationInput/UpdateConfigurationInput）、Zodバリデーション（名前/説明/configParams）、コンフィギュレーションリポジトリ（CRUD操作/並び順管理/isActive管理）、REST API（GET/POST /api/projects/[id]/configurations、GET/PUT/DELETE /api/projects/[id]/configurations/[configurationId]）、configParamsフィールド（os/osVersion/browser/browserVersion/device/deviceType/resolution/locale/timezone/custom）、プロジェクト内名前ユニーク制約、単体テスト53件追加（合計1830件）。PR #232 マージ完了。 |
+| 2026-05-25 | **Issue #54 実装完了**: テスト環境設定画面実装。ConfigurationForm（名前/説明/環境設定フィールド/有効切替）、ConfigurationCard（環境情報バッジ表示/アクションボタン）、ConfigurationCreateDialog/ConfigurationEditDialogコンポーネント、GeneratePatternsDialog（OS×ブラウザ×デバイス組み合わせ一括生成）、ConfigurationsPage（カード/テーブル表示切替、検索/フィルタ/ソート機能、クライアントサイドキャッシュ）。パターン生成機能（選択→プレビュー→作成の3ステップ、カスタム値追加対応、重複スキップ）、Collapsible詳細設定。PR #233 マージ完了。                                                                                                                                                                    |
 
 ---
 

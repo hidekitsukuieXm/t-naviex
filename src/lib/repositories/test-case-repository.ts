@@ -837,3 +837,355 @@ export async function getTestCaseCountByTestSpec(testSpecId: bigint): Promise<nu
 
   return count;
 }
+
+// ============================================
+// 全文検索
+// ============================================
+
+import type {
+  FullTextSearchParams,
+  FullTextSearchResponse,
+  TestCaseSearchResult,
+  SearchableField,
+  SearchHighlight,
+} from '@/types/test-case';
+import { ALL_SEARCHABLE_FIELDS } from '@/types/test-case';
+import { Prisma } from '@/generated/prisma/client';
+
+/**
+ * テストケース全文検索
+ * PostgreSQLのLIKE検索を使用した全文検索（日本語対応）
+ */
+export async function searchTestCases(
+  params: FullTextSearchParams
+): Promise<FullTextSearchResponse> {
+  const {
+    testSpecId,
+    query,
+    sectionId,
+    searchFields = ALL_SEARCHABLE_FIELDS,
+    priority,
+    testType,
+    testTechnique,
+    isMatrix,
+    tags,
+    classification,
+    page = 1,
+    limit = 20,
+  } = params;
+
+  const skip = (page - 1) * limit;
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return {
+      results: [],
+      total: 0,
+      page,
+      limit,
+      totalPages: 0,
+      query,
+      searchFields,
+    };
+  }
+
+  // Build WHERE conditions
+  const conditions: Prisma.Sql[] = [
+    Prisma.sql`tc.test_spec_id = ${BigInt(testSpecId)}`,
+    Prisma.sql`tc.deleted_at IS NULL`,
+  ];
+
+  if (sectionId !== undefined) {
+    if (sectionId === null) {
+      conditions.push(Prisma.sql`tc.section_id IS NULL`);
+    } else {
+      conditions.push(Prisma.sql`tc.section_id = ${BigInt(sectionId)}`);
+    }
+  }
+
+  if (priority) {
+    conditions.push(Prisma.sql`tc.priority = ${priority}::text`);
+  }
+
+  if (testType) {
+    conditions.push(Prisma.sql`tc.test_type = ${testType}::text`);
+  }
+
+  if (testTechnique) {
+    conditions.push(Prisma.sql`tc.test_technique = ${testTechnique}::text`);
+  }
+
+  if (isMatrix !== undefined) {
+    conditions.push(Prisma.sql`tc.is_matrix = ${isMatrix}`);
+  }
+
+  if (tags && tags.length > 0) {
+    conditions.push(Prisma.sql`tc.tags && ${tags}::text[]`);
+  }
+
+  if (classification?.trim()) {
+    conditions.push(
+      Prisma.sql`LOWER(tc.classification) LIKE ${`%${classification.trim().toLowerCase()}%`}`
+    );
+  }
+
+  // Build search conditions for each field
+  const searchConditions: Prisma.Sql[] = [];
+  const fieldMapping: Record<SearchableField, string> = {
+    title: 'tc.title',
+    description: 'tc.description',
+    preconditions: 'tc.preconditions',
+    expectedResult: 'tc.expected_result',
+    checkpoint: 'tc.checkpoint',
+    scenario: 'tc.scenario',
+    testEnvironment: 'tc.test_environment',
+    notes: 'tc.notes',
+  };
+
+  for (const field of searchFields) {
+    const column = fieldMapping[field];
+    if (column) {
+      searchConditions.push(
+        Prisma.sql`LOWER(${Prisma.raw(column)}) LIKE ${`%${normalizedQuery}%`}`
+      );
+    }
+  }
+
+  if (searchConditions.length === 0) {
+    return {
+      results: [],
+      total: 0,
+      page,
+      limit,
+      totalPages: 0,
+      query,
+      searchFields,
+    };
+  }
+
+  // Combine search conditions with OR
+  const searchWhere = Prisma.sql`(${Prisma.join(searchConditions, ' OR ')})`;
+  conditions.push(searchWhere);
+
+  const whereClause = Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`;
+
+  // Count total
+  const countQuery = Prisma.sql`
+    SELECT COUNT(*)::int as total
+    FROM test_cases tc
+    ${whereClause}
+  `;
+
+  const countResult = await prisma.$queryRaw<{ total: number }[]>(countQuery);
+  const total = countResult[0]?.total ?? 0;
+
+  if (total === 0) {
+    return {
+      results: [],
+      total: 0,
+      page,
+      limit,
+      totalPages: 0,
+      query,
+      searchFields,
+    };
+  }
+
+  // Calculate relevance score based on field matches
+  const rankExpressions: string[] = [];
+  const weights: Record<SearchableField, number> = {
+    title: 10,
+    description: 5,
+    preconditions: 3,
+    expectedResult: 3,
+    checkpoint: 2,
+    scenario: 2,
+    testEnvironment: 1,
+    notes: 1,
+  };
+
+  for (const field of searchFields) {
+    const column = fieldMapping[field];
+    const weight = weights[field];
+    if (column) {
+      rankExpressions.push(
+        `CASE WHEN LOWER(${column}) LIKE '%${normalizedQuery.replace(/'/g, "''")}%' THEN ${weight} ELSE 0 END`
+      );
+    }
+  }
+
+  const rankExpression = rankExpressions.length > 0 ? rankExpressions.join(' + ') : '0';
+
+  // Search query
+  const searchQuery = Prisma.sql`
+    SELECT
+      tc.id,
+      tc.test_spec_id,
+      tc.section_id,
+      tc.title,
+      tc.description,
+      tc.preconditions,
+      tc.expected_result,
+      tc.checkpoint,
+      tc.scenario,
+      tc.test_environment,
+      tc.notes,
+      tc.tags,
+      tc.classification,
+      tc.reference_id,
+      tc.estimated_time,
+      tc.priority,
+      tc.test_type,
+      tc.test_technique,
+      tc.is_matrix,
+      tc.sort_order,
+      tc.created_at,
+      tc.updated_at,
+      tc.deleted_at,
+      (${Prisma.raw(rankExpression)}) as rank
+    FROM test_cases tc
+    ${whereClause}
+    ORDER BY rank DESC, tc.sort_order ASC
+    LIMIT ${limit}
+    OFFSET ${skip}
+  `;
+
+  interface RawTestCase {
+    id: bigint;
+    test_spec_id: bigint;
+    section_id: bigint | null;
+    title: string;
+    description: string | null;
+    preconditions: string | null;
+    expected_result: string | null;
+    checkpoint: string | null;
+    scenario: string | null;
+    test_environment: string | null;
+    notes: string | null;
+    tags: string[];
+    classification: string | null;
+    reference_id: string | null;
+    estimated_time: number | null;
+    priority: string;
+    test_type: string;
+    test_technique: string;
+    is_matrix: boolean;
+    sort_order: number;
+    created_at: Date;
+    updated_at: Date;
+    deleted_at: Date | null;
+    rank: number;
+  }
+
+  const rawResults = await prisma.$queryRaw<RawTestCase[]>(searchQuery);
+
+  // Generate highlights for each result
+  const results: TestCaseSearchResult[] = rawResults.map((row) => {
+    const highlights = generateHighlights(row, normalizedQuery, searchFields);
+
+    return {
+      id: row.id.toString(),
+      testSpecId: row.test_spec_id.toString(),
+      sectionId: row.section_id?.toString() ?? null,
+      title: row.title,
+      description: row.description,
+      preconditions: row.preconditions,
+      expectedResult: row.expected_result,
+      checkpoint: row.checkpoint,
+      scenario: row.scenario,
+      testEnvironment: row.test_environment,
+      notes: row.notes,
+      tags: row.tags,
+      classification: row.classification,
+      referenceId: row.reference_id,
+      estimatedTime: row.estimated_time,
+      priority: row.priority as TestCasePriority,
+      testType: row.test_type as TestType,
+      testTechnique: row.test_technique as TestTechnique,
+      isMatrix: row.is_matrix,
+      sortOrder: row.sort_order,
+      createdAt: row.created_at.toISOString(),
+      updatedAt: row.updated_at.toISOString(),
+      deletedAt: row.deleted_at?.toISOString() ?? null,
+      rank: row.rank,
+      highlights,
+    };
+  });
+
+  return {
+    results,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+    query,
+    searchFields,
+  };
+}
+
+/**
+ * 検索結果のハイライト生成
+ */
+function generateHighlights(
+  row: {
+    title: string;
+    description: string | null;
+    preconditions: string | null;
+    expected_result: string | null;
+    checkpoint: string | null;
+    scenario: string | null;
+    test_environment: string | null;
+    notes: string | null;
+  },
+  query: string,
+  searchFields: SearchableField[]
+): SearchHighlight[] {
+  const highlights: SearchHighlight[] = [];
+
+  const fieldValues: Record<SearchableField, string | null> = {
+    title: row.title,
+    description: row.description,
+    preconditions: row.preconditions,
+    expectedResult: row.expected_result,
+    checkpoint: row.checkpoint,
+    scenario: row.scenario,
+    testEnvironment: row.test_environment,
+    notes: row.notes,
+  };
+
+  for (const field of searchFields) {
+    const value = fieldValues[field];
+    if (value && value.toLowerCase().includes(query)) {
+      const snippet = createHighlightSnippet(value, query);
+      highlights.push({ field, snippet });
+    }
+  }
+
+  return highlights;
+}
+
+/**
+ * ハイライト付きスニペットを生成
+ * マッチした部分を <mark> タグで囲む
+ */
+function createHighlightSnippet(text: string, query: string, maxLength = 150): string {
+  const lowerText = text.toLowerCase();
+  const matchIndex = lowerText.indexOf(query);
+
+  if (matchIndex === -1) {
+    return text.slice(0, maxLength) + (text.length > maxLength ? '...' : '');
+  }
+
+  // Calculate snippet boundaries
+  const snippetStart = Math.max(0, matchIndex - 40);
+  const snippetEnd = Math.min(text.length, matchIndex + query.length + 60);
+
+  let snippet = '';
+  if (snippetStart > 0) snippet += '...';
+  snippet += text.slice(snippetStart, matchIndex);
+  snippet += `<mark>${text.slice(matchIndex, matchIndex + query.length)}</mark>`;
+  snippet += text.slice(matchIndex + query.length, snippetEnd);
+  if (snippetEnd < text.length) snippet += '...';
+
+  return snippet;
+}

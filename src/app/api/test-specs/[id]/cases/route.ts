@@ -44,6 +44,8 @@ export async function GET(request: Request, { params }: RouteParams) {
     const testType = searchParams.get('testType');
     const testTechnique = searchParams.get('testTechnique');
     const isMatrixParam = searchParams.get('isMatrix');
+    const tagsParam = searchParams.get('tags');
+    const classification = searchParams.get('classification');
     const page = parseInt(searchParams.get('page') || '1', 10);
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const sortBy = searchParams.get('sortBy') as
@@ -52,8 +54,13 @@ export async function GET(request: Request, { params }: RouteParams) {
       | 'sortOrder'
       | 'createdAt'
       | 'updatedAt'
+      | 'testType'
+      | 'testTechnique'
       | null;
     const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' | null;
+
+    // タグをパース（カンマ区切り）
+    const tags = tagsParam ? tagsParam.split(',').filter((t) => t.trim()) : undefined;
 
     const result = await getTestCases({
       testSpecId,
@@ -79,6 +86,8 @@ export async function GET(request: Request, { params }: RouteParams) {
         | 'OTHER'
         | undefined,
       isMatrix: isMatrixParam === null ? undefined : isMatrixParam === 'true',
+      tags,
+      classification: classification ?? undefined,
       page,
       limit,
       sortBy: sortBy ?? undefined,

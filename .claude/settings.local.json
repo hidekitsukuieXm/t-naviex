@@ -25,7 +25,21 @@
       "Bash(npx shadcn@latest add:*)",
       "Bash(cat:*)",
       "Bash(gh pr comment:*)",
-      "Bash(npx prisma generate:*)"
+      "Bash(npx prisma generate:*)",
+      "Bash(npm install:*)",
+      "Bash(cd:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(find \"C:\\\\claudeprojects\\\\t-naviex\\\\src\\\\app\\\\\\(dashboard\\)\\\\projects\" -type f -name \"page.tsx\")",
+      "Bash(ls:*)",
+      "Bash(gh issue close:*)",
+      "Bash(npm run lint:*)",
+      "Bash(gh issue list:*)",
+      "Bash(for i in 41 42 43 44 45 46 47 48 49 50)",
+      "Bash(do echo \"=== Issue #$i ===\")",
+      "Bash(done)"
     ]
   }
 }

@@ -61,6 +61,7 @@ export interface TestCase {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
 }
 
 /**

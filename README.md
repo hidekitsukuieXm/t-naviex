@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態           |
 | ----------- | --------------------------------------------------------------- | -------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (23/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (24/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手         |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手         |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手         |
@@ -409,6 +409,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-25 | **Issue #41 実装完了**: テストケースコピー・移動・削除機能実装。ソフトデリート機能（deletedAtフィールド）追加、TestCaseActionsMenuコンポーネント（コピー/移動/削除アクションメニュー）、DeletedTestCasesDialogコンポーネント（削除済みテストケース表示・復元ダイアログ）、4つの新規APIエンドポイント（copy/move/restore/deleted）、監査ログ追加（logTestCaseCopy/logTestCaseMove/logTestCaseRestore）、単体テスト23件追加（合計1253件）。PR #220 作成。                                                                                                                                                 |
 | 2026-05-25 | **PR #220 レビュー完了**: テストケースコピー・移動・削除PRのコードレビュー実施。ソフトデリートパターン、RESTful API設計、コピー機能（テストステップ含む完全複製）、UIコンポーネント分離、テストカバレッジ（23件）を確認しLGTM。                                                                                                                                                                                                                                                                                                                                                                         |
 | 2026-05-25 | **PR #220 マージ完了**: テストケースコピー・移動・削除PRをmasterにマージ。Issue #41自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 2026-05-25 | **Issue #42 実装完了**: タグテーブル・タグ管理機能実装。Prismaスキーマ追加（Tagモデル、TestCaseTagジャンクションテーブル）、タグ型定義と検証関数（validateTagName/validateTagColor/validateTagDescription）、プリセットカラー8色、タグリポジトリ（CRUD操作、テストケースタグ管理）、REST API（GET/POST/PUT/DELETE /api/projects/[id]/tags/[tagId]、テストケースタグ /api/test-specs/[id]/cases/[caseId]/tags）、UIコンポーネント（TagBadge/TagInput/TagManagementDialog）、監査ログ追加（TAG_CREATE/TAG_UPDATE/TAG_DELETE）、単体テスト35件追加（合計1319件）。PR #221 作成。                           |
+| 2026-05-25 | **PR #221 レビュー完了**: タグテーブル・タグ管理機能PRのコードレビュー実施。Prismaスキーマ設計（多対多リレーション、ユニーク制約、インデックス）、検証関数、リポジトリパターン、REST API設計、UIコンポーネント分離（TagBadge/TagInput/TagManagementDialog）、テストカバレッジ（35件）を確認しLGTM。                                                                                                                                                                                                                                                                                                     |
+| 2026-05-25 | **PR #221 マージ完了**: タグテーブル・タグ管理機能PRをmasterにマージ。Issue #42自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 ---
 

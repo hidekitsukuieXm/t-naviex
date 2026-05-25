@@ -38,6 +38,7 @@ model User {
   passwordHistories    PasswordHistory[]
   assignedTasks        Task[]
   assignedTestRunCases TestRunCase[]
+  executedTestResults  TestResult[]
 
   @@map("users")
 }
@@ -924,4 +925,35 @@ model TestRunCase {
   @@index([executedAt])
   @@index([sortOrder])
   @@map("test_run_cases")
+
+  // Relations for test results history
+  testResults TestResult[]
+}
+
+/// テスト結果（実行履歴）
+model TestResult {
+  id             BigInt            @id @default(autoincrement())
+  testRunCaseId  BigInt            @map("test_run_case_id")
+  executedById   BigInt?           @map("executed_by_id")
+  status         TestRunCaseStatus
+  executedAt     DateTime          @default(now()) @map("executed_at")
+  executionTime  Int?              @map("execution_time")
+  actualResult   String?           @map("actual_result") @db.Text
+  defects        String?           @db.Text
+  comment        String?           @db.Text
+  environment    String?           @db.VarChar(255)
+  browserInfo    String?           @map("browser_info") @db.VarChar(255)
+  version        Int               @default(1)
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  testRunCase TestRunCase @relation(fields: [testRunCaseId], references: [id], onDelete: Cascade)
+  executedBy  User?       @relation(fields: [executedById], references: [id], onDelete: SetNull)
+
+  @@index([testRunCaseId])
+  @@index([executedById])
+  @@index([status])
+  @@index([executedAt])
+  @@index([version])
+  @@map("test_results")
 }

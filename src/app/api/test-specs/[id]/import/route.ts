@@ -1,6 +1,7 @@
 /**
  * テストケースインポート API
  * POST /api/test-specs/[id]/import
+ * CSV/Excelファイルからテストケースをインポート
  */
 
 import { NextResponse } from 'next/server';
@@ -14,6 +15,7 @@ import {
 import { createTestStep } from '@/lib/repositories/test-step-repository';
 import {
   parseCsv,
+  parseExcel,
   autoDetectMapping,
   validateMapping,
   convertCsvToTestCases,
@@ -21,8 +23,10 @@ import {
   extractSteps,
   csvToObjects,
   generateCsvPreview,
+  generateExcelPreview,
+  isExcelFile,
 } from '@/lib/import';
-import type { FieldMapping, ImportValidationResult } from '@/lib/import';
+import type { FieldMapping, ImportValidationResult, CsvParseResult } from '@/lib/import';
 import { findOrCreateSection } from '@/lib/repositories/test-section-repository';
 import { logTestCaseCreate } from '@/lib/audit';
 
@@ -69,6 +73,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       const action = formData.get('action') as string | null;
       const mappingsJson = formData.get('mappings') as string | null;
       const sectionId = formData.get('sectionId') as string | null;
+      const sheetName = formData.get('sheetName') as string | null;
 
       if (!file) {
         return NextResponse.json({ error: 'ファイルが必要です。' }, { status: 400 });
@@ -76,9 +81,12 @@ export async function POST(request: Request, { params }: RouteParams) {
 
       // ファイルタイプチェック
       const fileName = file.name.toLowerCase();
-      if (!fileName.endsWith('.csv')) {
+      const isCsv = fileName.endsWith('.csv');
+      const isExcel = isExcelFile(fileName);
+
+      if (!isCsv && !isExcel) {
         return NextResponse.json(
-          { error: 'CSVファイルのみサポートされています。' },
+          { error: 'CSVまたはExcelファイル(.xlsx, .xls, .xlsm)のみサポートされています。' },
           { status: 400 }
         );
       }
@@ -88,13 +96,27 @@ export async function POST(request: Request, { params }: RouteParams) {
         return NextResponse.json({ error: 'ファイルサイズは10MBまでです。' }, { status: 400 });
       }
 
-      const content = await file.text();
-      const parseResult = parseCsv(content);
+      // ファイルをパース
+      let parseResult: CsvParseResult;
+      let availableSheets: string[] = [];
+      let currentSheetName = '';
+      const fileType = isExcel ? 'Excel' : 'CSV';
+
+      if (isExcel) {
+        const buffer = await file.arrayBuffer();
+        const excelResult = parseExcel(buffer, { sheetName: sheetName || undefined });
+        parseResult = excelResult;
+        availableSheets = excelResult.availableSheets;
+        currentSheetName = excelResult.sheetName;
+      } else {
+        const content = await file.text();
+        parseResult = parseCsv(content);
+      }
 
       if (parseResult.errors.length > 0 && parseResult.rows.length === 0) {
         return NextResponse.json(
           {
-            error: 'CSVのパースに失敗しました。',
+            error: `${fileType}のパースに失敗しました。`,
             parseErrors: parseResult.errors,
           },
           { status: 400 }
@@ -105,16 +127,35 @@ export async function POST(request: Request, { params }: RouteParams) {
       if (action === 'preview' || !action) {
         const autoMappings = autoDetectMapping(parseResult.headers);
         const stepColumns = detectStepColumns(parseResult.headers);
-        const preview = generateCsvPreview(parseResult, 5);
 
-        return NextResponse.json({
-          headers: parseResult.headers,
-          preview: preview.previewRows,
-          totalRows: preview.totalRows,
-          autoMappings,
-          stepColumns,
-          parseErrors: parseResult.errors,
-        });
+        if (isExcel) {
+          const preview = generateExcelPreview(
+            { ...parseResult, sheetName: currentSheetName, availableSheets },
+            5
+          );
+          return NextResponse.json({
+            headers: parseResult.headers,
+            preview: preview.previewRows,
+            totalRows: preview.totalRows,
+            autoMappings,
+            stepColumns,
+            parseErrors: parseResult.errors,
+            fileType: 'excel',
+            sheetName: currentSheetName,
+            availableSheets,
+          });
+        } else {
+          const preview = generateCsvPreview(parseResult, 5);
+          return NextResponse.json({
+            headers: parseResult.headers,
+            preview: preview.previewRows,
+            totalRows: preview.totalRows,
+            autoMappings,
+            stepColumns,
+            parseErrors: parseResult.errors,
+            fileType: 'csv',
+          });
+        }
       }
 
       // バリデーションアクション - マッピングを使ってデータを検証
@@ -208,7 +249,8 @@ export async function POST(request: Request, { params }: RouteParams) {
           testSpecId,
           targetSectionId,
           validationResults,
-          session.user.id
+          session.user.id,
+          isExcel ? 'Excel' : 'CSV'
         );
 
         return NextResponse.json(importResults);
@@ -283,7 +325,8 @@ export async function POST(request: Request, { params }: RouteParams) {
         testSpecId,
         targetSectionId,
         validationResults,
-        session.user.id
+        session.user.id,
+        'CSV'
       );
 
       return NextResponse.json(importResults);
@@ -309,7 +352,8 @@ async function executeImport(
   testSpecId: string,
   targetSectionId: bigint | null,
   validationResults: ImportValidationResult[],
-  userId: string
+  userId: string,
+  importSource: 'CSV' | 'Excel' = 'CSV'
 ): Promise<{
   success: number;
   failed: number;
@@ -388,7 +432,7 @@ async function executeImport(
         title: testCase.title,
         priority: testCase.priority,
         testType: testCase.testType,
-        importedFrom: 'CSV',
+        importedFrom: importSource,
       });
 
       createdIds.push(testCase.id);

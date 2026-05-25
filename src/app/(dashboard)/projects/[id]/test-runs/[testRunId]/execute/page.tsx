@@ -51,6 +51,8 @@ import {
   getTestRunCaseStatusLabel,
   getTestRunCaseStatusColor,
   formatExecutionTime,
+  REPRODUCIBILITY_OPTIONS,
+  REPRODUCIBILITY_LABELS,
 } from '@/types/test-run-case';
 
 interface ProjectMember {
@@ -106,6 +108,7 @@ function ResultInputForm({
   const [formActualResult, setFormActualResult] = useState(testRunCase.actualResult || '');
   const [formDefects, setFormDefects] = useState(testRunCase.defects || '');
   const [formComment, setFormComment] = useState(testRunCase.comment || '');
+  const [formReproducibility, setFormReproducibility] = useState(testRunCase.reproducibility || '');
 
   // Timer state
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -158,6 +161,7 @@ function ResultInputForm({
             actualResult: formActualResult.trim() || null,
             defects: formDefects.trim() || null,
             comment: formComment.trim() || null,
+            reproducibility: formReproducibility || null,
             executionTime: elapsedSeconds,
             executedAt:
               formStatus !== TEST_RUN_CASE_STATUS.NOT_RUN ? new Date().toISOString() : null,
@@ -196,6 +200,7 @@ function ResultInputForm({
     formActualResult,
     formDefects,
     formComment,
+    formReproducibility,
     elapsedSeconds,
     onSave,
     toast,
@@ -344,6 +349,40 @@ function ResultInputForm({
             />
           </div>
 
+          {/* Reproducibility */}
+          {(formStatus === TEST_RUN_CASE_STATUS.FAILED ||
+            formStatus === TEST_RUN_CASE_STATUS.BLOCKED) && (
+            <div className="space-y-2">
+              <Label>再現性</Label>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(REPRODUCIBILITY_OPTIONS).map(([key, value]) => (
+                  <Button
+                    key={key}
+                    variant="outline"
+                    size="sm"
+                    className={
+                      formReproducibility === value ? 'border-2 border-primary bg-primary/10' : ''
+                    }
+                    onClick={() => setFormReproducibility(value)}
+                  >
+                    {REPRODUCIBILITY_LABELS[value]}
+                  </Button>
+                ))}
+                {formReproducibility && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setFormReproducibility('')}
+                    className="text-muted-foreground"
+                  >
+                    <X className="mr-1 size-3" />
+                    クリア
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Comment */}
           <div className="space-y-2">
             <Label htmlFor="comment">コメント</Label>
@@ -358,15 +397,43 @@ function ResultInputForm({
 
           {/* Test case info */}
           <div className="rounded-lg border bg-muted/30 p-4">
-            <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+            <div className="mb-3 flex items-center gap-2 text-sm font-medium">
               <FileText className="size-4" />
               テストケース情報
             </div>
-            <dl className="space-y-1 text-sm">
+            <dl className="space-y-3 text-sm">
               <div>
-                <dt className="text-muted-foreground">優先度</dt>
-                <dd>{testRunCase.testCase.priority}</dd>
+                <dt className="font-medium text-muted-foreground">優先度</dt>
+                <dd className="mt-1">{testRunCase.testCase.priority}</dd>
               </div>
+              {testRunCase.testCase.description && (
+                <div>
+                  <dt className="font-medium text-muted-foreground">説明</dt>
+                  <dd className="mt-1 whitespace-pre-wrap">{testRunCase.testCase.description}</dd>
+                </div>
+              )}
+              {testRunCase.testCase.preconditions && (
+                <div>
+                  <dt className="font-medium text-muted-foreground">前提条件</dt>
+                  <dd className="mt-1 whitespace-pre-wrap">{testRunCase.testCase.preconditions}</dd>
+                </div>
+              )}
+              {testRunCase.testCase.expectedResult && (
+                <div>
+                  <dt className="font-medium text-muted-foreground">期待結果</dt>
+                  <dd className="mt-1 whitespace-pre-wrap">
+                    {testRunCase.testCase.expectedResult}
+                  </dd>
+                </div>
+              )}
+              {testRunCase.executedAt && (
+                <div>
+                  <dt className="font-medium text-muted-foreground">実施日時</dt>
+                  <dd className="mt-1">
+                    {new Date(testRunCase.executedAt).toLocaleString('ja-JP')}
+                  </dd>
+                </div>
+              )}
             </dl>
           </div>
         </div>

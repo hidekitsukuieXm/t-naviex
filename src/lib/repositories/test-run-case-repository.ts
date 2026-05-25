@@ -30,6 +30,7 @@ const testRunCaseSelect = {
   actualResult: true,
   defects: true,
   comment: true,
+  reproducibility: true,
   sortOrder: true,
   createdAt: true,
   updatedAt: true,
@@ -48,6 +49,9 @@ const testRunCaseWithRelationsSelect = {
       id: true,
       title: true,
       priority: true,
+      description: true,
+      preconditions: true,
+      expectedResult: true,
     },
   },
   assignedTo: {
@@ -74,6 +78,7 @@ interface DbTestRunCase {
   actualResult: string | null;
   defects: string | null;
   comment: string | null;
+  reproducibility: string | null;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
@@ -88,6 +93,9 @@ interface DbTestRunCaseWithRelations extends DbTestRunCase {
     id: bigint;
     title: string;
     priority: string;
+    description: string | null;
+    preconditions: string | null;
+    expectedResult: string | null;
   };
   assignedTo: {
     id: bigint;
@@ -108,6 +116,7 @@ function serializeTestRunCase(testRunCase: DbTestRunCase): TestRunCase {
     actualResult: testRunCase.actualResult,
     defects: testRunCase.defects,
     comment: testRunCase.comment,
+    reproducibility: testRunCase.reproducibility,
     sortOrder: testRunCase.sortOrder,
     createdAt: testRunCase.createdAt.toISOString(),
     updatedAt: testRunCase.updatedAt.toISOString(),
@@ -127,6 +136,9 @@ function serializeTestRunCaseWithRelations(
       id: testRunCase.testCase.id.toString(),
       title: testRunCase.testCase.title,
       priority: testRunCase.testCase.priority,
+      description: testRunCase.testCase.description,
+      preconditions: testRunCase.testCase.preconditions,
+      expectedResult: testRunCase.testCase.expectedResult,
     },
     assignedTo: testRunCase.assignedTo
       ? {
@@ -274,6 +286,7 @@ export async function updateTestRunCase(
     actualResult?: string | null;
     defects?: string | null;
     comment?: string | null;
+    reproducibility?: string | null;
     sortOrder?: number;
   } = {};
 
@@ -315,6 +328,10 @@ export async function updateTestRunCase(
 
   if (input.comment !== undefined) {
     updateData.comment = input.comment;
+  }
+
+  if (input.reproducibility !== undefined) {
+    updateData.reproducibility = input.reproducibility;
   }
 
   if (input.sortOrder !== undefined) {

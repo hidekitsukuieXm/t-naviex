@@ -43,7 +43,8 @@
       "Bash(Select-String \"FAIL|× \")",
       "Bash(npm ls:*)",
       "Bash(npx prisma:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(npx shadcn@4.7.0 add:*)"
     ]
   }
 }

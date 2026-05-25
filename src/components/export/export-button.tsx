@@ -27,7 +27,7 @@ import { toast } from 'sonner';
 // ============================================
 
 export interface ExportOptions {
-  format: 'csv' | 'json';
+  format: 'csv' | 'xlsx' | 'json';
   includeSteps?: boolean;
   columns?: string[];
 }
@@ -95,7 +95,7 @@ export function ExportButton({
 
   // エクスポートURLを構築
   const buildExportUrl = useCallback(
-    (format: 'csv' | 'json', columns?: string[], withSteps?: boolean) => {
+    (format: 'csv' | 'xlsx' | 'json', columns?: string[], withSteps?: boolean) => {
       const params = new URLSearchParams();
       params.set('format', format);
 
@@ -120,7 +120,7 @@ export function ExportButton({
 
   // クイックエクスポート
   const handleQuickExport = useCallback(
-    async (format: 'csv' | 'json') => {
+    async (format: 'csv' | 'xlsx' | 'json') => {
       setIsExporting(true);
       try {
         const url = buildExportUrl(format);
@@ -139,10 +139,11 @@ export function ExportButton({
           });
           downloadBlob(blob, `test_cases_${new Date().toISOString().split('T')[0]}.json`);
         } else {
-          // CSV形式の場合はそのままダウンロード
+          // CSV/Excel形式の場合はそのままダウンロード
           const blob = await response.blob();
           const contentDisposition = response.headers.get('Content-Disposition');
-          const filename = extractFilename(contentDisposition) || 'test_cases.csv';
+          const defaultFilename = format === 'xlsx' ? 'test_cases.xlsx' : 'test_cases.csv';
+          const filename = extractFilename(contentDisposition) || defaultFilename;
           downloadBlob(blob, filename);
         }
 
@@ -231,12 +232,16 @@ export function ExportButton({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => void handleQuickExport('xlsx')}>
+            <FileSpreadsheet className="mr-2 size-4" />
+            Excel形式でエクスポート
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => void handleQuickExport('csv')}>
             <FileText className="mr-2 size-4" />
             CSV形式でエクスポート
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => void handleQuickExport('json')}>
-            <FileSpreadsheet className="mr-2 size-4" />
+            <FileText className="mr-2 size-4" />
             JSON形式でエクスポート
           </DropdownMenuItem>
           <DropdownMenuSeparator />

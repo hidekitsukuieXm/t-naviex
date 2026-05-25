@@ -13,12 +13,18 @@ vi.mock('@/lib/repositories/test-case-repository', () => ({
   testSpecExists: vi.fn(),
 }));
 
+vi.mock('@/lib/repositories/test-spec-repository', () => ({
+  getTestSpecById: vi.fn(),
+}));
+
 import { auth } from '@/lib/auth';
 import { getTestCasesForExport, testSpecExists } from '@/lib/repositories/test-case-repository';
+import { getTestSpecById } from '@/lib/repositories/test-spec-repository';
 
 const mockAuth = vi.mocked(auth);
 const mockGetTestCasesForExport = vi.mocked(getTestCasesForExport);
 const mockTestSpecExists = vi.mocked(testSpecExists);
+const mockGetTestSpecById = vi.mocked(getTestSpecById);
 
 describe('Export API', () => {
   const mockTestCase = {
@@ -53,6 +59,7 @@ describe('Export API', () => {
     vi.clearAllMocks();
     mockAuth.mockResolvedValue({ user: { id: '1', email: 'test@example.com' } } as never);
     mockTestSpecExists.mockResolvedValue(true);
+    mockGetTestSpecById.mockResolvedValue({ id: '1', name: 'テスト仕様書' } as never);
   });
 
   describe('GET /api/test-specs/[id]/export', () => {
@@ -125,10 +132,25 @@ describe('Export API', () => {
       expect(data.exportedAt).toBeDefined();
     });
 
-    it('should return 400 for unsupported format', async () => {
+    it('should export Excel format with format=xlsx', async () => {
       mockGetTestCasesForExport.mockResolvedValue([mockTestCase]);
 
       const request = new NextRequest('http://localhost/api/test-specs/1/export?format=xlsx');
+      const response = await GET(request, { params: Promise.resolve({ id: '1' }) });
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Content-Type')).toContain(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+
+      const contentDisposition = response.headers.get('Content-Disposition');
+      expect(contentDisposition).toContain('.xlsx');
+    });
+
+    it('should return 400 for unsupported format', async () => {
+      mockGetTestCasesForExport.mockResolvedValue([mockTestCase]);
+
+      const request = new NextRequest('http://localhost/api/test-specs/1/export?format=pdf');
       const response = await GET(request, { params: Promise.resolve({ id: '1' }) });
 
       expect(response.status).toBe(400);

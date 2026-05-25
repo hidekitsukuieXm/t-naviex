@@ -73,7 +73,7 @@ docs/
 
 | Phase       | 内容                                                            | 状態           |
 | ----------- | --------------------------------------------------------------- | -------------- |
-| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (22/50) |
+| **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 進行中 (23/50) |
 | **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 未着手         |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手         |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手         |
@@ -406,6 +406,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-25 | **Issue #40 実装完了**: 一覧表示設定（列表示/非表示）実装。ColumnVisibilityDialogコンポーネント（列表示設定ダイアログ）、列の表示/非表示切り替え（チェックボックス）、localStorage による設定永続化（loadColumnVisibility/saveColumnVisibility）、クイックアクション（「全て表示」「最小表示」「デフォルトに戻す」）、タイトル列の必須化（enableHiding: false）、TanStack Table の VisibilityState/onColumnVisibilityChange 活用、表示列のみのキーボードナビゲーション対応、単体テスト21件追加（合計1230件）。PR #219 作成。                                                                            |
 | 2026-05-25 | **PR #219 レビュー完了**: 一覧表示設定PRのコードレビュー実施。TanStack Table の Column Visibility API 活用、localStorage 永続化（エラーハンドリング付き）、ユーザビリティ（クイックアクション、表示列数表示、必須列ラベル）、キーボードナビゲーション対応、テストカバレッジ（21件）を確認しLGTM。                                                                                                                                                                                                                                                                                                       |
 | 2026-05-25 | **PR #219 マージ完了**: 一覧表示設定PRをmasterにマージ。Issue #40自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-05-25 | **Issue #41 実装完了**: テストケースコピー・移動・削除機能実装。ソフトデリート機能（deletedAtフィールド）追加、TestCaseActionsMenuコンポーネント（コピー/移動/削除アクションメニュー）、DeletedTestCasesDialogコンポーネント（削除済みテストケース表示・復元ダイアログ）、4つの新規APIエンドポイント（copy/move/restore/deleted）、監査ログ追加（logTestCaseCopy/logTestCaseMove/logTestCaseRestore）、単体テスト23件追加（合計1253件）。PR #220 作成。                                                                                                                                                 |
+| 2026-05-25 | **PR #220 レビュー完了**: テストケースコピー・移動・削除PRのコードレビュー実施。ソフトデリートパターン、RESTful API設計、コピー機能（テストステップ含む完全複製）、UIコンポーネント分離、テストカバレッジ（23件）を確認しLGTM。                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-05-25 | **PR #220 マージ完了**: テストケースコピー・移動・削除PRをmasterにマージ。Issue #41自動クローズ。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 ---
 

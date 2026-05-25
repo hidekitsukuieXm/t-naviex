@@ -74,7 +74,7 @@ docs/
 | Phase       | 内容                                                            | 状態          |
 | ----------- | --------------------------------------------------------------- | ------------- |
 | **Phase 1** | 基盤・コア機能（MVP）: プロジェクト基盤、認証、テストケースCRUD | 完了 (50/50)  |
-| **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 進行中 (1/23) |
+| **Phase 2** | テスト実施・結果管理: テストラン、結果登録、ガントチャート      | 進行中 (2/23) |
 | **Phase 3** | バグ・課題管理・外部連携: バグ管理、Redmine/Backlog連携         | 未着手        |
 | **Phase 4** | ダッシュボード・レポート: 各種グラフ、PDF出力、品質分析         | 未着手        |
 | **Phase 5** | AI機能統合: Claude API、テストケース自動生成、AIレビュー        | 未着手        |
@@ -433,6 +433,7 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-25 | **Issue #49 実装完了**: CSVインポート機能実装。CSVパーサー（UTF-8 BOM対応/クォートフィールド/エラートラッキング）、テストケースインポート（自動フィールドマッピング/型変換/バリデーション）、インポートAPI（POST /api/test-specs/[id]/import、マルチパート/JSON対応）、ImportButtonコンポーネント（プレビュー/マッピング/バリデーション/インポートUIステップ）、テスト手順カラム自動検出（手順N*操作/手順N*期待結果）、findOrCreateSectionリポジトリ関数、単体テスト81件追加（合計1659件）。PR #228 作成・マージ。                                                                                      |
 | 2026-05-25 | **Issue #50 実装完了**: Excelインポート機能実装。Excelパーサー（xlsxライブラリ活用/複数シート対応/シート選択機能）、インポートAPI拡張（.xlsx/.xls/.xlsm対応）、ImportButtonコンポーネント拡張（Excelファイル受付/シート選択UI）、parseExcel関数（列数調整/空行スキップ/エラー収集）、excelToObjects/generateExcelPreview関数、単体テスト27件追加（合計1686件）。PR #229 作成予定。                                                                                                                                                                                                                      |
 | 2026-05-25 | **Issue #51 実装完了**: マイルストーンテーブル（MILESTONES）実装。Prismaスキーマ追加（MilestoneモデルとMilestoneStatus enum）、マイルストーン型定義（Milestone/MilestoneWithProject/CreateMilestoneInput/UpdateMilestoneInput）、Zodバリデーション（名前/説明/ステータス/日付）、マイルストーンリポジトリ（CRUD操作/completedAt自動管理/並び順管理）、REST API（GET/POST /api/projects/[id]/milestones、GET/PUT/DELETE /api/projects/[id]/milestones/[milestoneId]）、プロジェクト内名前ユニーク制約、単体テスト66件追加（合計1752件）。PR #230 マージ完了。                                            |
+| 2026-05-25 | **Issue #52 実装完了**: マイルストーン一覧・作成・編集画面実装。MilestoneStatusBadge/MilestoneCard/MilestoneFormコンポーネント、MilestoneCreateDialog/MilestoneEditDialogコンポーネント、MilestonesPage（カード/テーブル表示切替、ステータスフィルタリング、検索機能、ソート機能）、Progress UIコンポーネント（shadcn/ui）、@radix-ui/react-progress/@testing-library/jest-dom/@testing-library/user-eventパッケージ追加、期間設定（開始日/期限日）、進捗表示、期限超過インジケーター、クライアントサイドキャッシュ、単体テスト25件追加（合計1777件）。PR #231 マージ完了。                             |
 
 ---
 

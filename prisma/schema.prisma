@@ -169,9 +169,12 @@ model Project {
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  projectMembers ProjectMember[]
-  testSpecs      TestSpec[]
-  tags           Tag[]
+  projectMembers       ProjectMember[]
+  testSpecs            TestSpec[]
+  tags                 Tag[]
+  testTypeMasters      TestTypeMaster[]
+  testTechniqueMasters TestTechniqueMaster[]
+  testPerspectives     TestPerspective[]
 
   @@map("projects")
 }
@@ -508,4 +511,77 @@ model TestCaseTag {
   @@index([testCaseId])
   @@index([tagId])
   @@map("test_case_tags")
+}
+
+// ============================================
+// テストタイプ・技法・観点マスタ
+// ============================================
+
+/// テストタイプマスタ
+model TestTypeMaster {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt   @map("project_id")
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([sortOrder])
+  @@index([isActive])
+  @@map("test_type_masters")
+}
+
+/// テスト技法マスタ
+model TestTechniqueMaster {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt   @map("project_id")
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([sortOrder])
+  @@index([isActive])
+  @@map("test_technique_masters")
+}
+
+/// テスト観点マスタ
+model TestPerspective {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt   @map("project_id")
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([sortOrder])
+  @@index([isActive])
+  @@map("test_perspectives")
 }

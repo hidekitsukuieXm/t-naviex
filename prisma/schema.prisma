@@ -451,6 +451,8 @@ model TestCase {
   testSteps    TestStep[]
   testCaseTags TestCaseTag[]
   testRunCases TestRunCase[]
+  dependencies CaseDependency[] @relation("TestCaseDependencies")
+  dependents   CaseDependency[] @relation("DependsOnTestCase")
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -483,6 +485,33 @@ model TestStep {
   @@index([stepNo])
   @@index([sharedStepId])
   @@map("test_steps")
+}
+
+/// テストケース依存関係タイプ
+enum CaseDependencyType {
+  BLOCKS    // このケースが完了するまで依存ケースはブロックされる
+  REQUIRES  // 依存ケースが合格である必要がある
+  RELATED   // 関連があるが実行順序には影響しない
+}
+
+/// テストケース依存関係
+model CaseDependency {
+  id             BigInt             @id @default(autoincrement())
+  testCaseId     BigInt             @map("test_case_id")
+  dependsOnId    BigInt             @map("depends_on_id")
+  dependencyType CaseDependencyType @default(REQUIRES) @map("dependency_type")
+  description    String?            @db.VarChar(500)
+  createdAt      DateTime           @default(now()) @map("created_at")
+
+  // Relations
+  testCase  TestCase @relation("TestCaseDependencies", fields: [testCaseId], references: [id], onDelete: Cascade)
+  dependsOn TestCase @relation("DependsOnTestCase", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([testCaseId, dependsOnId])
+  @@index([testCaseId])
+  @@index([dependsOnId])
+  @@index([dependencyType])
+  @@map("case_dependencies")
 }
 
 // ============================================

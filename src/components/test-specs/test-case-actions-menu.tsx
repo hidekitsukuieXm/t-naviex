@@ -24,8 +24,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { MoreHorizontal, Copy, Move, Trash2, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Copy, Move, Trash2, Loader2, Link2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { CaseDependencyDialog } from './case-dependency-dialog';
 import type { TestCase } from '@/types/test-case';
 import type { TestSectionWithChildren } from '@/types/test-section';
 
@@ -73,6 +74,7 @@ export function TestCaseActionsMenu({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCopyDialogOpen, setIsCopyDialogOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [isDependencyDialogOpen, setIsDependencyDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCopying, setIsCopying] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
@@ -178,6 +180,10 @@ export function TestCaseActionsMenu({
           <DropdownMenuItem onClick={() => setIsMoveDialogOpen(true)}>
             <Move className="mr-2 size-4" />
             移動
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setIsDependencyDialogOpen(true)}>
+            <Link2 className="mr-2 size-4" />
+            依存関係
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -292,6 +298,16 @@ export function TestCaseActionsMenu({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dependency Dialog */}
+      <CaseDependencyDialog
+        open={isDependencyDialogOpen}
+        onOpenChange={setIsDependencyDialogOpen}
+        testSpecId={testSpecId}
+        testCaseId={testCase.id}
+        testCaseTitle={testCase.title}
+        onDependenciesChanged={onSuccess}
+      />
     </>
   );
 }

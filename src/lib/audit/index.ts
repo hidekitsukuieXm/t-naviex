@@ -644,6 +644,49 @@ export async function logTestStepReorder(
   });
 }
 
+// タグイベント用ショートカット関数
+export async function logTagCreate(
+  actorUserId: bigint | string,
+  tagId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TAG_CREATE',
+    targetType: 'TAG',
+    targetId: tagId,
+    details,
+  });
+}
+
+export async function logTagUpdate(
+  actorUserId: bigint | string,
+  tagId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TAG_UPDATE',
+    targetType: 'TAG',
+    targetId: tagId,
+    details,
+  });
+}
+
+export async function logTagDelete(
+  actorUserId: bigint | string,
+  tagId: bigint | string,
+  details?: Record<string, unknown>
+): Promise<void> {
+  await logAudit({
+    userId: actorUserId,
+    action: 'TAG_DELETE',
+    targetType: 'TAG',
+    targetId: tagId,
+    details,
+  });
+}
+
 // その他イベント用ショートカット関数
 export async function logAuditLogExport(
   actorUserId: bigint | string,

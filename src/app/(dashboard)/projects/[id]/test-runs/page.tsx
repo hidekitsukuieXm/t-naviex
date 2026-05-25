@@ -349,12 +349,21 @@ export default function TestRunsPage({ params }: TestRunsPageProps) {
             <h1 className="text-2xl font-bold tracking-tight">テストラン一覧</h1>
             <p className="text-muted-foreground">テストランの管理・作成ができます。</p>
           </div>
-          <TestRunCreateDialog
-            projectId={projectId}
-            milestones={milestones}
-            configurations={configurations}
-            onSuccess={handleRefresh}
-          />
+          <div className="flex items-center gap-2">
+            <TestRunCreateDialog
+              projectId={projectId}
+              milestones={milestones}
+              configurations={configurations}
+              onSuccess={handleRefresh}
+            />
+            <Link
+              href={`/projects/${projectId}/test-runs/create`}
+              className={buttonVariants({ variant: 'outline' })}
+            >
+              <PlayCircle className="mr-2 size-4" />
+              ウィザードで作成
+            </Link>
+          </div>
         </div>
       </div>
 

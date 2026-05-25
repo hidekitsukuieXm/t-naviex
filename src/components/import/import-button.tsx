@@ -20,7 +20,15 @@ import {
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Loader2, CheckCircle2, XCircle, AlertCircle, FileText } from 'lucide-react';
+import {
+  Upload,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  FileText,
+  FileSpreadsheet,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import type { FieldMapping } from '@/lib/import';
 import { TARGET_FIELDS } from '@/lib/import';
@@ -46,6 +54,9 @@ interface PreviewResult {
   autoMappings: AutoMapping[];
   stepColumns: StepColumnInfo;
   parseErrors: Array<{ line: number; message: string }>;
+  fileType?: 'csv' | 'excel';
+  sheetName?: string;
+  availableSheets?: string[];
 }
 
 interface ValidationResult {
@@ -96,6 +107,7 @@ export function ImportButton({
   const [mappings, setMappings] = useState<FieldMapping[]>([]);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ダイアログを閉じるときにリセット
@@ -107,6 +119,7 @@ export function ImportButton({
     setMappings([]);
     setValidationResult(null);
     setImportResult(null);
+    setSelectedSheet(null);
   }, []);
 
   // ファイル選択
@@ -144,6 +157,11 @@ export function ImportButton({
           }))
         );
 
+        // Excelファイルの場合はシート名を設定
+        if (result.sheetName) {
+          setSelectedSheet(result.sheetName);
+        }
+
         setStep('mapping');
       } catch (error) {
         console.error('File preview error:', error);
@@ -153,6 +171,50 @@ export function ImportButton({
       }
     },
     [testSpecId]
+  );
+
+  // シート変更（Excelファイルの場合）
+  const handleSheetChange = useCallback(
+    async (sheetName: string) => {
+      if (!file || !previewResult) return;
+
+      setSelectedSheet(sheetName);
+      setIsLoading(true);
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('action', 'preview');
+        formData.append('sheetName', sheetName);
+
+        const response = await fetch(`/api/test-specs/${testSpecId}/import`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'シートの読み込みに失敗しました。');
+        }
+
+        const result: PreviewResult = await response.json();
+        setPreviewResult(result);
+
+        // 自動マッピングを再設定
+        setMappings(
+          result.autoMappings.map((m) => ({
+            csvHeader: m.csvHeader,
+            targetField: m.targetField,
+          }))
+        );
+      } catch (error) {
+        console.error('Sheet change error:', error);
+        toast.error(error instanceof Error ? error.message : 'シートの読み込みに失敗しました。');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [file, previewResult, testSpecId]
   );
 
   // マッピング変更
@@ -183,6 +245,9 @@ export function ImportButton({
       formData.append('file', file);
       formData.append('action', 'validate');
       formData.append('mappings', JSON.stringify(mappings));
+      if (selectedSheet) {
+        formData.append('sheetName', selectedSheet);
+      }
 
       const response = await fetch(`/api/test-specs/${testSpecId}/import`, {
         method: 'POST',
@@ -203,7 +268,7 @@ export function ImportButton({
     } finally {
       setIsLoading(false);
     }
-  }, [file, previewResult, mappings, testSpecId]);
+  }, [file, previewResult, mappings, testSpecId, selectedSheet]);
 
   // インポート実行
   const handleImport = useCallback(async () => {
@@ -219,6 +284,9 @@ export function ImportButton({
       formData.append('mappings', JSON.stringify(mappings));
       if (sectionId !== undefined) {
         formData.append('sectionId', sectionId === null ? 'null' : sectionId);
+      }
+      if (selectedSheet) {
+        formData.append('sheetName', selectedSheet);
       }
 
       const response = await fetch(`/api/test-specs/${testSpecId}/import`, {
@@ -247,7 +315,7 @@ export function ImportButton({
     } finally {
       setIsLoading(false);
     }
-  }, [file, validationResult, mappings, sectionId, testSpecId, onImportComplete]);
+  }, [file, validationResult, mappings, sectionId, testSpecId, onImportComplete, selectedSheet]);
 
   // 現在のマッピング状態を取得
   const getMappingForHeader = useCallback(
@@ -279,8 +347,8 @@ export function ImportButton({
           <DialogHeader>
             <DialogTitle>テストケースのインポート</DialogTitle>
             <DialogDescription>
-              {step === 'upload' && 'CSVファイルを選択してください。'}
-              {step === 'mapping' && 'CSVカラムとフィールドのマッピングを確認してください。'}
+              {step === 'upload' && 'CSVまたはExcelファイルを選択してください。'}
+              {step === 'mapping' && 'カラムとフィールドのマッピングを確認してください。'}
               {step === 'validate' && 'インポート内容を確認してください。'}
               {step === 'importing' && 'インポート中...'}
               {step === 'complete' && 'インポートが完了しました。'}
@@ -293,7 +361,7 @@ export function ImportButton({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls,.xlsm"
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -308,9 +376,16 @@ export function ImportButton({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <FileText className="size-8 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">クリックしてCSVファイルを選択</p>
-                    <p className="text-xs text-muted-foreground">最大10MBまで</p>
+                    <div className="flex items-center gap-2">
+                      <FileText className="size-6 text-muted-foreground" />
+                      <FileSpreadsheet className="size-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      クリックしてCSVまたはExcelファイルを選択
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      対応形式: .csv, .xlsx, .xls, .xlsm（最大10MB）
+                    </p>
                   </div>
                 )}
               </div>
@@ -321,7 +396,11 @@ export function ImportButton({
           {step === 'mapping' && previewResult && (
             <div className="flex-1 overflow-hidden flex flex-col gap-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <FileText className="size-4" />
+                {previewResult.fileType === 'excel' ? (
+                  <FileSpreadsheet className="size-4" />
+                ) : (
+                  <FileText className="size-4" />
+                )}
                 <span>{file?.name}</span>
                 <Badge variant="secondary">{previewResult.totalRows}行</Badge>
                 {previewResult.stepColumns.maxSteps > 0 && (
@@ -330,6 +409,27 @@ export function ImportButton({
                   </Badge>
                 )}
               </div>
+
+              {/* Excelシート選択 */}
+              {previewResult.fileType === 'excel' &&
+                previewResult.availableSheets &&
+                previewResult.availableSheets.length > 1 && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm">シート:</Label>
+                    <Select value={selectedSheet || ''} onValueChange={handleSheetChange}>
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="シートを選択" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {previewResult.availableSheets.map((sheet) => (
+                          <SelectItem key={sheet} value={sheet}>
+                            {sheet}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
               {previewResult.parseErrors.length > 0 && (
                 <div className="bg-yellow-50 dark:bg-yellow-950/20 rounded-lg p-3">

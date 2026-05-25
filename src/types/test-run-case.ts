@@ -112,6 +112,9 @@ export interface BulkUpdateTestRunCaseInput {
   ids: string[];
   assignedToId?: string | null;
   status?: TestRunCaseStatus;
+  actualResult?: string | null;
+  comment?: string | null;
+  reproducibility?: string | null;
 }
 
 // ============================================

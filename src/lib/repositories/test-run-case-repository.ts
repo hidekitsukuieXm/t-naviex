@@ -357,6 +357,9 @@ export async function bulkUpdateTestRunCases(
     assignedToId?: bigint | null;
     status?: string;
     executedAt?: Date | null;
+    actualResult?: string | null;
+    comment?: string | null;
+    reproducibility?: string | null;
   } = {};
 
   if (input.assignedToId !== undefined) {
@@ -377,6 +380,18 @@ export async function bulkUpdateTestRunCases(
     if (isExecuted) {
       updateData.executedAt = new Date();
     }
+  }
+
+  if (input.actualResult !== undefined) {
+    updateData.actualResult = input.actualResult;
+  }
+
+  if (input.comment !== undefined) {
+    updateData.comment = input.comment;
+  }
+
+  if (input.reproducibility !== undefined) {
+    updateData.reproducibility = input.reproducibility;
   }
 
   const testRunCases = await prisma.$transaction(

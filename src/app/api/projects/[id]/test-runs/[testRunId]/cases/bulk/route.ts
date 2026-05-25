@@ -75,6 +75,9 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       ids: body.ids,
       assignedToId: body.assignedToId !== undefined ? body.assignedToId : undefined,
       status: body.status,
+      actualResult: body.actualResult,
+      comment: body.comment,
+      reproducibility: body.reproducibility,
     });
 
     return NextResponse.json({

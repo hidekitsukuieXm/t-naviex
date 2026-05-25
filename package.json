@@ -36,6 +36,7 @@
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-progress": "^1.1.8",
     "@tanstack/react-table": "^8.21.3",
+    "@wamra/gantt-task-react": "^0.6.17",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

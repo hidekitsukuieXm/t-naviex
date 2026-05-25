@@ -37,7 +37,11 @@ import {
   ChevronRight,
   User,
   FileText,
+  Users2,
+  UserCheck,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { type TestRunWithRelations, TEST_RUN_STATUS_LABELS } from '@/types/test-run';
 import {
@@ -388,6 +392,8 @@ interface ExecuteTestRunPageProps {
 export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) {
   const { id: projectId, testRunId } = use(params);
   const { toast } = useToast();
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id;
 
   // Data state
   const [testRun, setTestRun] = useState<TestRunWithRelations | null>(null);
@@ -400,6 +406,11 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<TestRunCaseStatus | 'all'>('all');
   const [assigneeFilter, setAssigneeFilter] = useState<string>('all');
+
+  // Multi-select state for bulk operations
+  const [selectedCaseIds, setSelectedCaseIds] = useState<Set<string>>(new Set());
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+  const [bulkAssignee, setBulkAssignee] = useState<string>('none');
 
   // Fetch data
   useEffect(() => {
@@ -449,7 +460,13 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
     if (statusFilter !== 'all' && c.status !== statusFilter) return false;
     if (assigneeFilter !== 'all') {
       if (assigneeFilter === 'unassigned' && c.assignedToId) return false;
-      if (assigneeFilter !== 'unassigned' && c.assignedToId !== assigneeFilter) return false;
+      if (assigneeFilter === 'my-cases' && c.assignedToId !== currentUserId) return false;
+      if (
+        assigneeFilter !== 'unassigned' &&
+        assigneeFilter !== 'my-cases' &&
+        c.assignedToId !== assigneeFilter
+      )
+        return false;
     }
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -460,6 +477,80 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
     }
     return true;
   });
+
+  // Selection handlers for bulk operations
+  const toggleCaseSelection = (caseId: string) => {
+    setSelectedCaseIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(caseId)) {
+        newSet.delete(caseId);
+      } else {
+        newSet.add(caseId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleAllCases = () => {
+    if (selectedCaseIds.size === filteredCases.length) {
+      setSelectedCaseIds(new Set());
+    } else {
+      setSelectedCaseIds(new Set(filteredCases.map((c) => c.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedCaseIds(new Set());
+  };
+
+  // Bulk assignee update handler
+  const handleBulkAssigneeUpdate = async () => {
+    if (selectedCaseIds.size === 0 || bulkAssignee === 'none') return;
+
+    setIsBulkUpdating(true);
+    try {
+      const assignedToId = bulkAssignee === 'unassigned' ? null : bulkAssignee;
+      const response = await fetch(`/api/projects/${projectId}/test-runs/${testRunId}/cases/bulk`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: Array.from(selectedCaseIds),
+          assignedToId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '一括更新に失敗しました。');
+      }
+
+      const result = await response.json();
+
+      // Update local state
+      setTestRunCases((prev) =>
+        prev.map((c) => {
+          const updatedCase = result.cases.find((uc: TestRunCaseWithRelations) => uc.id === c.id);
+          return updatedCase ? { ...c, ...updatedCase } : c;
+        })
+      );
+
+      toast({
+        title: '更新完了',
+        description: `${result.updatedCount}件のケースの担当者を更新しました。`,
+      });
+
+      clearSelection();
+      setBulkAssignee('none');
+    } catch (err) {
+      toast({
+        title: 'エラー',
+        description: err instanceof Error ? err.message : 'エラーが発生しました。',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
 
   // Calculate progress
   const totalCases = testRunCases.length;
@@ -621,6 +712,14 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全て</SelectItem>
+                    {currentUserId && (
+                      <SelectItem value="my-cases">
+                        <span className="flex items-center gap-1">
+                          <UserCheck className="size-3" />
+                          自分の担当
+                        </span>
+                      </SelectItem>
+                    )}
                     <SelectItem value="unassigned">未割当</SelectItem>
                     {projectMembers.map((m) => (
                       <SelectItem key={m.userId} value={m.userId}>
@@ -632,7 +731,70 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
               </div>
             </div>
           </CardHeader>
-          <Separator />
+          {/* Bulk action bar */}
+          {selectedCaseIds.size > 0 && (
+            <>
+              <div className="shrink-0 bg-muted/50 p-3">
+                <div className="mb-2 flex items-center justify-between text-sm">
+                  <span className="font-medium">{selectedCaseIds.size}件選択中</span>
+                  <Button variant="ghost" size="sm" onClick={clearSelection}>
+                    <X className="mr-1 size-3" />
+                    選択解除
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="担当者を選択" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">選択してください</SelectItem>
+                      <SelectItem value="unassigned">担当者を解除</SelectItem>
+                      {projectMembers.map((m) => (
+                        <SelectItem key={m.userId} value={m.userId}>
+                          {m.user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    onClick={handleBulkAssigneeUpdate}
+                    disabled={isBulkUpdating || bulkAssignee === 'none'}
+                  >
+                    {isBulkUpdating ? (
+                      <Loader2 className="mr-1 size-3 animate-spin" />
+                    ) : (
+                      <Users2 className="mr-1 size-3" />
+                    )}
+                    適用
+                  </Button>
+                </div>
+              </div>
+              <Separator />
+            </>
+          )}
+          {/* Select all checkbox */}
+          {filteredCases.length > 0 && (
+            <>
+              <div className="flex shrink-0 items-center gap-2 px-4 py-2">
+                <Checkbox
+                  id="select-all"
+                  checked={
+                    selectedCaseIds.size === filteredCases.length && filteredCases.length > 0
+                  }
+                  onCheckedChange={toggleAllCases}
+                />
+                <Label
+                  htmlFor="select-all"
+                  className="cursor-pointer text-xs text-muted-foreground"
+                >
+                  すべて選択 ({filteredCases.length}件)
+                </Label>
+              </div>
+              <Separator />
+            </>
+          )}
           <ScrollArea className="flex-1">
             <div className="space-y-1 p-2">
               {filteredCases.length === 0 ? (
@@ -641,32 +803,41 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
                 </div>
               ) : (
                 filteredCases.map((tc) => (
-                  <button
+                  <div
                     key={tc.id}
-                    onClick={() => setSelectedCaseId(tc.id)}
                     className={cn(
-                      'flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors',
+                      'flex w-full items-center gap-2 rounded-md p-2 transition-colors',
                       selectedCaseId === tc.id
                         ? 'bg-primary/10 border border-primary/30'
                         : 'hover:bg-muted/50'
                     )}
                   >
-                    {STATUS_ICONS[tc.status]}
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{tc.testCase.title}</div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Badge variant="secondary" className="h-4 px-1 text-[10px]">
-                          {tc.testCase.priority}
-                        </Badge>
-                        {tc.assignedTo && (
-                          <span className="flex items-center gap-1">
-                            <User className="size-3" />
-                            {tc.assignedTo.name}
-                          </span>
-                        )}
+                    <Checkbox
+                      checked={selectedCaseIds.has(tc.id)}
+                      onCheckedChange={() => toggleCaseSelection(tc.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <button
+                      onClick={() => setSelectedCaseId(tc.id)}
+                      className="flex flex-1 items-center gap-3 text-left"
+                    >
+                      {STATUS_ICONS[tc.status]}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">{tc.testCase.title}</div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="secondary" className="h-4 px-1 text-[10px]">
+                            {tc.testCase.priority}
+                          </Badge>
+                          {tc.assignedTo && (
+                            <span className="flex items-center gap-1">
+                              <User className="size-3" />
+                              {tc.assignedTo.name}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  </div>
                 ))
               )}
             </div>

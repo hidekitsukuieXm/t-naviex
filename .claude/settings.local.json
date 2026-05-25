@@ -39,7 +39,10 @@
       "Bash(gh issue list:*)",
       "Bash(for i in 41 42 43 44 45 46 47 48 49 50)",
       "Bash(do echo \"=== Issue #$i ===\")",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(Select-String \"FAIL|× \")",
+      "Bash(npm ls:*)",
+      "Bash(npx prisma:*)"
     ]
   }
 }

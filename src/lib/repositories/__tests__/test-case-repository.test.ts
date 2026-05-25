@@ -19,6 +19,7 @@ vi.mock('@/lib/prisma', () => ({
     testSection: {
       findFirst: vi.fn(),
     },
+    $queryRaw: vi.fn(),
   },
 }));
 
@@ -35,6 +36,7 @@ import {
   isTestCaseTitleTaken,
   getTestCaseCountBySection,
   getTestCaseCountByTestSpec,
+  searchTestCases,
 } from '../test-case-repository';
 
 const mockPrisma = vi.mocked(prisma);
@@ -498,6 +500,135 @@ describe('Test Case Repository', () => {
         },
       });
       expect(result).toBe(10);
+    });
+  });
+
+  describe('searchTestCases', () => {
+    const mockSearchResult = {
+      id: BigInt(1),
+      test_spec_id: BigInt(100),
+      section_id: BigInt(10),
+      title: 'Test Case with keyword',
+      description: 'Description with keyword',
+      preconditions: null,
+      expected_result: null,
+      checkpoint: null,
+      scenario: null,
+      test_environment: null,
+      notes: null,
+      tags: ['tag1'],
+      classification: null,
+      reference_id: null,
+      estimated_time: null,
+      priority: 'HIGH',
+      test_type: 'FUNCTIONAL',
+      test_technique: 'OTHER',
+      is_matrix: false,
+      sort_order: 0,
+      created_at: new Date('2024-01-01T00:00:00Z'),
+      updated_at: new Date('2024-01-01T00:00:00Z'),
+      deleted_at: null,
+      rank: 15,
+    };
+
+    it('should return empty results for empty query', async () => {
+      const result = await searchTestCases({
+        testSpecId: '100',
+        query: '  ',
+      });
+
+      expect(result.results).toHaveLength(0);
+      expect(result.total).toBe(0);
+    });
+
+    it('should search test cases with query', async () => {
+      (prisma.$queryRaw as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([{ total: 1 }])
+        .mockResolvedValueOnce([mockSearchResult]);
+
+      const result = await searchTestCases({
+        testSpecId: '100',
+        query: 'keyword',
+      });
+
+      expect(result.results).toHaveLength(1);
+      expect(result.total).toBe(1);
+      expect(result.results[0].id).toBe('1');
+      expect(result.results[0].title).toBe('Test Case with keyword');
+      expect(result.results[0].rank).toBe(15);
+    });
+
+    it('should include highlights in results', async () => {
+      (prisma.$queryRaw as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([{ total: 1 }])
+        .mockResolvedValueOnce([mockSearchResult]);
+
+      const result = await searchTestCases({
+        testSpecId: '100',
+        query: 'keyword',
+        searchFields: ['title', 'description'],
+      });
+
+      expect(result.results[0].highlights).toHaveLength(2);
+      expect(result.results[0].highlights[0].field).toBe('title');
+      expect(result.results[0].highlights[0].snippet).toContain('<mark>');
+    });
+
+    it('should return paginated results', async () => {
+      (prisma.$queryRaw as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([{ total: 25 }])
+        .mockResolvedValueOnce([mockSearchResult]);
+
+      const result = await searchTestCases({
+        testSpecId: '100',
+        query: 'keyword',
+        page: 2,
+        limit: 10,
+      });
+
+      expect(result.page).toBe(2);
+      expect(result.limit).toBe(10);
+      expect(result.total).toBe(25);
+      expect(result.totalPages).toBe(3);
+    });
+
+    it('should filter by specific search fields', async () => {
+      (prisma.$queryRaw as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([{ total: 1 }])
+        .mockResolvedValueOnce([mockSearchResult]);
+
+      const result = await searchTestCases({
+        testSpecId: '100',
+        query: 'keyword',
+        searchFields: ['title'],
+      });
+
+      expect(result.searchFields).toEqual(['title']);
+    });
+
+    it('should return empty results when count is 0', async () => {
+      (prisma.$queryRaw as ReturnType<typeof vi.fn>).mockResolvedValueOnce([{ total: 0 }]);
+
+      const result = await searchTestCases({
+        testSpecId: '100',
+        query: 'notfound',
+      });
+
+      expect(result.results).toHaveLength(0);
+      expect(result.total).toBe(0);
+    });
+
+    it('should handle null section_id in results', async () => {
+      (prisma.$queryRaw as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce([{ total: 1 }])
+        .mockResolvedValueOnce([{ ...mockSearchResult, section_id: null }]);
+
+      const result = await searchTestCases({
+        testSpecId: '100',
+        query: 'keyword',
+      });
+
+      expect(result.results[0].sectionId).toBeNull();
     });
   });
 });

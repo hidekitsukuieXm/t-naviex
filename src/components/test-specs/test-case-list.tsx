@@ -29,9 +29,11 @@ import {
   AlertTriangle,
   Info,
   Plus,
+  Search,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TestCaseCreateDialog } from './test-case-create-dialog';
+import { TestCaseSearchDialog } from './test-case-search-dialog';
 import {
   TestCaseFilterPanel,
   DEFAULT_FILTER_STATE,
@@ -255,20 +257,31 @@ export function TestCaseList({
               {total > 0 ? `${total}件のテストケース` : 'テストケースがありません'}
             </CardDescription>
           </div>
-          {!isLocked && (
-            <TestCaseCreateDialog
+          <div className="flex items-center gap-2">
+            <TestCaseSearchDialog
               testSpecId={testSpecId}
-              sections={sections}
-              defaultSectionId={selectedSectionId}
-              onSuccess={() => void fetchTestCases()}
               trigger={
-                <Button size="sm">
-                  <Plus className="mr-2 size-4" />
-                  新規テストケース
+                <Button variant="outline" size="sm">
+                  <Search className="mr-2 size-4" />
+                  全文検索
                 </Button>
               }
             />
-          )}
+            {!isLocked && (
+              <TestCaseCreateDialog
+                testSpecId={testSpecId}
+                sections={sections}
+                defaultSectionId={selectedSectionId}
+                onSuccess={() => void fetchTestCases()}
+                trigger={
+                  <Button size="sm">
+                    <Plus className="mr-2 size-4" />
+                    新規テストケース
+                  </Button>
+                }
+              />
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">

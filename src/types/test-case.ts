@@ -186,6 +186,98 @@ export interface TestCaseListResponse {
 }
 
 // ============================================
+// 全文検索型定義
+// ============================================
+
+/**
+ * 検索対象フィールド
+ */
+export type SearchableField =
+  | 'title'
+  | 'description'
+  | 'preconditions'
+  | 'expectedResult'
+  | 'checkpoint'
+  | 'scenario'
+  | 'testEnvironment'
+  | 'notes';
+
+/**
+ * 検索結果のハイライト情報
+ */
+export interface SearchHighlight {
+  field: SearchableField;
+  snippet: string;
+}
+
+/**
+ * 全文検索結果のテストケース
+ */
+export interface TestCaseSearchResult extends TestCase {
+  rank: number;
+  highlights: SearchHighlight[];
+}
+
+/**
+ * 全文検索パラメータ
+ */
+export interface FullTextSearchParams {
+  testSpecId: string;
+  query: string;
+  sectionId?: string | null;
+  searchFields?: SearchableField[];
+  priority?: TestCasePriority;
+  testType?: TestType;
+  testTechnique?: TestTechnique;
+  isMatrix?: boolean;
+  tags?: string[];
+  classification?: string;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * 全文検索レスポンス
+ */
+export interface FullTextSearchResponse {
+  results: TestCaseSearchResult[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  query: string;
+  searchFields: SearchableField[];
+}
+
+/**
+ * 全検索対象フィールド一覧
+ */
+export const ALL_SEARCHABLE_FIELDS: SearchableField[] = [
+  'title',
+  'description',
+  'preconditions',
+  'expectedResult',
+  'checkpoint',
+  'scenario',
+  'testEnvironment',
+  'notes',
+];
+
+/**
+ * 検索対象フィールドのラベル
+ */
+export const SEARCHABLE_FIELD_LABELS: Record<SearchableField, string> = {
+  title: 'タイトル',
+  description: '説明',
+  preconditions: '事前条件',
+  expectedResult: '期待結果',
+  checkpoint: 'チェックポイント',
+  scenario: 'シナリオ',
+  testEnvironment: 'テスト環境',
+  notes: '特記事項',
+};
+
+// ============================================
 // 定数定義
 // ============================================
 

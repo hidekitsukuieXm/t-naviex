@@ -18,6 +18,14 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   ArrowLeft,
@@ -39,6 +47,7 @@ import {
   FileText,
   Users2,
   UserCheck,
+  ClipboardList,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSession } from 'next-auth/react';
@@ -478,6 +487,9 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
   const [selectedCaseIds, setSelectedCaseIds] = useState<Set<string>>(new Set());
   const [isBulkUpdating, setIsBulkUpdating] = useState(false);
   const [bulkAssignee, setBulkAssignee] = useState<string>('none');
+  const [bulkStatus, setBulkStatus] = useState<TestRunCaseStatus | 'none'>('none');
+  const [bulkComment, setBulkComment] = useState('');
+  const [showBulkResultDialog, setShowBulkResultDialog] = useState(false);
 
   // Fetch data
   useEffect(() => {
@@ -608,6 +620,70 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
 
       clearSelection();
       setBulkAssignee('none');
+    } catch (err) {
+      toast({
+        title: 'エラー',
+        description: err instanceof Error ? err.message : 'エラーが発生しました。',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
+  // Bulk status and comment update handler
+  const handleBulkResultUpdate = async () => {
+    if (selectedCaseIds.size === 0) return;
+    if (bulkStatus === 'none' && !bulkComment.trim()) return;
+
+    setIsBulkUpdating(true);
+    try {
+      const updateData: {
+        ids: string[];
+        status?: TestRunCaseStatus;
+        comment?: string | null;
+      } = {
+        ids: Array.from(selectedCaseIds),
+      };
+
+      if (bulkStatus !== 'none') {
+        updateData.status = bulkStatus;
+      }
+
+      if (bulkComment.trim()) {
+        updateData.comment = bulkComment.trim();
+      }
+
+      const response = await fetch(`/api/projects/${projectId}/test-runs/${testRunId}/cases/bulk`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '一括更新に失敗しました。');
+      }
+
+      const result = await response.json();
+
+      // Update local state
+      setTestRunCases((prev) =>
+        prev.map((c) => {
+          const updatedCase = result.cases.find((uc: TestRunCaseWithRelations) => uc.id === c.id);
+          return updatedCase ? { ...c, ...updatedCase } : c;
+        })
+      );
+
+      toast({
+        title: '更新完了',
+        description: `${result.updatedCount}件のケースを更新しました。`,
+      });
+
+      clearSelection();
+      setBulkStatus('none');
+      setBulkComment('');
+      setShowBulkResultDialog(false);
     } catch (err) {
       toast({
         title: 'エラー',
@@ -809,32 +885,45 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
                     選択解除
                   </Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="担当者を選択" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">選択してください</SelectItem>
-                      <SelectItem value="unassigned">担当者を解除</SelectItem>
-                      {projectMembers.map((m) => (
-                        <SelectItem key={m.userId} value={m.userId}>
-                          {m.user.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-2">
+                  {/* Bulk assignee */}
+                  <div className="flex items-center gap-2">
+                    <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="担当者を選択" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">担当者を選択</SelectItem>
+                        <SelectItem value="unassigned">担当者を解除</SelectItem>
+                        {projectMembers.map((m) => (
+                          <SelectItem key={m.userId} value={m.userId}>
+                            {m.user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      onClick={handleBulkAssigneeUpdate}
+                      disabled={isBulkUpdating || bulkAssignee === 'none'}
+                    >
+                      {isBulkUpdating ? (
+                        <Loader2 className="mr-1 size-3 animate-spin" />
+                      ) : (
+                        <Users2 className="mr-1 size-3" />
+                      )}
+                      適用
+                    </Button>
+                  </div>
+                  {/* Bulk result button */}
                   <Button
+                    variant="outline"
                     size="sm"
-                    onClick={handleBulkAssigneeUpdate}
-                    disabled={isBulkUpdating || bulkAssignee === 'none'}
+                    className="w-full"
+                    onClick={() => setShowBulkResultDialog(true)}
                   >
-                    {isBulkUpdating ? (
-                      <Loader2 className="mr-1 size-3 animate-spin" />
-                    ) : (
-                      <Users2 className="mr-1 size-3" />
-                    )}
-                    適用
+                    <ClipboardList className="mr-1 size-3" />
+                    一括結果入力
                   </Button>
                 </div>
               </div>
@@ -932,6 +1021,107 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
           )}
         </Card>
       </div>
+
+      {/* Bulk Result Dialog */}
+      <Dialog open={showBulkResultDialog} onOpenChange={setShowBulkResultDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>一括結果入力</DialogTitle>
+            <DialogDescription>
+              {selectedCaseIds.size}件のテストケースに結果を一括設定します
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Bulk status selection */}
+            <div className="space-y-2">
+              <Label>ステータス</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  {
+                    status: TEST_RUN_CASE_STATUS.PASSED,
+                    color: 'bg-green-100 hover:bg-green-200 text-green-800',
+                    icon: CheckCircle2,
+                    label: '合格',
+                  },
+                  {
+                    status: TEST_RUN_CASE_STATUS.FAILED,
+                    color: 'bg-red-100 hover:bg-red-200 text-red-800',
+                    icon: XCircle,
+                    label: '不合格',
+                  },
+                  {
+                    status: TEST_RUN_CASE_STATUS.BLOCKED,
+                    color: 'bg-yellow-100 hover:bg-yellow-200 text-yellow-800',
+                    icon: AlertTriangle,
+                    label: 'ブロック',
+                  },
+                  {
+                    status: TEST_RUN_CASE_STATUS.SKIPPED,
+                    color: 'bg-purple-100 hover:bg-purple-200 text-purple-800',
+                    icon: SkipForward,
+                    label: 'スキップ',
+                  },
+                  {
+                    status: TEST_RUN_CASE_STATUS.RETEST,
+                    color: 'bg-blue-100 hover:bg-blue-200 text-blue-800',
+                    icon: RotateCcw,
+                    label: '再テスト',
+                  },
+                ].map(({ status, color, icon: Icon, label }) => (
+                  <Button
+                    key={status}
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      'flex-1',
+                      bulkStatus === status && color,
+                      bulkStatus === status && 'border-2'
+                    )}
+                    onClick={() => setBulkStatus(status === bulkStatus ? 'none' : status)}
+                  >
+                    <Icon className="mr-1 size-4" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bulk comment */}
+            <div className="space-y-2">
+              <Label htmlFor="bulkComment">コメント</Label>
+              <Textarea
+                id="bulkComment"
+                value={bulkComment}
+                onChange={(e) => setBulkComment(e.target.value)}
+                placeholder="選択したケースに追加するコメント..."
+                rows={3}
+              />
+              <p className="text-xs text-muted-foreground">
+                ※ 入力したコメントは既存のコメントを上書きします
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowBulkResultDialog(false);
+                setBulkStatus('none');
+                setBulkComment('');
+              }}
+            >
+              キャンセル
+            </Button>
+            <Button
+              onClick={handleBulkResultUpdate}
+              disabled={isBulkUpdating || (bulkStatus === 'none' && !bulkComment.trim())}
+            >
+              {isBulkUpdating && <Loader2 className="mr-2 size-4 animate-spin" />}
+              一括更新
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -181,6 +181,7 @@ model Project {
   milestones           Milestone[]
   configurations       Configuration[]
   tasks                Task[]
+  testRuns             TestRun[]
 
   @@map("projects")
 }
@@ -707,7 +708,8 @@ model Milestone {
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
   // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testRuns TestRun[]
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -730,7 +732,8 @@ model Configuration {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testRuns TestRun[]
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -792,4 +795,56 @@ model Task {
   @@index([endDate])
   @@index([sortOrder])
   @@map("tasks")
+}
+
+// ============================================
+// テストラン（テスト実行管理）
+// ============================================
+
+/// テストランステータス
+enum TestRunStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  ABORTED
+  BLOCKED
+
+  @@map("test_run_status")
+}
+
+/// テストラン
+model TestRun {
+  id              BigInt        @id @default(autoincrement())
+  projectId       BigInt        @map("project_id")
+  milestoneId     BigInt?       @map("milestone_id")
+  configurationId BigInt?       @map("configuration_id")
+  name            String        @db.VarChar(255)
+  description     String?       @db.Text
+  status          TestRunStatus @default(PLANNED)
+  plannedStartDate DateTime?    @map("planned_start_date") @db.Date
+  plannedEndDate   DateTime?    @map("planned_end_date") @db.Date
+  actualStartDate  DateTime?    @map("actual_start_date") @db.Date
+  actualEndDate    DateTime?    @map("actual_end_date") @db.Date
+  totalCases       Int          @default(0) @map("total_cases")
+  passedCases      Int          @default(0) @map("passed_cases")
+  failedCases      Int          @default(0) @map("failed_cases")
+  blockedCases     Int          @default(0) @map("blocked_cases")
+  skippedCases     Int          @default(0) @map("skipped_cases")
+  notes            String?      @db.Text
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestone     Milestone?     @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  configuration Configuration? @relation(fields: [configurationId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([milestoneId])
+  @@index([configurationId])
+  @@index([status])
+  @@index([plannedStartDate])
+  @@index([plannedEndDate])
+  @@index([createdAt])
+  @@map("test_runs")
 }

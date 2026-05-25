@@ -898,19 +898,20 @@ enum TestRunCaseStatus {
 
 /// テストランケース（テストランとテストケースの紐付け）
 model TestRunCase {
-  id             BigInt            @id @default(autoincrement())
-  testRunId      BigInt            @map("test_run_id")
-  testCaseId     BigInt            @map("test_case_id")
-  assignedToId   BigInt?           @map("assigned_to_id")
-  status         TestRunCaseStatus @default(NOT_RUN)
-  executedAt     DateTime?         @map("executed_at")
-  executionTime  Int?              @map("execution_time")
-  actualResult   String?           @map("actual_result") @db.Text
-  defects        String?           @db.Text
-  comment        String?           @db.Text
-  sortOrder      Int               @default(0) @map("sort_order")
-  createdAt      DateTime          @default(now()) @map("created_at")
-  updatedAt      DateTime          @updatedAt @map("updated_at")
+  id              BigInt            @id @default(autoincrement())
+  testRunId       BigInt            @map("test_run_id")
+  testCaseId      BigInt            @map("test_case_id")
+  assignedToId    BigInt?           @map("assigned_to_id")
+  status          TestRunCaseStatus @default(NOT_RUN)
+  executedAt      DateTime?         @map("executed_at")
+  executionTime   Int?              @map("execution_time")
+  actualResult    String?           @map("actual_result") @db.Text
+  defects         String?           @db.Text
+  comment         String?           @db.Text
+  reproducibility String?           @db.VarChar(50)
+  sortOrder       Int               @default(0) @map("sort_order")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
 
   // Relations
   testRun    TestRun   @relation(fields: [testRunId], references: [id], onDelete: Cascade)
@@ -932,19 +933,20 @@ model TestRunCase {
 
 /// テスト結果（実行履歴）
 model TestResult {
-  id             BigInt            @id @default(autoincrement())
-  testRunCaseId  BigInt            @map("test_run_case_id")
-  executedById   BigInt?           @map("executed_by_id")
-  status         TestRunCaseStatus
-  executedAt     DateTime          @default(now()) @map("executed_at")
-  executionTime  Int?              @map("execution_time")
-  actualResult   String?           @map("actual_result") @db.Text
-  defects        String?           @db.Text
-  comment        String?           @db.Text
-  environment    String?           @db.VarChar(255)
-  browserInfo    String?           @map("browser_info") @db.VarChar(255)
-  version        Int               @default(1)
-  createdAt      DateTime          @default(now()) @map("created_at")
+  id              BigInt            @id @default(autoincrement())
+  testRunCaseId   BigInt            @map("test_run_case_id")
+  executedById    BigInt?           @map("executed_by_id")
+  status          TestRunCaseStatus
+  executedAt      DateTime          @default(now()) @map("executed_at")
+  executionTime   Int?              @map("execution_time")
+  actualResult    String?           @map("actual_result") @db.Text
+  defects         String?           @db.Text
+  comment         String?           @db.Text
+  reproducibility String?           @db.VarChar(50)
+  environment     String?           @db.VarChar(255)
+  browserInfo     String?           @map("browser_info") @db.VarChar(255)
+  version         Int               @default(1)
+  createdAt       DateTime          @default(now()) @map("created_at")
 
   // Relations
   testRunCase TestRunCase @relation(fields: [testRunCaseId], references: [id], onDelete: Cascade)

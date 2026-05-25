@@ -32,10 +32,31 @@ export interface TestRunCase {
   actualResult: string | null;
   defects: string | null;
   comment: string | null;
+  reproducibility: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
+
+// 再現性選択肢
+export const REPRODUCIBILITY_OPTIONS = {
+  ALWAYS: 'ALWAYS',
+  SOMETIMES: 'SOMETIMES',
+  RARELY: 'RARELY',
+  ONCE: 'ONCE',
+  UNKNOWN: 'UNKNOWN',
+} as const;
+
+export type Reproducibility =
+  (typeof REPRODUCIBILITY_OPTIONS)[keyof typeof REPRODUCIBILITY_OPTIONS];
+
+export const REPRODUCIBILITY_LABELS: Record<string, string> = {
+  ALWAYS: '常に再現',
+  SOMETIMES: '時々再現',
+  RARELY: 'まれに再現',
+  ONCE: '1回のみ',
+  UNKNOWN: '不明',
+};
 
 export interface TestRunCaseWithRelations extends TestRunCase {
   testRun: {
@@ -46,6 +67,9 @@ export interface TestRunCaseWithRelations extends TestRunCase {
     id: string;
     title: string;
     priority: string;
+    description?: string | null;
+    preconditions?: string | null;
+    expectedResult?: string | null;
   };
   assignedTo: {
     id: string;
@@ -74,6 +98,7 @@ export interface UpdateTestRunCaseInput {
   actualResult?: string | null;
   defects?: string | null;
   comment?: string | null;
+  reproducibility?: string | null;
   sortOrder?: number;
 }
 

@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { TestRunStatusBadge } from './test-run-status-badge';
 import {
@@ -19,17 +20,25 @@ import {
   CheckCircle2,
   XCircle,
   MinusCircle,
+  Play,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TestRunCardProps {
+  projectId: string;
   testRun: TestRunWithRelations;
   onEdit: (testRun: TestRunWithRelations) => void;
   onDelete: (id: string) => void;
   isDeleting: boolean;
 }
 
-export function TestRunCard({ testRun, onEdit, onDelete, isDeleting }: TestRunCardProps) {
+export function TestRunCard({
+  projectId,
+  testRun,
+  onEdit,
+  onDelete,
+  isDeleting,
+}: TestRunCardProps) {
   const progress = getTestRunProgress(testRun);
   const passRate = getTestRunPassRate(testRun);
   const overdue = isTestRunOverdue(testRun);
@@ -145,6 +154,13 @@ export function TestRunCard({ testRun, onEdit, onDelete, isDeleting }: TestRunCa
 
         {/* Actions */}
         <div className="flex gap-2 border-t pt-3">
+          <Link
+            href={`/projects/${projectId}/test-runs/${testRun.id}/execute`}
+            className={cn(buttonVariants({ variant: 'default', size: 'sm' }), 'flex-1')}
+          >
+            <Play className="mr-1 size-3" />
+            実行
+          </Link>
           <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(testRun)}>
             <Pencil className="mr-1 size-3" />
             編集
@@ -152,7 +168,7 @@ export function TestRunCard({ testRun, onEdit, onDelete, isDeleting }: TestRunCa
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 text-destructive hover:text-destructive"
+            className="text-destructive hover:text-destructive"
             onClick={() => onDelete(testRun.id)}
             disabled={isDeleting}
           >

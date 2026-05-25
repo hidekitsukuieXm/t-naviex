@@ -47,6 +47,15 @@ describe('Test Case Repository', () => {
     title: 'Test Case 1',
     description: 'Description',
     preconditions: 'Preconditions',
+    expectedResult: null as string | null,
+    checkpoint: null as string | null,
+    scenario: null as string | null,
+    testEnvironment: null as string | null,
+    notes: null as string | null,
+    tags: [] as string[],
+    classification: null as string | null,
+    referenceId: null as string | null,
+    estimatedTime: null as number | null,
     priority: 'MEDIUM',
     testType: 'FUNCTIONAL',
     testTechnique: 'OTHER',
@@ -54,6 +63,7 @@ describe('Test Case Repository', () => {
     sortOrder: 0,
     createdAt: new Date('2024-01-01T12:00:00Z'),
     updatedAt: new Date('2024-01-02T12:00:00Z'),
+    deletedAt: null as Date | null,
   };
 
   const mockDbTestCaseDetail = {
@@ -96,7 +106,7 @@ describe('Test Case Repository', () => {
       });
 
       expect(mockPrisma.testCase.create).toHaveBeenCalledWith({
-        data: {
+        data: expect.objectContaining({
           testSpecId: BigInt(100),
           sectionId: BigInt(10),
           title: 'Test Case 1',
@@ -107,7 +117,7 @@ describe('Test Case Repository', () => {
           testTechnique: 'OTHER',
           isMatrix: false,
           sortOrder: 0,
-        },
+        }),
         select: expect.any(Object),
       });
 
@@ -325,14 +335,21 @@ describe('Test Case Repository', () => {
   });
 
   describe('deleteTestCase', () => {
-    it('should delete test case', async () => {
-      mockPrisma.testCase.findUnique.mockResolvedValueOnce(mockDbTestCase);
-      mockPrisma.testCase.delete.mockResolvedValueOnce(mockDbTestCase);
+    it('should soft delete test case', async () => {
+      mockPrisma.testCase.findUnique.mockResolvedValueOnce({
+        ...mockDbTestCase,
+        deletedAt: null,
+      });
+      mockPrisma.testCase.update.mockResolvedValueOnce({
+        ...mockDbTestCase,
+        deletedAt: new Date(),
+      });
 
       const result = await deleteTestCase(BigInt(1));
 
-      expect(mockPrisma.testCase.delete).toHaveBeenCalledWith({
+      expect(mockPrisma.testCase.update).toHaveBeenCalledWith({
         where: { id: BigInt(1) },
+        data: { deletedAt: expect.any(Date) },
       });
       expect(result.success).toBe(true);
     });
@@ -344,6 +361,18 @@ describe('Test Case Repository', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('テストケースが見つかりません。');
+    });
+
+    it('should return error for already deleted test case', async () => {
+      mockPrisma.testCase.findUnique.mockResolvedValueOnce({
+        ...mockDbTestCase,
+        deletedAt: new Date(),
+      });
+
+      const result = await deleteTestCase(BigInt(1));
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('テストケースは既に削除されています。');
     });
   });
 

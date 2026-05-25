@@ -41,6 +41,13 @@ export type AuditAction =
   | 'TEST_CASE_CREATE'
   | 'TEST_CASE_UPDATE'
   | 'TEST_CASE_DELETE'
+  | 'TEST_CASE_COPY'
+  | 'TEST_CASE_MOVE'
+  | 'TEST_CASE_RESTORE'
+  // タグ関連
+  | 'TAG_CREATE'
+  | 'TAG_UPDATE'
+  | 'TAG_DELETE'
   // テスト手順関連
   | 'TEST_STEP_CREATE'
   | 'TEST_STEP_UPDATE'
@@ -62,6 +69,7 @@ export type AuditTargetType =
   | 'TEST_SECTION'
   | 'TEST_CASE'
   | 'TEST_STEP'
+  | 'TAG'
   | 'PASSWORD_POLICY'
   | 'SESSION_SETTINGS'
   | 'AUDIT_LOG'
@@ -160,6 +168,13 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   TEST_CASE_CREATE: 'テストケース作成',
   TEST_CASE_UPDATE: 'テストケース更新',
   TEST_CASE_DELETE: 'テストケース削除',
+  TEST_CASE_COPY: 'テストケースコピー',
+  TEST_CASE_MOVE: 'テストケース移動',
+  TEST_CASE_RESTORE: 'テストケース復元',
+  // タグ関連
+  TAG_CREATE: 'タグ作成',
+  TAG_UPDATE: 'タグ更新',
+  TAG_DELETE: 'タグ削除',
   // テスト手順関連
   TEST_STEP_CREATE: 'テスト手順作成',
   TEST_STEP_UPDATE: 'テスト手順更新',
@@ -182,6 +197,7 @@ export const AUDIT_TARGET_TYPE_LABELS: Record<AuditTargetType, string> = {
   TEST_SECTION: 'テストセクション',
   TEST_CASE: 'テストケース',
   TEST_STEP: 'テスト手順',
+  TAG: 'タグ',
   PASSWORD_POLICY: 'パスワードポリシー',
   SESSION_SETTINGS: 'セッション設定',
   AUDIT_LOG: '監査ログ',
@@ -198,6 +214,7 @@ export type AuditActionCategory =
   | 'test_section'
   | 'test_case'
   | 'test_step'
+  | 'tag'
   | 'settings'
   | 'other';
 
@@ -257,7 +274,10 @@ export function getActionCategory(action: AuditAction): AuditActionCategory {
   if (
     action === 'TEST_CASE_CREATE' ||
     action === 'TEST_CASE_UPDATE' ||
-    action === 'TEST_CASE_DELETE'
+    action === 'TEST_CASE_DELETE' ||
+    action === 'TEST_CASE_COPY' ||
+    action === 'TEST_CASE_MOVE' ||
+    action === 'TEST_CASE_RESTORE'
   ) {
     return 'test_case';
   }
@@ -268,6 +288,9 @@ export function getActionCategory(action: AuditAction): AuditActionCategory {
     action === 'TEST_STEP_REORDER'
   ) {
     return 'test_step';
+  }
+  if (action === 'TAG_CREATE' || action === 'TAG_UPDATE' || action === 'TAG_DELETE') {
+    return 'tag';
   }
   if (action === 'PASSWORD_POLICY_UPDATE' || action === 'SESSION_SETTINGS_UPDATE') {
     return 'settings';
@@ -285,6 +308,7 @@ export const AUDIT_ACTION_CATEGORY_LABELS: Record<AuditActionCategory, string> =
   test_section: 'テストセクション',
   test_case: 'テストケース',
   test_step: 'テスト手順',
+  tag: 'タグ',
   settings: '設定',
   other: 'その他',
 };

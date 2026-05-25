@@ -171,6 +171,7 @@ model Project {
   // Relations
   projectMembers ProjectMember[]
   testSpecs      TestSpec[]
+  tags           Tag[]
 
   @@map("projects")
 }
@@ -434,9 +435,10 @@ model TestCase {
   deletedAt       DateTime?        @map("deleted_at")
 
   // Relations
-  testSpec  TestSpec     @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
-  section   TestSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
-  testSteps TestStep[]
+  testSpec     TestSpec      @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
+  section      TestSection?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  testSteps    TestStep[]
+  testCaseTags TestCaseTag[]
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -466,4 +468,44 @@ model TestStep {
   @@index([testCaseId])
   @@index([stepNo])
   @@map("test_steps")
+}
+
+// ============================================
+// タグ管理モデル
+// ============================================
+
+/// タグ
+model Tag {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt   @map("project_id")
+  name        String   @db.VarChar(100)
+  color       String   @default("#3b82f6") @db.VarChar(7)
+  description String?  @db.VarChar(500)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testCaseTags  TestCaseTag[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([name])
+  @@map("tags")
+}
+
+/// テストケースタグ中間テーブル
+model TestCaseTag {
+  testCaseId BigInt   @map("test_case_id")
+  tagId      BigInt   @map("tag_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([testCaseId, tagId])
+  @@index([testCaseId])
+  @@index([tagId])
+  @@map("test_case_tags")
 }

@@ -1,6 +1,16 @@
 import '@testing-library/react';
 import { vi } from 'vitest';
 
+// Mock ResizeObserver for tests
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
+
+// Mock scrollIntoView for tests (used by cmdk)
+Element.prototype.scrollIntoView = vi.fn();
+
 // Counter to generate unique IDs for mock RichTextEditor
 let mockEditorIdCounter = 0;
 

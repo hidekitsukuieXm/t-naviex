@@ -24,6 +24,10 @@ export interface GanttChartProps {
   onMilestoneClick?: (milestoneId: string) => void;
   onTaskDateChange?: (taskId: string, startDate: Date, endDate: Date) => void;
   onTaskProgressChange?: (taskId: string, progress: number) => void;
+  onTaskMove?: (taskId: string, newParentId: string | null) => void;
+  showDependencies?: boolean;
+  showTaskList?: boolean;
+  enableDragAndDrop?: boolean;
   className?: string;
 }
 
@@ -138,9 +142,16 @@ export function GanttChart({
   onMilestoneClick,
   onTaskDateChange,
   onTaskProgressChange,
+  onTaskMove,
+  showDependencies: initialShowDependencies = true,
+  showTaskList: initialShowTaskList = true,
+  enableDragAndDrop = true,
   className,
 }: GanttChartProps) {
   const [zoom, setZoom] = useState<ZoomLevel>('week');
+  const [showDependencies, setShowDependencies] = useState(initialShowDependencies);
+  const [showTaskList, setShowTaskList] = useState(initialShowTaskList);
+  const [isDragging, setIsDragging] = useState(false);
 
   // タスクとマイルストーンをGantt形式に変換
   const ganttTasks = useMemo<GanttTask[]>(() => {
@@ -181,9 +192,10 @@ export function GanttChart({
     [onTaskClick, onMilestoneClick]
   );
 
-  // 日付変更ハンドラ
+  // 日付変更ハンドラ（ドラッグ&ドロップ移動・リサイズ）
   const handleDateChange = useCallback(
     (task: GanttTask) => {
+      setIsDragging(false);
       const [type, id] = task.id.split('-');
       if (type === 'task' && onTaskDateChange) {
         onTaskDateChange(id, task.start, task.end);
@@ -192,15 +204,39 @@ export function GanttChart({
     [onTaskDateChange]
   );
 
-  // 進捗変更ハンドラ
+  // 進捗変更ハンドラ（進捗バードラッグ）
   const handleProgressChange = useCallback(
     (task: GanttTask) => {
+      setIsDragging(false);
       const [type, id] = task.id.split('-');
       if (type === 'task' && onTaskProgressChange) {
         onTaskProgressChange(id, task.progress);
       }
     },
     [onTaskProgressChange]
+  );
+
+  // タスク削除ハンドラ（依存関係削除時に使用）
+  const handleTaskDelete = useCallback(
+    (task: GanttTask) => {
+      const [type, id] = task.id.split('-');
+      if (type === 'task' && onTaskMove) {
+        // 親タスクからの依存関係を削除（ルートに移動）
+        onTaskMove(id, null);
+      }
+      return true; // 削除を許可
+    },
+    [onTaskMove]
+  );
+
+  // ドラッグ開始ハンドラ
+  const handleSelect = useCallback(
+    (_task: GanttTask, isSelected: boolean) => {
+      if (isSelected && enableDragAndDrop) {
+        setIsDragging(true);
+      }
+    },
+    [enableDragAndDrop]
   );
 
   // データがない場合
@@ -220,32 +256,64 @@ export function GanttChart({
 
   return (
     <div className={className}>
-      {/* ズームコントロール */}
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-sm font-medium text-muted-foreground">表示単位:</span>
-        <div className="flex gap-1">
-          <Button
-            variant={zoom === 'day' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setZoom('day')}
-          >
-            日
-          </Button>
-          <Button
-            variant={zoom === 'week' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setZoom('week')}
-          >
-            週
-          </Button>
-          <Button
-            variant={zoom === 'month' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setZoom('month')}
-          >
-            月
-          </Button>
+      {/* コントロールパネル */}
+      <div className="flex flex-wrap items-center gap-4 mb-4">
+        {/* ズームコントロール */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">表示単位:</span>
+          <div className="flex gap-1">
+            <Button
+              variant={zoom === 'day' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setZoom('day')}
+            >
+              日
+            </Button>
+            <Button
+              variant={zoom === 'week' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setZoom('week')}
+            >
+              週
+            </Button>
+            <Button
+              variant={zoom === 'month' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setZoom('month')}
+            >
+              月
+            </Button>
+          </div>
         </div>
+
+        {/* 表示オプション */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">表示:</span>
+          <div className="flex gap-1">
+            <Button
+              variant={showTaskList ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowTaskList(!showTaskList)}
+            >
+              タスク一覧
+            </Button>
+            <Button
+              variant={showDependencies ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setShowDependencies(!showDependencies)}
+            >
+              依存関係
+            </Button>
+          </div>
+        </div>
+
+        {/* ドラッグ状態インジケータ */}
+        {isDragging && (
+          <div className="flex items-center gap-1 text-sm text-blue-600">
+            <span className="animate-pulse">●</span>
+            <span>ドラッグ中...</span>
+          </div>
+        )}
       </div>
 
       {/* 凡例 */}
@@ -275,7 +343,24 @@ export function GanttChart({
           <span className="w-3 h-3 rotate-45 bg-gray-400" />
           <span>マイルストーン</span>
         </div>
+        {showDependencies && (
+          <div className="flex items-center gap-1">
+            <span className="w-4 h-0.5 bg-gray-500" />
+            <span className="text-gray-500">→</span>
+            <span>依存関係</span>
+          </div>
+        )}
       </div>
+
+      {/* 操作説明 */}
+      {enableDragAndDrop && (
+        <div className="flex flex-wrap items-center gap-4 mb-4 text-xs text-muted-foreground">
+          <span>操作:</span>
+          <span>タスクバーをドラッグ → 期間移動</span>
+          <span>タスクバーの端をドラッグ → 期間変更</span>
+          <span>進捗バーをドラッグ → 進捗変更</span>
+        </div>
+      )}
 
       {/* ガントチャート */}
       <div className="border rounded-lg overflow-hidden bg-background">
@@ -284,15 +369,18 @@ export function GanttChart({
           viewMode={getViewModeFromZoom(zoom)}
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
-          onDateChange={handleDateChange}
-          onProgressChange={handleProgressChange}
+          onDateChange={enableDragAndDrop ? handleDateChange : undefined}
+          onProgressChange={enableDragAndDrop ? handleProgressChange : undefined}
+          onTaskDelete={onTaskMove ? handleTaskDelete : undefined}
+          onSelect={handleSelect}
           locale="ja-JP"
-          listCellWidth=""
+          listCellWidth={showTaskList ? '200px' : ''}
           columnWidth={zoom === 'day' ? 65 : zoom === 'week' ? 150 : 200}
           ganttHeight={400}
           barCornerRadius={4}
           todayColor="rgba(59, 130, 246, 0.2)"
-          arrowColor="#6b7280"
+          arrowColor={showDependencies ? '#6b7280' : 'transparent'}
+          arrowIndent={20}
         />
       </div>
     </div>

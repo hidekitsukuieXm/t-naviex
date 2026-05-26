@@ -24,6 +24,7 @@ import { BugStatusBadge } from '@/components/bugs/bug-status-badge';
 import { BugPriorityBadge } from '@/components/bugs/bug-priority-badge';
 import { BugSeverityBadge } from '@/components/bugs/bug-severity-badge';
 import { BugTypeBadge } from '@/components/bugs/bug-type-badge';
+import { BugCreateDialog } from '@/components/bugs/bug-create-dialog';
 import {
   type BugWithRelations,
   type BugStatus,
@@ -45,7 +46,6 @@ import {
   AlertTriangle,
   Calendar,
   User,
-  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -283,10 +283,7 @@ export default function BugsPage({ params }: BugsPageProps) {
             <h1 className="text-2xl font-bold tracking-tight">バグ一覧</h1>
             <p className="text-muted-foreground">バグ・課題の管理ができます。</p>
           </div>
-          <Button onClick={() => toast({ title: 'バグ登録画面は別Issueで実装予定です' })}>
-            <Plus className="mr-2 size-4" />
-            新規バグ登録
-          </Button>
+          <BugCreateDialog projectId={projectId} onSuccess={handleRefresh} />
         </div>
       </div>
 

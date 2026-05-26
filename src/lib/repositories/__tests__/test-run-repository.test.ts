@@ -14,6 +14,9 @@ import {
   getTestRunsByConfiguration,
   createReRun,
   getTestRunCaseStatusCounts,
+  closeTestRun,
+  reopenTestRun,
+  isTestRunClosed,
 } from '../test-run-repository';
 
 // Mock prisma
@@ -525,6 +528,112 @@ describe('TestRun Repository', () => {
       await expect(
         createReRun(BigInt(100), BigInt(1), { includeStatuses: ['FAILED'] })
       ).rejects.toThrow('対象のテストケースがありません');
+    });
+  });
+
+  describe('closeTestRun', () => {
+    it('should close test run and update status counts', async () => {
+      const testRun = {
+        id: BigInt(1),
+        projectId: BigInt(100),
+        status: 'IN_PROGRESS',
+        notes: 'Test notes',
+      };
+
+      mockPrisma.testRun.findUnique.mockResolvedValue(testRun);
+      mockPrisma.testRunCase.groupBy.mockResolvedValue([
+        { status: 'PASSED', _count: 5 },
+        { status: 'FAILED', _count: 2 },
+      ]);
+      mockPrisma.testRun.update.mockResolvedValue({
+        ...mockDbTestRunWithRelations,
+        status: 'COMPLETED',
+      });
+
+      const result = await closeTestRun(BigInt(100), BigInt(1));
+
+      expect(result.status).toBe('COMPLETED');
+      expect(mockPrisma.testRun.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: 'COMPLETED',
+            passedCases: 5,
+            failedCases: 2,
+          }),
+        })
+      );
+    });
+
+    it('should throw error if test run not found', async () => {
+      mockPrisma.testRun.findUnique.mockResolvedValue(null);
+
+      await expect(closeTestRun(BigInt(100), BigInt(999))).rejects.toThrow(
+        'テストランが見つかりません'
+      );
+    });
+
+    it('should throw error if already closed', async () => {
+      mockPrisma.testRun.findUnique.mockResolvedValue({
+        id: BigInt(1),
+        projectId: BigInt(100),
+        status: 'COMPLETED',
+      });
+
+      await expect(closeTestRun(BigInt(100), BigInt(1))).rejects.toThrow(
+        'テストランは既にクローズされています'
+      );
+    });
+  });
+
+  describe('reopenTestRun', () => {
+    it('should reopen closed test run', async () => {
+      mockPrisma.testRun.findUnique.mockResolvedValue({
+        id: BigInt(1),
+        projectId: BigInt(100),
+        status: 'COMPLETED',
+      });
+      mockPrisma.testRun.update.mockResolvedValue({
+        ...mockDbTestRunWithRelations,
+        status: 'IN_PROGRESS',
+      });
+
+      const result = await reopenTestRun(BigInt(100), BigInt(1));
+
+      expect(result.status).toBe('IN_PROGRESS');
+    });
+
+    it('should throw error if not closed', async () => {
+      mockPrisma.testRun.findUnique.mockResolvedValue({
+        id: BigInt(1),
+        projectId: BigInt(100),
+        status: 'IN_PROGRESS',
+      });
+
+      await expect(reopenTestRun(BigInt(100), BigInt(1))).rejects.toThrow(
+        'テストランはクローズされていません'
+      );
+    });
+  });
+
+  describe('isTestRunClosed', () => {
+    it('should return true for closed test run', async () => {
+      mockPrisma.testRun.findUnique.mockResolvedValue({
+        status: 'COMPLETED',
+      });
+
+      const result = await isTestRunClosed(BigInt(1));
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false for open test run', async () => {
+      mockPrisma.testRun.findUnique.mockResolvedValue({
+        status: 'IN_PROGRESS',
+      });
+
+      const result = await isTestRunClosed(BigInt(1));
+
+      expect(result).toBe(false);
     });
   });
 });

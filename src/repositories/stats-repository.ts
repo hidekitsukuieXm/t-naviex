@@ -803,3 +803,191 @@ export async function getCumulativeBugData(
 
   return result;
 }
+
+// バーンダウンチャートデータ
+export interface BurndownChartData {
+  date: string;
+  remaining: number; // 残テストケース数
+  ideal: number; // 理想線
+  actualVelocity: number; // 実際の消化速度
+}
+
+export interface BurndownStats {
+  data: BurndownChartData[];
+  totalCases: number;
+  completedCases: number;
+  remainingCases: number;
+  startDate: string;
+  endDate: string | null;
+  predictedEndDate: string | null;
+  daysRemaining: number | null;
+}
+
+// テストランのバーンダウンチャートデータ取得
+export async function getTestRunBurndownData(testRunId: bigint): Promise<BurndownStats> {
+  // テストラン情報を取得
+  const testRun = await prisma.testRun.findUnique({
+    where: { id: testRunId },
+    select: {
+      startDate: true,
+      endDate: true,
+      testRunCases: {
+        select: {
+          status: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  if (!testRun) {
+    return {
+      data: [],
+      totalCases: 0,
+      completedCases: 0,
+      remainingCases: 0,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: null,
+      predictedEndDate: null,
+      daysRemaining: null,
+    };
+  }
+
+  const totalCases = testRun.testRunCases.length;
+  const completedStatuses = ['PASSED', 'FAILED', 'BLOCKED', 'SKIPPED'];
+  const completedCases = testRun.testRunCases.filter((trc) =>
+    completedStatuses.includes(trc.status)
+  ).length;
+  const remainingCases = totalCases - completedCases;
+
+  const startDate = testRun.startDate || new Date();
+  const endDate = testRun.endDate;
+
+  // テスト結果から日別の完了数を取得
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: { testRunId },
+    },
+    select: {
+      executedAt: true,
+      status: true,
+    },
+    orderBy: { executedAt: 'asc' },
+  });
+
+  // 日別の完了数を集計
+  const dailyCompletions: Record<string, number> = {};
+  for (const result of testResults) {
+    const dateStr = result.executedAt.toISOString().split('T')[0];
+    if (completedStatuses.includes(result.status)) {
+      dailyCompletions[dateStr] = (dailyCompletions[dateStr] || 0) + 1;
+    }
+  }
+
+  // 期間を計算
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const chartEndDate = endDate || new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const totalDays = Math.ceil(
+    (chartEndDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  // 理想線と実績を計算
+  const data: BurndownChartData[] = [];
+  let cumulativeCompleted = 0;
+  const dailyIdealBurn = totalCases / Math.max(totalDays, 1);
+
+  for (let i = 0; i <= totalDays; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+
+    // 今日より先の日付は実績なし
+    if (date <= today) {
+      cumulativeCompleted += dailyCompletions[dateStr] || 0;
+    }
+
+    const ideal = Math.max(0, totalCases - dailyIdealBurn * i);
+    const remaining = date <= today ? totalCases - cumulativeCompleted : 0;
+
+    data.push({
+      date: dateStr,
+      remaining: date <= today ? remaining : 0,
+      ideal: Math.round(ideal * 10) / 10,
+      actualVelocity: dailyCompletions[dateStr] || 0,
+    });
+  }
+
+  // 予測完了日を計算（直近7日の平均速度から）
+  let predictedEndDate: string | null = null;
+  let daysRemaining: number | null = null;
+
+  if (remainingCases > 0 && completedCases > 0) {
+    const recentDays = Object.entries(dailyCompletions)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .slice(0, 7);
+
+    if (recentDays.length > 0) {
+      const totalRecentCompleted = recentDays.reduce((sum, [, count]) => sum + count, 0);
+      const avgDailyVelocity = totalRecentCompleted / recentDays.length;
+
+      if (avgDailyVelocity > 0) {
+        daysRemaining = Math.ceil(remainingCases / avgDailyVelocity);
+        const predicted = new Date(today);
+        predicted.setDate(predicted.getDate() + daysRemaining);
+        predictedEndDate = predicted.toISOString().split('T')[0];
+      }
+    }
+  }
+
+  return {
+    data,
+    totalCases,
+    completedCases,
+    remainingCases,
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate?.toISOString().split('T')[0] || null,
+    predictedEndDate,
+    daysRemaining,
+  };
+}
+
+// プロジェクト全体のバーンダウンチャートデータ取得
+export async function getProjectBurndownData(projectId: bigint): Promise<BurndownStats> {
+  // アクティブなテストランのテストケース数を取得
+  const testRuns = await prisma.testRun.findMany({
+    where: {
+      projectId,
+      status: { in: ['PLANNED', 'IN_PROGRESS'] },
+    },
+    select: {
+      id: true,
+      startDate: true,
+      endDate: true,
+      testRunCases: {
+        select: {
+          status: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (testRuns.length === 0) {
+    return {
+      data: [],
+      totalCases: 0,
+      completedCases: 0,
+      remainingCases: 0,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: null,
+      predictedEndDate: null,
+      daysRemaining: null,
+    };
+  }
+
+  // 最初のアクティブなテストランを使用
+  const testRun = testRuns[0];
+  return getTestRunBurndownData(testRun.id);
+}

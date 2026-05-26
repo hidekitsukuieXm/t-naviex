@@ -17,6 +17,7 @@ import {
   SummaryPieChartWidget,
   BugSummaryWidget,
   BugChartWidget,
+  BurndownChartWidget,
   TeamInfoWidget,
   MilestoneWidget,
 } from '@/components/dashboard/widgets';
@@ -327,6 +328,8 @@ export default function DashboardPage({ params }: DashboardPageProps) {
         return <MilestoneWidget widget={widget} projectId={projectId} />;
       case 'COVERAGE_STATS':
         return <SummaryPieChartWidget widget={widget} projectId={projectId} />;
+      case 'BURNDOWN_CHART':
+        return <BurndownChartWidget widget={widget} projectId={projectId} />;
       default:
         return null; // デフォルトのプレースホルダーを使用
     }

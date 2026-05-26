@@ -60,6 +60,8 @@ import {
   REPRODUCIBILITY_OPTIONS,
   REPRODUCIBILITY_LABELS,
 } from '@/types/test-run-case';
+import { BugFromTestResultDialog } from '@/components/bugs/bug-from-test-result-dialog';
+import { Bug } from 'lucide-react';
 
 interface ProjectMember {
   userId: string;
@@ -110,6 +112,7 @@ function ResultInputForm({
   const [isSaving, setIsSaving] = useState(false);
   const stopwatchRef = useRef<StopwatchRef>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(testRunCase.executionTime || 0);
+  const [isBugDialogOpen, setIsBugDialogOpen] = useState(false);
 
   // Form state initialized from props
   const [formStatus, setFormStatus] = useState<TestRunCaseStatus>(testRunCase.status);
@@ -400,14 +403,49 @@ function ResultInputForm({
       </ScrollArea>
       <Separator />
       <div className="flex items-center justify-between p-4">
-        <Button variant="outline" onClick={handleSaveAndNext} disabled={isSaving || !canNavigate}>
-          保存して次へ
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleSaveAndNext} disabled={isSaving || !canNavigate}>
+            保存して次へ
+          </Button>
+          {(formStatus === TEST_RUN_CASE_STATUS.FAILED ||
+            formStatus === TEST_RUN_CASE_STATUS.BLOCKED) && (
+            <Button
+              variant="outline"
+              onClick={() => setIsBugDialogOpen(true)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Bug className="mr-2 size-4" />
+              バグ登録
+            </Button>
+          )}
+        </div>
         <Button onClick={handleSave} disabled={isSaving}>
           {isSaving && <Loader2 className="mr-2 size-4 animate-spin" />}
           保存
         </Button>
       </div>
+
+      {/* Bug Registration Dialog */}
+      <BugFromTestResultDialog
+        open={isBugDialogOpen}
+        onOpenChange={setIsBugDialogOpen}
+        projectId={projectId}
+        testRunId={testRunId}
+        testRunCase={{
+          id: testRunCase.id,
+          testCase: testRunCase.testCase,
+          actualResult: formActualResult,
+          defects: formDefects,
+          comment: formComment,
+          reproducibility: formReproducibility,
+        }}
+        onSuccess={(bugId) => {
+          toast({
+            title: 'バグを登録しました',
+            description: `バグ #${bugId} を作成しました。`,
+          });
+        }}
+      />
     </>
   );
 }

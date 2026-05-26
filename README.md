@@ -439,6 +439,10 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-25 | **Issue #55 テスト追加完了**: タスクテーブル（TASKS）のAPI単体テスト実装。Tasks API包括的テストカバレッジ追加（GET/POST/PUT/DELETE全エンドポイント）、認証チェック（401）、プロジェクト/タスク存在確認（404）、バリデーションエラー（400）、親子関係テスト（親タスク作成/循環参照チェック）、担当者割り当てテスト、フィルター機能テスト（status/priority/rootOnly）。Vitestモック設計（auth/prisma）、単体テスト26件追加。PR #245 マージ完了。                                                                                                                                                                                                                                                                      |
 | 2026-05-25 | **Issue #56 テスト追加完了**: ガントチャート画面のページ単体テスト実装。GanttPageコンポーネントテスト（ページタイトル/説明表示、タスク・マイルストーンAPI呼び出し、GanttChartコンポーネント統合、統計カード表示、エラー処理、空データ処理）、React 19対応（Suspenseラッパー/act()使用/Promise-based params）、モック設計（next/navigation/sonner/GanttChart/fetch）、単体テスト8件追加。PR #246 マージ完了。                                                                                                                                                                                                                                                                                                        |
 
+| 2026-05-26 | **Issue #71 実装完了**: テスト結果編集・履歴管理機能実装。TestResultHistoryテーブル追加（フィールド単位の変更追跡）、テスト結果更新API（PUT /api/projects/[id]/test-runs/[testRunId]/cases/[caseId]/results/[resultId]）、編集履歴取得API（GET .../history）、TestResultHistoryDialogコンポーネント（変更履歴表示UI）、トランザクション処理による履歴自動記録、単体テスト20件。PR #252 マージ完了。 |
+| 2026-05-26 | **Issue #72 実装完了**: Re-Run（再テスト）機能実装。createReRun関数（失敗/ブロック/スキップ/再テストケース抽出）、getTestRunCaseStatusCounts関数（ステータス別カウント）、Re-Run API（GET /api/projects/[id]/test-runs/[testRunId]/rerun で候補取得、POST で新規テストラン生成）、TestRunReRunDialogコンポーネント（ステータス選択/プレビュー/作成UI）、単体テスト31件。PR #253 マージ完了。 |
+| 2026-05-26 | **Issue #73 実装完了**: テストランクローズ機能実装。closeTestRun関数（ステータスカウント記録/actualEndDate設定）、reopenTestRun関数（再オープン機能）、isTestRunClosed関数、クローズAPI（GET /api/projects/[id]/test-runs/[testRunId]/close でサマリー取得、POST でクローズ、DELETE で再オープン）、TestRunCloseDialogコンポーネント（クローズ確認/未実行警告/合格率表示UI）、単体テスト38件。PR #254 マージ完了。 |
+
 ---
 
 _本プロジェクトはUSDM要求仕様書（SRS-TM-USDM-2026-001）に基づき設計・開発されています。_

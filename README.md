@@ -456,6 +456,9 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 | 2026-05-26 | **Issue #71 実装完了**: テスト結果編集・履歴管理機能実装。TestResultHistoryテーブル追加（フィールド単位の変更追跡）、テスト結果更新API（PUT /api/projects/[id]/test-runs/[testRunId]/cases/[caseId]/results/[resultId]issue、編集履歴取得API（GET .../history）、TestResultHistoryDialogコンポーネント（変更履歴表示UI）、トランザクション処理による履歴自動記録、単体テスト20件。PR #252 マージ完了。 |
 | 2026-05-26 | **Issue #72 実装完了**: Re-Run（再テスト）機能実装。createReRun関数（失敗/ブロック/スキップ/再テストケース抽出）、getTestRunCaseStatusCounts関数（ステータス別カウント）、Re-Run API（GET /api/projects/[id]/test-runs/[testRunId]/rerun で候補取得、POST で新規テストラン生成）、TestRunReRunDialogコンポーネント（ステータス選択/プレビュー/作成UI）、単体テスト31件。PR #253 マージ完了。 |
 | 2026-05-26 | **Issue #73 実装完了**: テストランクローズ機能実装。closeTestRun関数（ステータスカウント記録/actualEndDate設定）、reopenTestRun関数（再オープン機能）、isTestRunClosed関数、クローズAPI（GET /api/projects/[id]/test-runs/[testRunId]/close でサマリー取得、POST でクローズ、DELETE で再オープン）、TestRunCloseDialogコンポーネント（クローズ確認/未実行警告/合格率表示UI）、単体テスト38件。PR #254 マージ完了。 |
+| 2026-05-26 | **Issue #74-#82 実装完了**: バグ・課題管理機能実装。Bugモデル（ステータス/種別/優先度/重大度/期限）、BugComment/BugAttachment/BugHistoryモデル、バグ一覧/登録/詳細/編集画面、種別・ステータス設定、ワークフローテーブル・管理画面、サブタスク機能（親子関係/循環参照チェック）、テスト結果からバグ登録連携。PR #255-#263 マージ完了。 |
+| 2026-05-26 | **Issue #83-#85 実装完了**: 外部連携機能実装。ExternalIntegration/IntegrationStatusMapping/BugSyncモデル、AES-256-GCM暗号化対応、Redmine REST APIクライアント（redmine-client.ts）、Redmine同期機能（push/pull/import）、Backlog API v2クライアント（backlog-client.ts）、Backlog同期機能、ステータスマッピング、外部連携設定画面。PR #264-#266 マージ完了。 |
+| 2026-05-26 | **Issue #86-#88 実装完了**: 要求仕様管理機能実装。Requirementモデル（階層構造/MoSCoW優先度）、TestCaseRequirementモデル（テストケース紐付け）、要求仕様一覧/登録/編集画面、ツリービュー/リストビュー切替、トレーサビリティマトリクス、カバレッジ統計（種別別/優先度別）、テストケース紐付けダイアログ。PR #267-#269 マージ完了。全2324テスト合格。 |
 
 ---
 

@@ -1692,3 +1692,29 @@ model DashboardWidget {
   @@index([sortOrder])
   @@map("dashboard_widgets")
 }
+
+// ============================================
+// AI機能
+// ============================================
+
+/// AI設定
+model AiSettings {
+  id             BigInt    @id @default(autoincrement())
+  projectId      BigInt?   @unique @map("project_id")
+  isEnabled      Boolean   @default(false) @map("is_enabled")
+  apiKeyEncrypted String?  @map("api_key_encrypted") @db.Text
+  model          String    @default("claude-sonnet-4-20250514") @db.VarChar(100)
+  maxTokens      Int       @default(4096) @map("max_tokens")
+  temperature    Float     @default(0.7)
+  usageToday     Int       @default(0) @map("usage_today")
+  usageMonth     Int       @default(0) @map("usage_month")
+  usageTotal     Int       @default(0) @map("usage_total")
+  lastUsedAt     DateTime? @map("last_used_at")
+  lastTestedAt   DateTime? @map("last_tested_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([projectId])
+  @@index([isEnabled])
+  @@map("ai_settings")
+}

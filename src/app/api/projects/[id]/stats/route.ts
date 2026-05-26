@@ -11,6 +11,7 @@ import {
   getProjectSummary,
   getDailyTestExecutions,
   getTeamExecutionStats,
+  getCumulativeTestProgress,
 } from '@/repositories/stats-repository';
 
 interface RouteParams {
@@ -51,6 +52,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       case 'team': {
         const team = await getTeamExecutionStats(projectId);
         return NextResponse.json({ team });
+      }
+
+      case 'cumulative': {
+        const daysParam = searchParams.get('days');
+        const days = daysParam ? parseInt(daysParam, 10) : 30;
+        const cumulative = await getCumulativeTestProgress(projectId, days);
+        return NextResponse.json({ cumulative });
       }
 
       case 'summary':

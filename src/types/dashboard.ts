@@ -80,6 +80,8 @@ export interface ProgressChartConfig {
   testRunId?: string;
   chartType?: 'bar' | 'line' | 'area';
   showLegend?: boolean;
+  days?: number; // 期間（日数）: 7, 14, 30 など
+  mode?: 'daily' | 'cumulative'; // 日別 or 累積
 }
 
 export interface BugSummaryConfig {

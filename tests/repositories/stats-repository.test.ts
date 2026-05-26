@@ -11,6 +11,8 @@ import {
   getProjectSummary,
   getDailyTestExecutions,
   getTestRunDailyExecutions,
+  getCumulativeTestProgress,
+  getTestRunCumulativeProgress,
 } from '@/repositories/stats-repository';
 
 // Prismaモック
@@ -31,12 +33,14 @@ vi.mock('@/lib/prisma', () => ({
     },
     testCase: {
       count: vi.fn(),
+      findMany: vi.fn(),
     },
     requirement: {
       count: vi.fn(),
     },
     testResult: {
       findMany: vi.fn(),
+      groupBy: vi.fn(),
     },
   },
 }));
@@ -235,6 +239,60 @@ describe('stats-repository', () => {
       const dates = result.map((d) => d.date);
       const sortedDates = [...dates].sort();
       expect(dates).toEqual(sortedDates);
+    });
+  });
+
+  describe('getCumulativeTestProgress', () => {
+    it('プロジェクトの累積テスト進捗を取得する', async () => {
+      // 初期登録数
+      vi.mocked(prisma.testCase.count).mockResolvedValue(10);
+      // 期間中の新規登録
+      vi.mocked(prisma.testCase.findMany).mockResolvedValue([]);
+      // 初期結果
+      vi.mocked(prisma.testResult.groupBy).mockResolvedValue([
+        { status: 'PASSED', _count: { status: 5 } },
+        { status: 'FAILED', _count: { status: 2 } },
+      ] as never);
+      // 期間中の結果
+      vi.mocked(prisma.testResult.findMany).mockResolvedValue([]);
+
+      const result = await getCumulativeTestProgress(BigInt(1), 7);
+
+      expect(result).toHaveLength(8);
+      // 累積値が返されていることを確認
+      expect(result.every((d) => d.date && typeof d.registered === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.executed === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.passed === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.failed === 'number')).toBe(true);
+    });
+
+    it('データがない場合は初期値が維持される', async () => {
+      vi.mocked(prisma.testCase.count).mockResolvedValue(0);
+      vi.mocked(prisma.testCase.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.testResult.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.testResult.findMany).mockResolvedValue([]);
+
+      const result = await getCumulativeTestProgress(BigInt(1), 7);
+
+      expect(result).toHaveLength(8);
+      expect(result.every((d) => d.registered === 0)).toBe(true);
+      expect(result.every((d) => d.executed === 0)).toBe(true);
+    });
+  });
+
+  describe('getTestRunCumulativeProgress', () => {
+    it('テストランの累積テスト進捗を取得する', async () => {
+      vi.mocked(prisma.testRunCase.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.testResult.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.testResult.findMany).mockResolvedValue([]);
+
+      const result = await getTestRunCumulativeProgress(BigInt(1), 7);
+
+      expect(result).toHaveLength(8);
+      expect(result.every((d) => d.date && typeof d.registered === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.executed === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.passed === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.failed === 'number')).toBe(true);
     });
   });
 });

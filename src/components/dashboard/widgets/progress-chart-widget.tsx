@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -16,6 +16,13 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { Loader2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { DashboardWidgetSafe, ProgressChartConfig } from '@/types/dashboard';
 
 interface DailyTestExecution {
@@ -27,17 +34,38 @@ interface DailyTestExecution {
   total: number;
 }
 
+interface CumulativeTestProgress {
+  date: string;
+  registered: number;
+  executed: number;
+  passed: number;
+  failed: number;
+}
+
 interface ProgressChartWidgetProps {
   widget: DashboardWidgetSafe;
   projectId: string;
 }
 
+const PERIOD_OPTIONS = [
+  { value: '7', label: '7日間' },
+  { value: '14', label: '14日間' },
+  { value: '30', label: '30日間' },
+];
+
+const MODE_OPTIONS = [
+  { value: 'daily', label: '日別実績' },
+  { value: 'cumulative', label: '累積推移' },
+];
+
 export function ProgressChartWidget({ widget, projectId }: ProgressChartWidgetProps) {
-  const [data, setData] = useState<DailyTestExecution[]>([]);
+  const config = (widget.config as ProgressChartConfig) || {};
+  const [days, setDays] = useState(config.days?.toString() || '30');
+  const [mode, setMode] = useState<'daily' | 'cumulative'>(config.mode || 'daily');
+  const [data, setData] = useState<DailyTestExecution[] | CumulativeTestProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const config = (widget.config as ProgressChartConfig) || {};
   const chartType = config.chartType || 'area';
   const showLegend = config.showLegend !== false;
 
@@ -45,10 +73,13 @@ export function ProgressChartWidget({ widget, projectId }: ProgressChartWidgetPr
     let isMounted = true;
 
     const fetchData = async () => {
+      setIsLoading(true);
       try {
-        const url = config.testRunId
-          ? `/api/projects/${projectId}/test-runs/${config.testRunId}/stats?type=daily`
-          : `/api/projects/${projectId}/stats?type=daily&days=30`;
+        const baseUrl = config.testRunId
+          ? `/api/projects/${projectId}/test-runs/${config.testRunId}/stats`
+          : `/api/projects/${projectId}/stats`;
+
+        const url = `${baseUrl}?type=${mode}&days=${days}`;
 
         const response = await fetch(url);
         if (!response.ok) {
@@ -57,7 +88,7 @@ export function ProgressChartWidget({ widget, projectId }: ProgressChartWidgetPr
 
         const result = await response.json();
         if (isMounted) {
-          setData(result.daily || []);
+          setData(mode === 'daily' ? result.daily || [] : result.cumulative || []);
           setError(null);
         }
       } catch (err) {
@@ -76,7 +107,15 @@ export function ProgressChartWidget({ widget, projectId }: ProgressChartWidgetPr
     return () => {
       isMounted = false;
     };
-  }, [projectId, config.testRunId]);
+  }, [projectId, config.testRunId, days, mode]);
+
+  // 日付表示をフォーマット
+  const formattedData = useMemo(() => {
+    return data.map((item) => ({
+      ...item,
+      displayDate: item.date.slice(5), // MM-DD形式で表示
+    }));
+  }, [data]);
 
   if (isLoading) {
     return (
@@ -102,17 +141,11 @@ export function ProgressChartWidget({ widget, projectId }: ProgressChartWidgetPr
     );
   }
 
-  // 日付表示をフォーマット
-  const formattedData = data.map((item) => ({
-    ...item,
-    displayDate: item.date.slice(5), // MM-DD形式で表示
-  }));
-
   const commonProps = {
     data: formattedData,
   };
 
-  const renderChart = () => {
+  const renderDailyChart = () => {
     switch (chartType) {
       case 'bar':
         return (
@@ -241,11 +274,89 @@ export function ProgressChartWidget({ widget, projectId }: ProgressChartWidgetPr
     }
   };
 
+  const renderCumulativeChart = () => {
+    return (
+      <LineChart {...commonProps}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="displayDate" fontSize={10} />
+        <YAxis fontSize={10} />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: 'hsl(var(--background))',
+            border: '1px solid hsl(var(--border))',
+            borderRadius: '6px',
+          }}
+        />
+        {showLegend && <Legend wrapperStyle={{ fontSize: 12 }} />}
+        <Line
+          type="monotone"
+          dataKey="registered"
+          name="登録数"
+          stroke="#8b5cf6"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="executed"
+          name="実施数"
+          stroke="#3b82f6"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="passed"
+          name="合格数"
+          stroke="#22c55e"
+          strokeWidth={2}
+          dot={false}
+        />
+        <Line
+          type="monotone"
+          dataKey="failed"
+          name="失敗数"
+          stroke="#ef4444"
+          strokeWidth={2}
+          dot={false}
+        />
+      </LineChart>
+    );
+  };
+
   return (
-    <div className="h-full w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        {renderChart()}
-      </ResponsiveContainer>
+    <div className="h-full w-full flex flex-col">
+      <div className="flex items-center gap-2 mb-2 px-1">
+        <Select value={mode} onValueChange={(v) => setMode(v as 'daily' | 'cumulative')}>
+          <SelectTrigger className="h-7 w-[100px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MODE_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={days} onValueChange={setDays}>
+          <SelectTrigger className="h-7 w-[80px] text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PERIOD_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          {mode === 'daily' ? renderDailyChart() : renderCumulativeChart()}
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

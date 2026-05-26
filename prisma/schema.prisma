@@ -949,8 +949,9 @@ model TestResult {
   createdAt       DateTime          @default(now()) @map("created_at")
 
   // Relations
-  testRunCase TestRunCase @relation(fields: [testRunCaseId], references: [id], onDelete: Cascade)
-  executedBy  User?       @relation(fields: [executedById], references: [id], onDelete: SetNull)
+  testRunCase TestRunCase            @relation(fields: [testRunCaseId], references: [id], onDelete: Cascade)
+  executedBy  User?                  @relation(fields: [executedById], references: [id], onDelete: SetNull)
+  attachments TestResultAttachment[]
 
   @@index([testRunCaseId])
   @@index([executedById])
@@ -958,4 +959,24 @@ model TestResult {
   @@index([executedAt])
   @@index([version])
   @@map("test_results")
+}
+
+/// テスト結果添付ファイル
+model TestResultAttachment {
+  id           BigInt   @id @default(autoincrement())
+  testResultId BigInt   @map("test_result_id")
+  fileName     String   @map("file_name") @db.VarChar(255)
+  fileSize     Int      @map("file_size")
+  mimeType     String   @map("mime_type") @db.VarChar(100)
+  storagePath  String   @map("storage_path") @db.VarChar(500)
+  thumbnailPath String? @map("thumbnail_path") @db.VarChar(500)
+  description  String?  @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  testResult TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+
+  @@index([testResultId])
+  @@index([createdAt])
+  @@map("test_result_attachments")
 }

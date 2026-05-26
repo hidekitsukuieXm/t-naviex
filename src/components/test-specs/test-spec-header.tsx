@@ -1,12 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
-import { buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { TestSpecStatusBadge } from './test-spec-status-badge';
 import { type TestSpec } from '@/types/test-spec';
-import { ArrowLeft, FileText, Calendar, Lock, Pencil } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar, Lock, Pencil, Download, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface TestSpecHeaderProps {
   testSpec: TestSpec;
@@ -15,6 +17,9 @@ interface TestSpecHeaderProps {
 }
 
 export function TestSpecHeader({ testSpec, projectId, backHref }: TestSpecHeaderProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('ja-JP', {
       year: 'numeric',
@@ -23,6 +28,41 @@ export function TestSpecHeader({ testSpec, projectId, backHref }: TestSpecHeader
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleDownloadPDF = async () => {
+    setIsDownloading(true);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/test-specs/${testSpec.id}/pdf`);
+
+      if (!response.ok) {
+        throw new Error('PDF生成に失敗しました');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `test-spec-${testSpec.name}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: 'PDFをダウンロードしました',
+        description: 'テスト仕様書のPDFが正常にダウンロードされました。',
+      });
+    } catch (error) {
+      console.error('PDF download error:', error);
+      toast({
+        title: 'エラー',
+        description: 'PDFのダウンロードに失敗しました。',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -54,6 +94,19 @@ export function TestSpecHeader({ testSpec, projectId, backHref }: TestSpecHeader
             </div>
             <div className="flex items-center gap-2">
               <TestSpecStatusBadge status={testSpec.status} />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <Loader2 className="mr-1 size-3 animate-spin" />
+                ) : (
+                  <Download className="mr-1 size-3" />
+                )}
+                PDF
+              </Button>
               <Link
                 href={`/projects/${projectId}/test-specs/${testSpec.id}/edit`}
                 className={buttonVariants({ variant: 'outline', size: 'sm' })}

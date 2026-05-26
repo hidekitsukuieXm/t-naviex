@@ -21,8 +21,11 @@ import {
   XCircle,
   MinusCircle,
   Play,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface TestRunCardProps {
   projectId: string;
@@ -39,9 +42,48 @@ export function TestRunCard({
   onDelete,
   isDeleting,
 }: TestRunCardProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const { toast } = useToast();
   const progress = getTestRunProgress(testRun);
   const passRate = getTestRunPassRate(testRun);
   const overdue = isTestRunOverdue(testRun);
+
+  const handleDownloadPDF = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDownloading(true);
+    try {
+      const response = await fetch(`/api/projects/${projectId}/test-runs/${testRun.id}/pdf`);
+
+      if (!response.ok) {
+        throw new Error('PDF生成に失敗しました');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `test-result-${testRun.name}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: 'PDFをダウンロードしました',
+        description: 'テスト成績書のPDFが正常にダウンロードされました。',
+      });
+    } catch (error) {
+      console.error('PDF download error:', error);
+      toast({
+        title: 'エラー',
+        description: 'PDFのダウンロードに失敗しました。',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -161,9 +203,21 @@ export function TestRunCard({
             <Play className="mr-1 size-3" />
             実行
           </Link>
-          <Button variant="outline" size="sm" className="flex-1" onClick={() => onEdit(testRun)}>
-            <Pencil className="mr-1 size-3" />
-            編集
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+            title="PDFダウンロード"
+          >
+            {isDownloading ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : (
+              <Download className="size-3" />
+            )}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => onEdit(testRun)}>
+            <Pencil className="size-3" />
           </Button>
           <Button
             variant="outline"
@@ -173,11 +227,10 @@ export function TestRunCard({
             disabled={isDeleting}
           >
             {isDeleting ? (
-              <Loader2 className="mr-1 size-3 animate-spin" />
+              <Loader2 className="size-3 animate-spin" />
             ) : (
-              <Trash2 className="mr-1 size-3" />
+              <Trash2 className="size-3" />
             )}
-            削除
           </Button>
         </div>
       </CardContent>

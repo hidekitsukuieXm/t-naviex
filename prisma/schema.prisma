@@ -44,6 +44,9 @@ model User {
   testResultHistories  TestResultHistory[] @relation("TestResultHistoryEditor")
   assignedBugs         Bug[]               @relation("BugAssignee")
   reportedBugs         Bug[]               @relation("BugReporter")
+  bugComments          BugComment[]        @relation("BugCommentAuthor")
+  bugAttachments       BugAttachment[]     @relation("BugAttachmentUploader")
+  bugHistories         BugHistory[]        @relation("BugHistoryChanger")
 
   @@map("users")
 }
@@ -1149,10 +1152,13 @@ model Bug {
   // Relations
   project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
   parentBug   Bug?        @relation("BugSubtasks", fields: [parentBugId], references: [id], onDelete: SetNull)
-  childBugs   Bug[]       @relation("BugSubtasks")
-  testResult  TestResult? @relation(fields: [testResultId], references: [id], onDelete: SetNull)
-  assignee    User?       @relation("BugAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  reporter    User        @relation("BugReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  childBugs    Bug[]           @relation("BugSubtasks")
+  testResult   TestResult?     @relation(fields: [testResultId], references: [id], onDelete: SetNull)
+  assignee     User?           @relation("BugAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reporter     User            @relation("BugReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  comments     BugComment[]
+  attachments  BugAttachment[]
+  histories    BugHistory[]
 
   @@index([projectId])
   @@index([parentBugId])
@@ -1164,4 +1170,71 @@ model Bug {
   @@index([type])
   @@index([createdAt])
   @@map("bugs")
+}
+
+/// バグコメント
+model BugComment {
+  id          BigInt       @id @default(autoincrement())
+  bugId       BigInt       @map("bug_id")
+  authorId    BigInt       @map("author_id")
+  parentId    BigInt?      @map("parent_id")
+  content     String       @db.Text
+  isInternal  Boolean      @default(false) @map("is_internal")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  bug      Bug          @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  author   User         @relation("BugCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  parent   BugComment?  @relation("BugCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  BugComment[] @relation("BugCommentReplies")
+
+  @@index([bugId])
+  @@index([authorId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("bug_comments")
+}
+
+/// バグ添付ファイル
+model BugAttachment {
+  id            BigInt   @id @default(autoincrement())
+  bugId         BigInt   @map("bug_id")
+  uploadedById  BigInt   @map("uploaded_by_id")
+  fileName      String   @map("file_name") @db.VarChar(255)
+  fileSize      Int      @map("file_size")
+  mimeType      String   @map("mime_type") @db.VarChar(100)
+  storagePath   String   @map("storage_path") @db.VarChar(500)
+  thumbnailPath String?  @map("thumbnail_path") @db.VarChar(500)
+  description   String?  @db.VarChar(500)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  bug        Bug  @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  uploadedBy User @relation("BugAttachmentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([bugId])
+  @@index([uploadedById])
+  @@index([createdAt])
+  @@map("bug_attachments")
+}
+
+/// バグ変更履歴
+model BugHistory {
+  id         BigInt   @id @default(autoincrement())
+  bugId      BigInt   @map("bug_id")
+  changedById BigInt   @map("changed_by_id")
+  fieldName  String   @map("field_name") @db.VarChar(50)
+  oldValue   String?  @map("old_value") @db.Text
+  newValue   String?  @map("new_value") @db.Text
+  changedAt  DateTime @default(now()) @map("changed_at")
+
+  // Relations
+  bug       Bug  @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  changedBy User @relation("BugHistoryChanger", fields: [changedById], references: [id], onDelete: Cascade)
+
+  @@index([bugId])
+  @@index([changedById])
+  @@index([changedAt])
+  @@map("bug_histories")
 }

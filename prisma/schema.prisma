@@ -42,6 +42,8 @@ model User {
   comments             Comment[]
   commentMentions      CommentMention[]
   testResultHistories  TestResultHistory[] @relation("TestResultHistoryEditor")
+  assignedBugs         Bug[]               @relation("BugAssignee")
+  reportedBugs         Bug[]               @relation("BugReporter")
 
   @@map("users")
 }
@@ -187,6 +189,7 @@ model Project {
   configurations       Configuration[]
   tasks                Task[]
   testRuns             TestRun[]
+  bugs                 Bug[]
 
   @@map("projects")
 }
@@ -956,6 +959,7 @@ model TestResult {
   executedBy  User?                  @relation(fields: [executedById], references: [id], onDelete: SetNull)
   attachments TestResultAttachment[]
   histories   TestResultHistory[]
+  bugs        Bug[]
 
   @@index([testRunCaseId])
   @@index([executedById])
@@ -1062,4 +1066,102 @@ model CommentMention {
   @@index([commentId])
   @@index([userId])
   @@map("comment_mentions")
+}
+
+// ============================================
+// バグ・課題管理
+// ============================================
+
+/// バグ種別
+enum BugType {
+  BUG        // 不具合
+  FEATURE    // 機能要望
+  INQUIRY    // 問い合わせ
+  TASK       // タスク
+  IMPROVEMENT // 改善
+
+  @@map("bug_type")
+}
+
+/// バグ優先度
+enum BugPriority {
+  CRITICAL // 緊急
+  HIGH     // 高
+  MEDIUM   // 中
+  LOW      // 低
+
+  @@map("bug_priority")
+}
+
+/// バグ重要度
+enum BugSeverity {
+  BLOCKER  // ブロッカー
+  CRITICAL // 致命的
+  MAJOR    // 重大
+  MINOR    // 軽微
+  TRIVIAL  // 些細
+
+  @@map("bug_severity")
+}
+
+/// バグステータス
+enum BugStatus {
+  NEW        // 新規
+  OPEN       // オープン
+  IN_PROGRESS // 対応中
+  RESOLVED   // 解決済み
+  VERIFIED   // 検証済み
+  CLOSED     // クローズ
+  REJECTED   // 却下
+  DEFERRED   // 保留
+
+  @@map("bug_status")
+}
+
+/// バグ
+model Bug {
+  id              BigInt      @id @default(autoincrement())
+  projectId       BigInt      @map("project_id")
+  parentBugId     BigInt?     @map("parent_bug_id")
+  testResultId    BigInt?     @map("test_result_id")
+  title           String      @db.VarChar(500)
+  description     String?     @db.Text
+  type            BugType     @default(BUG)
+  status          BugStatus   @default(NEW)
+  priority        BugPriority @default(MEDIUM)
+  severity        BugSeverity @default(MAJOR)
+  assigneeId      BigInt?     @map("assignee_id")
+  reporterId      BigInt      @map("reporter_id")
+  stepsToReproduce String?    @map("steps_to_reproduce") @db.Text
+  expectedResult  String?     @map("expected_result") @db.Text
+  actualResult    String?     @map("actual_result") @db.Text
+  environment     String?     @db.VarChar(500)
+  version         String?     @db.VarChar(100)
+  fixedVersion    String?     @map("fixed_version") @db.VarChar(100)
+  dueDate         DateTime?   @map("due_date")
+  resolvedAt      DateTime?   @map("resolved_at")
+  closedAt        DateTime?   @map("closed_at")
+  externalId      String?     @map("external_id") @db.VarChar(100)
+  externalUrl     String?     @map("external_url") @db.VarChar(500)
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentBug   Bug?        @relation("BugSubtasks", fields: [parentBugId], references: [id], onDelete: SetNull)
+  childBugs   Bug[]       @relation("BugSubtasks")
+  testResult  TestResult? @relation(fields: [testResultId], references: [id], onDelete: SetNull)
+  assignee    User?       @relation("BugAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reporter    User        @relation("BugReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([parentBugId])
+  @@index([testResultId])
+  @@index([assigneeId])
+  @@index([reporterId])
+  @@index([status])
+  @@index([priority])
+  @@index([type])
+  @@index([createdAt])
+  @@map("bugs")
 }

@@ -17,6 +17,7 @@ export const WidgetTypes = {
   BURNDOWN_CHART: 'BURNDOWN_CHART',
   RELIABILITY_CHART: 'RELIABILITY_CHART',
   ENVIRONMENT_STATS: 'ENVIRONMENT_STATS',
+  BUG_ANALYSIS: 'BUG_ANALYSIS',
   CUSTOM: 'CUSTOM',
 } as const;
 
@@ -33,6 +34,7 @@ export const WidgetTypeLabels: Record<WidgetType, string> = {
   BURNDOWN_CHART: 'バーンダウン',
   RELIABILITY_CHART: '信頼度成長曲線',
   ENVIRONMENT_STATS: '環境別集計',
+  BUG_ANALYSIS: '不具合分析',
   CUSTOM: 'カスタム',
 };
 
@@ -123,6 +125,10 @@ export interface EnvironmentStatsConfig {
   viewMode?: 'chart' | 'table';
 }
 
+export interface BugAnalysisConfig {
+  viewMode?: 'assignee' | 'reporter' | 'type';
+}
+
 export type WidgetConfig =
   | ProgressSummaryConfig
   | ProgressChartConfig
@@ -133,6 +139,7 @@ export type WidgetConfig =
   | BurndownConfig
   | ReliabilityChartConfig
   | EnvironmentStatsConfig
+  | BugAnalysisConfig
   | Record<string, unknown>;
 
 // 変換ユーティリティ

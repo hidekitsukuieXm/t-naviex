@@ -244,6 +244,35 @@ export default function DashboardPage({ params }: DashboardPageProps) {
     });
   };
 
+  // レイアウト変更
+  const handleLayoutChange = async (
+    widgets: Array<{ id: string; x: number; y: number; width: number; height: number }>
+  ) => {
+    if (!selectedDashboard) return;
+
+    try {
+      const response = await fetch(`/api/dashboards/${selectedDashboard.id}/widgets`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ widgets }),
+      });
+
+      if (!response.ok) {
+        throw new Error('レイアウトの保存に失敗しました');
+      }
+
+      const data = await response.json();
+      setSelectedDashboard(data.dashboard);
+      setDashboards((prev) => prev.map((d) => (d.id === data.dashboard.id ? data.dashboard : d)));
+    } catch (error) {
+      toast({
+        title: 'エラー',
+        description: error instanceof Error ? error.message : 'レイアウトの保存に失敗しました',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // ウィジェットレンダラー
   const renderWidget = (widget: DashboardWidgetSafe) => {
     switch (widget.widgetType) {
@@ -351,6 +380,7 @@ export default function DashboardPage({ params }: DashboardPageProps) {
               isEditing={isEditing}
               onRemoveWidget={handleRemoveWidget}
               onWidgetSettings={handleWidgetSettings}
+              onLayoutChange={handleLayoutChange}
               renderWidget={renderWidget}
             />
           ) : (

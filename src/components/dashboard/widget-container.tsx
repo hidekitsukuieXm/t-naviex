@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, X, Settings } from 'lucide-react';
+import { Loader2, X, Settings, GripVertical } from 'lucide-react';
 import type { DashboardWidgetSafe } from '@/types/dashboard';
 import { WidgetTypeLabels } from '@/types/dashboard';
 import { cn } from '@/lib/utils';
@@ -33,9 +33,16 @@ export function WidgetContainer({
   return (
     <Card className={cn('h-full overflow-hidden', className)}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium truncate">{title}</CardTitle>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {isEditing && (
+            <div className="widget-drag-handle cursor-move text-muted-foreground hover:text-foreground">
+              <GripVertical className="h-4 w-4" />
+            </div>
+          )}
+          <CardTitle className="text-sm font-medium truncate">{title}</CardTitle>
+        </div>
         {isEditing && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {onSettings && (
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onSettings}>
                 <Settings className="h-3 w-3" />

@@ -48,7 +48,7 @@ import {
   User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 type SortField =
   | 'title'
@@ -89,7 +89,7 @@ export default function BugsPage({ params }: BugsPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
-  const { toast } = useToast();
+  const router = useRouter();
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -538,12 +538,7 @@ export default function BugsPage({ params }: BugsPageProps) {
                     <TableRow
                       key={bug.id.toString()}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() =>
-                        toast({
-                          title: 'バグ詳細画面は別Issueで実装予定です',
-                          description: `Bug ID: ${bug.id}`,
-                        })
-                      }
+                      onClick={() => router.push(`/projects/${projectId}/bugs/${bug.id}`)}
                     >
                       <TableCell className="font-mono text-sm text-muted-foreground">
                         #{bug.id.toString()}

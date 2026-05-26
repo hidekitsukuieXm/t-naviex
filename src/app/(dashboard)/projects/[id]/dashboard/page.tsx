@@ -14,6 +14,7 @@ import {
 import {
   ProgressSummaryWidget,
   ProgressChartWidget,
+  SummaryPieChartWidget,
   BugSummaryWidget,
   TeamInfoWidget,
   MilestoneWidget,
@@ -321,6 +322,8 @@ export default function DashboardPage({ params }: DashboardPageProps) {
         return <TeamInfoWidget widget={widget} projectId={projectId} />;
       case 'MILESTONE':
         return <MilestoneWidget widget={widget} projectId={projectId} />;
+      case 'COVERAGE_STATS':
+        return <SummaryPieChartWidget widget={widget} projectId={projectId} />;
       default:
         return null; // デフォルトのプレースホルダーを使用
     }

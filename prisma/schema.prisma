@@ -39,6 +39,8 @@ model User {
   assignedTasks        Task[]
   assignedTestRunCases TestRunCase[]
   executedTestResults  TestResult[]
+  comments             Comment[]
+  commentMentions      CommentMention[]
 
   @@map("users")
 }
@@ -979,4 +981,63 @@ model TestResultAttachment {
   @@index([testResultId])
   @@index([createdAt])
   @@map("test_result_attachments")
+}
+
+// ============================================
+// コメント・Q&A機能
+// ============================================
+
+/// コメント対象エンティティタイプ
+enum CommentTargetType {
+  TEST_RUN_CASE
+  TEST_RESULT
+  TEST_CASE
+  TEST_SPEC
+
+  @@map("comment_target_type")
+}
+
+/// コメント
+model Comment {
+  id            BigInt            @id @default(autoincrement())
+  targetType    CommentTargetType @map("target_type")
+  targetId      BigInt            @map("target_id")
+  parentId      BigInt?           @map("parent_id")
+  authorId      BigInt            @map("author_id")
+  content       String            @db.Text
+  isEdited      Boolean           @default(false) @map("is_edited")
+  isResolved    Boolean           @default(false) @map("is_resolved")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  deletedAt     DateTime?         @map("deleted_at")
+
+  // Relations
+  author   User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent   Comment?   @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[]  @relation("CommentThread")
+  mentions CommentMention[]
+
+  @@index([targetType, targetId])
+  @@index([parentId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("comments")
+}
+
+/// コメントメンション
+model CommentMention {
+  id          BigInt   @id @default(autoincrement())
+  commentId   BigInt   @map("comment_id")
+  userId      BigInt   @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+  @@index([userId])
+  @@map("comment_mentions")
 }

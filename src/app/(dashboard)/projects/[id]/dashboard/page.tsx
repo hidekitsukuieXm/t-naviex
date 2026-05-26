@@ -22,6 +22,7 @@ import {
   MilestoneWidget,
   EnvironmentStatsWidget,
   BugAnalysisWidget,
+  ReliabilityChartWidget,
 } from '@/components/dashboard/widgets';
 import type { DashboardSafe, DashboardWidgetSafe } from '@/types/dashboard';
 import type { WidgetType } from '@/generated/prisma';
@@ -336,6 +337,8 @@ export default function DashboardPage({ params }: DashboardPageProps) {
         return <EnvironmentStatsWidget widget={widget} projectId={projectId} />;
       case 'BUG_ANALYSIS':
         return <BugAnalysisWidget widget={widget} projectId={projectId} />;
+      case 'RELIABILITY_CHART':
+        return <ReliabilityChartWidget widget={widget} projectId={projectId} />;
       default:
         return null; // デフォルトのプレースホルダーを使用
     }

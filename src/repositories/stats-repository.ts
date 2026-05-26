@@ -1351,3 +1351,242 @@ export async function getProjectBugAnalysis(projectId: bigint): Promise<BugAnaly
     unassignedBugs,
   };
 }
+
+// 信頼度成長曲線データポイント
+export interface ReliabilityDataPoint {
+  date: string;
+  day: number;
+  actual: number; // 実際の累積欠陥数
+  gompertz: number | null; // ゴンペルツモデルによる予測
+  logistic: number | null; // ロジスティックモデルによる予測
+}
+
+// 信頼度成長曲線パラメータ
+export interface ReliabilityCurveParams {
+  a: number; // 予測総欠陥数
+  b: number; // パラメータ
+  c: number; // パラメータ（成長率）
+  r2: number; // 決定係数
+}
+
+export interface ReliabilityGrowthResult {
+  data: ReliabilityDataPoint[];
+  totalDefects: number;
+  gompertzParams: ReliabilityCurveParams | null;
+  logisticParams: ReliabilityCurveParams | null;
+  predictedTotalGompertz: number | null;
+  predictedTotalLogistic: number | null;
+  startDate: string;
+  endDate: string;
+}
+
+// ゴンペルツ曲線: N(t) = a * exp(-b * exp(-c*t))
+function gompertzModel(t: number, a: number, b: number, c: number): number {
+  return a * Math.exp(-b * Math.exp(-c * t));
+}
+
+// ロジスティック曲線: N(t) = a / (1 + b * exp(-c*t))
+function logisticModel(t: number, a: number, b: number, c: number): number {
+  return a / (1 + b * Math.exp(-c * t));
+}
+
+// 最小二乗法によるパラメータ推定（グリッドサーチ + 局所探索）
+function fitCurve(
+  data: Array<{ t: number; y: number }>,
+  modelFn: (t: number, a: number, b: number, c: number) => number
+): ReliabilityCurveParams | null {
+  if (data.length < 3) return null;
+
+  const maxY = Math.max(...data.map((d) => d.y));
+  if (maxY === 0) return null;
+
+  let bestParams = { a: maxY * 1.5, b: 10, c: 0.1 };
+  let bestSSE = Infinity;
+
+  // グリッドサーチ
+  const aRange = [maxY, maxY * 1.2, maxY * 1.5, maxY * 2, maxY * 3];
+  const bRange = [1, 5, 10, 20, 50];
+  const cRange = [0.01, 0.05, 0.1, 0.2, 0.5];
+
+  for (const a of aRange) {
+    for (const b of bRange) {
+      for (const c of cRange) {
+        const sse = data.reduce((sum, d) => {
+          const predicted = modelFn(d.t, a, b, c);
+          return sum + Math.pow(d.y - predicted, 2);
+        }, 0);
+
+        if (sse < bestSSE) {
+          bestSSE = sse;
+          bestParams = { a, b, c };
+        }
+      }
+    }
+  }
+
+  // 局所探索による改善
+  const step = 0.1;
+  for (let iter = 0; iter < 100; iter++) {
+    let improved = false;
+    for (const delta of [-step, step]) {
+      // aの調整
+      const newA = bestParams.a * (1 + delta);
+      if (newA > 0) {
+        const sse = data.reduce((sum, d) => {
+          const predicted = modelFn(d.t, newA, bestParams.b, bestParams.c);
+          return sum + Math.pow(d.y - predicted, 2);
+        }, 0);
+        if (sse < bestSSE) {
+          bestSSE = sse;
+          bestParams.a = newA;
+          improved = true;
+        }
+      }
+
+      // bの調整
+      const newB = bestParams.b * (1 + delta);
+      if (newB > 0) {
+        const sse = data.reduce((sum, d) => {
+          const predicted = modelFn(d.t, bestParams.a, newB, bestParams.c);
+          return sum + Math.pow(d.y - predicted, 2);
+        }, 0);
+        if (sse < bestSSE) {
+          bestSSE = sse;
+          bestParams.b = newB;
+          improved = true;
+        }
+      }
+
+      // cの調整
+      const newC = bestParams.c * (1 + delta);
+      if (newC > 0) {
+        const sse = data.reduce((sum, d) => {
+          const predicted = modelFn(d.t, bestParams.a, bestParams.b, newC);
+          return sum + Math.pow(d.y - predicted, 2);
+        }, 0);
+        if (sse < bestSSE) {
+          bestSSE = sse;
+          bestParams.c = newC;
+          improved = true;
+        }
+      }
+    }
+    if (!improved) break;
+  }
+
+  // R²（決定係数）を計算
+  const meanY = data.reduce((sum, d) => sum + d.y, 0) / data.length;
+  const ssTot = data.reduce((sum, d) => sum + Math.pow(d.y - meanY, 2), 0);
+  const r2 = ssTot > 0 ? 1 - bestSSE / ssTot : 0;
+
+  return {
+    a: Math.round(bestParams.a * 10) / 10,
+    b: Math.round(bestParams.b * 100) / 100,
+    c: Math.round(bestParams.c * 1000) / 1000,
+    r2: Math.round(r2 * 1000) / 1000,
+  };
+}
+
+// プロジェクトの信頼度成長曲線データ取得
+export async function getProjectReliabilityGrowth(
+  projectId: bigint,
+  days: number = 60
+): Promise<ReliabilityGrowthResult> {
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // 期間内のバグを取得
+  const bugs = await prisma.bug.findMany({
+    where: {
+      projectId,
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      createdAt: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (bugs.length === 0) {
+    return {
+      data: [],
+      totalDefects: 0,
+      gompertzParams: null,
+      logisticParams: null,
+      predictedTotalGompertz: null,
+      predictedTotalLogistic: null,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+    };
+  }
+
+  // 日別の累積欠陥数を計算
+  const dailyData: Record<string, number> = {};
+  const bugCountByDate: Record<string, number> = {};
+
+  // 日付範囲を初期化
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dailyData[dateStr] = 0;
+    bugCountByDate[dateStr] = 0;
+  }
+
+  // バグを日別にカウント
+  for (const bug of bugs) {
+    const dateStr = bug.createdAt.toISOString().split('T')[0];
+    if (bugCountByDate[dateStr] !== undefined) {
+      bugCountByDate[dateStr]++;
+    }
+  }
+
+  // 累積値を計算
+  let cumulative = 0;
+  const sortedDates = Object.keys(dailyData).sort();
+  for (const dateStr of sortedDates) {
+    cumulative += bugCountByDate[dateStr];
+    dailyData[dateStr] = cumulative;
+  }
+
+  // フィッティング用データを準備
+  const fittingData = sortedDates.map((dateStr, index) => ({
+    t: index + 1,
+    y: dailyData[dateStr],
+  }));
+
+  // カーブフィッティング
+  const gompertzParams = fitCurve(fittingData, gompertzModel);
+  const logisticParams = fitCurve(fittingData, logisticModel);
+
+  // 予測値を含むデータを作成
+  const data: ReliabilityDataPoint[] = sortedDates.map((dateStr, index) => ({
+    date: dateStr,
+    day: index + 1,
+    actual: dailyData[dateStr],
+    gompertz: gompertzParams
+      ? Math.round(gompertzModel(index + 1, gompertzParams.a, gompertzParams.b, gompertzParams.c))
+      : null,
+    logistic: logisticParams
+      ? Math.round(logisticModel(index + 1, logisticParams.a, logisticParams.b, logisticParams.c))
+      : null,
+  }));
+
+  return {
+    data,
+    totalDefects: cumulative,
+    gompertzParams,
+    logisticParams,
+    predictedTotalGompertz: gompertzParams ? Math.round(gompertzParams.a) : null,
+    predictedTotalLogistic: logisticParams ? Math.round(logisticParams.a) : null,
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+  };
+}

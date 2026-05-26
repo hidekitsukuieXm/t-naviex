@@ -9,7 +9,11 @@ import type {
   TestResultWithRelations,
   TestResultDetail,
   CreateTestResultInput,
+  UpdateTestResultInput,
   TestResultSearchParams,
+  TestResultHistory,
+  TestResultHistoryWithEditor,
+  CreateTestResultHistoryInput,
 } from '@/types/test-result';
 
 // ============================================
@@ -396,4 +400,230 @@ export async function testRunCaseExists(id: bigint): Promise<boolean> {
     where: { id },
   });
   return count > 0;
+}
+
+// ============================================
+// 更新操作
+// ============================================
+
+/**
+ * テスト結果を更新（履歴記録付き）
+ */
+export async function updateTestResult(
+  id: bigint,
+  input: UpdateTestResultInput,
+  editedById: bigint
+): Promise<TestResultWithRelations | null> {
+  // 現在のテスト結果を取得
+  const current = await prisma.testResult.findUnique({
+    where: { id },
+  });
+
+  if (!current) {
+    return null;
+  }
+
+  // 変更履歴を記録するためのデータを準備
+  const historyEntries: { fieldName: string; oldValue: string | null; newValue: string | null }[] =
+    [];
+
+  // 各フィールドの変更をチェック
+  if (input.status !== undefined && input.status !== current.status) {
+    historyEntries.push({
+      fieldName: 'status',
+      oldValue: current.status,
+      newValue: input.status,
+    });
+  }
+  if (input.executionTime !== undefined && input.executionTime !== current.executionTime) {
+    historyEntries.push({
+      fieldName: 'executionTime',
+      oldValue: current.executionTime?.toString() ?? null,
+      newValue: input.executionTime?.toString() ?? null,
+    });
+  }
+  if (input.actualResult !== undefined && input.actualResult !== current.actualResult) {
+    historyEntries.push({
+      fieldName: 'actualResult',
+      oldValue: current.actualResult,
+      newValue: input.actualResult,
+    });
+  }
+  if (input.defects !== undefined && input.defects !== current.defects) {
+    historyEntries.push({
+      fieldName: 'defects',
+      oldValue: current.defects,
+      newValue: input.defects,
+    });
+  }
+  if (input.comment !== undefined && input.comment !== current.comment) {
+    historyEntries.push({
+      fieldName: 'comment',
+      oldValue: current.comment,
+      newValue: input.comment,
+    });
+  }
+  if (input.environment !== undefined && input.environment !== current.environment) {
+    historyEntries.push({
+      fieldName: 'environment',
+      oldValue: current.environment,
+      newValue: input.environment,
+    });
+  }
+  if (input.browserInfo !== undefined && input.browserInfo !== current.browserInfo) {
+    historyEntries.push({
+      fieldName: 'browserInfo',
+      oldValue: current.browserInfo,
+      newValue: input.browserInfo,
+    });
+  }
+
+  // トランザクションで更新と履歴記録を実行
+  const result = await prisma.$transaction(async (tx) => {
+    // テスト結果を更新
+    const updated = await tx.testResult.update({
+      where: { id },
+      data: {
+        status: input.status,
+        executionTime: input.executionTime,
+        actualResult: input.actualResult,
+        defects: input.defects,
+        comment: input.comment,
+        environment: input.environment,
+        browserInfo: input.browserInfo,
+      },
+      select: testResultWithRelationsSelect,
+    });
+
+    // 変更履歴を記録
+    if (historyEntries.length > 0) {
+      await tx.testResultHistory.createMany({
+        data: historyEntries.map((entry) => ({
+          testResultId: id,
+          editedById,
+          fieldName: entry.fieldName,
+          oldValue: entry.oldValue,
+          newValue: entry.newValue,
+        })),
+      });
+    }
+
+    return updated;
+  });
+
+  return toTestResultWithRelations(result);
+}
+
+// ============================================
+// 履歴操作
+// ============================================
+
+/**
+ * 履歴データを変換
+ */
+function toTestResultHistory(data: {
+  id: bigint;
+  testResultId: bigint;
+  editedById: bigint;
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+  editedAt: Date;
+}): TestResultHistory {
+  return {
+    id: data.id.toString(),
+    testResultId: data.testResultId.toString(),
+    editedById: data.editedById.toString(),
+    fieldName: data.fieldName,
+    oldValue: data.oldValue,
+    newValue: data.newValue,
+    editedAt: data.editedAt.toISOString(),
+  };
+}
+
+/**
+ * 履歴データを編集者情報付きで変換
+ */
+function toTestResultHistoryWithEditor(data: {
+  id: bigint;
+  testResultId: bigint;
+  editedById: bigint;
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+  editedAt: Date;
+  editedBy: {
+    id: bigint;
+    name: string;
+    email: string;
+  };
+}): TestResultHistoryWithEditor {
+  return {
+    ...toTestResultHistory(data),
+    editedBy: {
+      id: data.editedBy.id.toString(),
+      name: data.editedBy.name,
+      email: data.editedBy.email,
+    },
+  };
+}
+
+/**
+ * テスト結果の編集履歴を取得
+ */
+export async function getTestResultHistories(
+  testResultId: bigint,
+  params: { limit?: number; offset?: number } = {}
+): Promise<{ data: TestResultHistoryWithEditor[]; total: number }> {
+  const { limit = 50, offset = 0 } = params;
+
+  const [histories, total] = await Promise.all([
+    prisma.testResultHistory.findMany({
+      where: { testResultId },
+      select: {
+        id: true,
+        testResultId: true,
+        editedById: true,
+        fieldName: true,
+        oldValue: true,
+        newValue: true,
+        editedAt: true,
+        editedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { editedAt: 'desc' },
+      take: limit,
+      skip: offset,
+    }),
+    prisma.testResultHistory.count({ where: { testResultId } }),
+  ]);
+
+  return {
+    data: histories.map(toTestResultHistoryWithEditor),
+    total,
+  };
+}
+
+/**
+ * テスト結果の編集履歴を作成
+ */
+export async function createTestResultHistory(
+  input: CreateTestResultHistoryInput
+): Promise<TestResultHistory> {
+  const history = await prisma.testResultHistory.create({
+    data: {
+      testResultId: BigInt(input.testResultId),
+      editedById: BigInt(input.editedById),
+      fieldName: input.fieldName,
+      oldValue: input.oldValue,
+      newValue: input.newValue,
+    },
+  });
+
+  return toTestResultHistory(history);
 }

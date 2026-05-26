@@ -41,6 +41,7 @@ model User {
   executedTestResults  TestResult[]
   comments             Comment[]
   commentMentions      CommentMention[]
+  testResultHistories  TestResultHistory[] @relation("TestResultHistoryEditor")
 
   @@map("users")
 }
@@ -954,6 +955,7 @@ model TestResult {
   testRunCase TestRunCase            @relation(fields: [testRunCaseId], references: [id], onDelete: Cascade)
   executedBy  User?                  @relation(fields: [executedById], references: [id], onDelete: SetNull)
   attachments TestResultAttachment[]
+  histories   TestResultHistory[]
 
   @@index([testRunCaseId])
   @@index([executedById])
@@ -981,6 +983,26 @@ model TestResultAttachment {
   @@index([testResultId])
   @@index([createdAt])
   @@map("test_result_attachments")
+}
+
+/// テスト結果編集履歴
+model TestResultHistory {
+  id             BigInt   @id @default(autoincrement())
+  testResultId   BigInt   @map("test_result_id")
+  editedById     BigInt   @map("edited_by_id")
+  fieldName      String   @map("field_name") @db.VarChar(50)
+  oldValue       String?  @map("old_value") @db.Text
+  newValue       String?  @map("new_value") @db.Text
+  editedAt       DateTime @default(now()) @map("edited_at")
+
+  // Relations
+  testResult TestResult @relation(fields: [testResultId], references: [id], onDelete: Cascade)
+  editedBy   User       @relation("TestResultHistoryEditor", fields: [editedById], references: [id], onDelete: Cascade)
+
+  @@index([testResultId])
+  @@index([editedById])
+  @@index([editedAt])
+  @@map("test_result_histories")
 }
 
 // ============================================

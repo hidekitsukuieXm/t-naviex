@@ -87,3 +87,55 @@ export interface TestResultSearchParams {
   limit?: number;
   offset?: number;
 }
+
+/**
+ * テスト結果更新入力
+ */
+export interface UpdateTestResultInput {
+  status?: TestRunCaseStatus;
+  executionTime?: number | null;
+  actualResult?: string | null;
+  defects?: string | null;
+  comment?: string | null;
+  environment?: string | null;
+  browserInfo?: string | null;
+}
+
+// ============================================
+// 編集履歴型定義
+// ============================================
+
+/**
+ * テスト結果編集履歴
+ */
+export interface TestResultHistory {
+  id: string;
+  testResultId: string;
+  editedById: string;
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+  editedAt: string;
+}
+
+/**
+ * テスト結果編集履歴（編集者情報付き）
+ */
+export interface TestResultHistoryWithEditor extends TestResultHistory {
+  editedBy: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+/**
+ * テスト結果編集履歴作成入力
+ */
+export interface CreateTestResultHistoryInput {
+  testResultId: string;
+  editedById: string;
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+}

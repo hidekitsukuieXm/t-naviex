@@ -4,3 +4,4 @@ export { TestRunEditDialog } from './test-run-edit-dialog';
 export { TestRunCard } from './test-run-card';
 export { TestResultHistoryDialog } from './test-result-history-dialog';
 export { TestRunReRunDialog } from './test-run-rerun-dialog';
+export { TestRunCloseDialog } from './test-run-close-dialog';

@@ -601,3 +601,103 @@ export async function getTestRunCaseStatusCounts(
 
   return result;
 }
+
+// ============================================
+// クローズ機能
+// ============================================
+
+/**
+ * テストランクローズ入力型
+ */
+export interface CloseTestRunInput {
+  notes?: string;
+}
+
+/**
+ * テストランをクローズ
+ */
+export async function closeTestRun(
+  projectId: bigint,
+  testRunId: bigint,
+  input?: CloseTestRunInput
+): Promise<TestRunWithRelations> {
+  // テストランを取得
+  const testRun = await prisma.testRun.findUnique({
+    where: { id: testRunId },
+  });
+
+  if (!testRun || testRun.projectId !== projectId) {
+    throw new Error('テストランが見つかりません');
+  }
+
+  if (testRun.status === TEST_RUN_STATUS.COMPLETED) {
+    throw new Error('テストランは既にクローズされています');
+  }
+
+  // ステータス別カウントを取得
+  const statusCounts = await getTestRunCaseStatusCounts(testRunId);
+
+  // テストランを更新
+  const updatedTestRun = await prisma.testRun.update({
+    where: { id: testRunId },
+    data: {
+      status: TEST_RUN_STATUS.COMPLETED,
+      actualEndDate: new Date(),
+      passedCases: statusCounts.PASSED,
+      failedCases: statusCounts.FAILED,
+      blockedCases: statusCounts.BLOCKED,
+      skippedCases: statusCounts.SKIPPED,
+      notes: input?.notes
+        ? `${testRun.notes || ''}\n\n[クローズ時メモ]\n${input.notes}`
+        : testRun.notes,
+    },
+    select: testRunWithRelationsSelect,
+  });
+
+  return serializeTestRunWithRelations(updatedTestRun as DbTestRunWithRelations);
+}
+
+/**
+ * テストランがクローズされているかチェック
+ */
+export async function isTestRunClosed(testRunId: bigint): Promise<boolean> {
+  const testRun = await prisma.testRun.findUnique({
+    where: { id: testRunId },
+    select: { status: true },
+  });
+
+  return testRun?.status === TEST_RUN_STATUS.COMPLETED;
+}
+
+/**
+ * テストランを再オープン
+ */
+export async function reopenTestRun(
+  projectId: bigint,
+  testRunId: bigint
+): Promise<TestRunWithRelations> {
+  // テストランを取得
+  const testRun = await prisma.testRun.findUnique({
+    where: { id: testRunId },
+  });
+
+  if (!testRun || testRun.projectId !== projectId) {
+    throw new Error('テストランが見つかりません');
+  }
+
+  if (testRun.status !== TEST_RUN_STATUS.COMPLETED) {
+    throw new Error('テストランはクローズされていません');
+  }
+
+  // テストランを更新
+  const updatedTestRun = await prisma.testRun.update({
+    where: { id: testRunId },
+    data: {
+      status: TEST_RUN_STATUS.IN_PROGRESS,
+      actualEndDate: null,
+    },
+    select: testRunWithRelationsSelect,
+  });
+
+  return serializeTestRunWithRelations(updatedTestRun as DbTestRunWithRelations);
+}

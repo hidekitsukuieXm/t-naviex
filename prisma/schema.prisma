@@ -197,6 +197,7 @@ model Project {
   bugStatusMasters     BugStatusMaster[]     @relation("ProjectBugStatuses")
   bugPriorityMasters   BugPriorityMaster[]   @relation("ProjectBugPriorities")
   bugSeverityMasters   BugSeverityMaster[]   @relation("ProjectBugSeverities")
+  bugWorkflows         BugWorkflow[]         @relation("ProjectWorkflows")
 
   @@map("projects")
 }
@@ -1346,4 +1347,50 @@ model BugSeverityMaster {
   @@index([isEnabled])
   @@index([sortOrder])
   @@map("bug_severity_masters")
+}
+
+/// バグワークフロー
+model BugWorkflow {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt?  @map("project_id")
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  isDefault   Boolean  @default(false) @map("is_default")
+  isEnabled   Boolean  @default(true) @map("is_enabled")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project     Project?              @relation("ProjectWorkflows", fields: [projectId], references: [id], onDelete: Cascade)
+  transitions BugWorkflowTransition[]
+
+  @@index([projectId])
+  @@index([isEnabled])
+  @@map("bug_workflows")
+}
+
+/// バグワークフロー遷移
+model BugWorkflowTransition {
+  id           BigInt   @id @default(autoincrement())
+  workflowId   BigInt   @map("workflow_id")
+  fromStatus   String   @map("from_status") @db.VarChar(50)
+  toStatus     String   @map("to_status") @db.VarChar(50)
+  name         String?  @db.VarChar(100)
+  description  String?  @db.VarChar(500)
+  buttonLabel  String?  @map("button_label") @db.VarChar(50)
+  buttonColor  String?  @map("button_color") @db.VarChar(50)
+  sortOrder    Int      @default(0) @map("sort_order")
+  isEnabled    Boolean  @default(true) @map("is_enabled")
+  requiredRole String?  @map("required_role") @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  workflow BugWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, fromStatus, toStatus])
+  @@index([workflowId])
+  @@index([fromStatus])
+  @@index([toStatus])
+  @@map("bug_workflow_transitions")
 }

@@ -27,6 +27,7 @@ import {
   LineChart,
   Settings,
   Monitor,
+  UserCheck,
 } from 'lucide-react';
 import type { WidgetType } from '@/generated/prisma';
 import { WidgetTypeLabels } from '@/types/dashboard';
@@ -107,6 +108,12 @@ const widgetOptions: {
     label: WidgetTypeLabels.ENVIRONMENT_STATS,
     description: '環境別のテスト実行状況を表示',
     icon: Monitor,
+  },
+  {
+    type: 'BUG_ANALYSIS',
+    label: WidgetTypeLabels.BUG_ANALYSIS,
+    description: '担当者・報告者・タイプ別の不具合分析',
+    icon: UserCheck,
   },
   {
     type: 'CUSTOM',

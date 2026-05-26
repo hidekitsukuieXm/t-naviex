@@ -1171,3 +1171,183 @@ export async function getProjectBurndownData(projectId: bigint): Promise<Burndow
   const testRun = testRuns[0];
   return getTestRunBurndownData(testRun.id);
 }
+
+// 担当者別不具合統計
+export interface AssigneeBugStats {
+  assigneeId: string | null;
+  assigneeName: string | null;
+  assigneeEmail: string | null;
+  totalBugs: number;
+  openBugs: number;
+  resolvedBugs: number;
+  closedBugs: number;
+  resolveRate: number;
+  avgResolutionDays: number | null;
+}
+
+// 報告者別不具合統計
+export interface ReporterBugStats {
+  reporterId: string;
+  reporterName: string | null;
+  reporterEmail: string | null;
+  totalBugs: number;
+  byPriority: Record<string, number>;
+  bySeverity: Record<string, number>;
+}
+
+// タイプ別不具合統計
+export interface TypeBugStats {
+  type: string;
+  totalBugs: number;
+  openBugs: number;
+  resolvedBugs: number;
+  closedBugs: number;
+}
+
+export interface BugAnalysisResult {
+  byAssignee: AssigneeBugStats[];
+  byReporter: ReporterBugStats[];
+  byType: TypeBugStats[];
+  totalBugs: number;
+  unassignedBugs: number;
+}
+
+// プロジェクトの不具合分析データ取得
+export async function getProjectBugAnalysis(projectId: bigint): Promise<BugAnalysisResult> {
+  const bugs = await prisma.bug.findMany({
+    where: { projectId },
+    select: {
+      id: true,
+      status: true,
+      type: true,
+      priority: true,
+      severity: true,
+      assigneeId: true,
+      reporterId: true,
+      createdAt: true,
+      resolvedAt: true,
+      assignee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      reporter: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  // 担当者別集計
+  const assigneeStats: Record<string, AssigneeBugStats> = {};
+  const reporterStats: Record<string, ReporterBugStats> = {};
+  const typeStats: Record<string, TypeBugStats> = {};
+
+  const openStatuses = ['NEW', 'OPEN', 'IN_PROGRESS'];
+  const resolvedStatuses = ['RESOLVED', 'VERIFIED'];
+  const closedStatuses = ['CLOSED', 'REJECTED', 'DEFERRED'];
+
+  for (const bug of bugs) {
+    // 担当者別
+    const assigneeKey = bug.assigneeId?.toString() || 'unassigned';
+    if (!assigneeStats[assigneeKey]) {
+      assigneeStats[assigneeKey] = {
+        assigneeId: bug.assigneeId?.toString() || null,
+        assigneeName: bug.assignee?.name || null,
+        assigneeEmail: bug.assignee?.email || null,
+        totalBugs: 0,
+        openBugs: 0,
+        resolvedBugs: 0,
+        closedBugs: 0,
+        resolveRate: 0,
+        avgResolutionDays: null,
+      };
+    }
+    assigneeStats[assigneeKey].totalBugs++;
+    if (openStatuses.includes(bug.status)) {
+      assigneeStats[assigneeKey].openBugs++;
+    } else if (resolvedStatuses.includes(bug.status)) {
+      assigneeStats[assigneeKey].resolvedBugs++;
+    } else if (closedStatuses.includes(bug.status)) {
+      assigneeStats[assigneeKey].closedBugs++;
+    }
+
+    // 報告者別
+    const reporterKey = bug.reporterId.toString();
+    if (!reporterStats[reporterKey]) {
+      reporterStats[reporterKey] = {
+        reporterId: reporterKey,
+        reporterName: bug.reporter.name,
+        reporterEmail: bug.reporter.email,
+        totalBugs: 0,
+        byPriority: {},
+        bySeverity: {},
+      };
+    }
+    reporterStats[reporterKey].totalBugs++;
+    reporterStats[reporterKey].byPriority[bug.priority] =
+      (reporterStats[reporterKey].byPriority[bug.priority] || 0) + 1;
+    reporterStats[reporterKey].bySeverity[bug.severity] =
+      (reporterStats[reporterKey].bySeverity[bug.severity] || 0) + 1;
+
+    // タイプ別
+    if (!typeStats[bug.type]) {
+      typeStats[bug.type] = {
+        type: bug.type,
+        totalBugs: 0,
+        openBugs: 0,
+        resolvedBugs: 0,
+        closedBugs: 0,
+      };
+    }
+    typeStats[bug.type].totalBugs++;
+    if (openStatuses.includes(bug.status)) {
+      typeStats[bug.type].openBugs++;
+    } else if (resolvedStatuses.includes(bug.status)) {
+      typeStats[bug.type].resolvedBugs++;
+    } else if (closedStatuses.includes(bug.status)) {
+      typeStats[bug.type].closedBugs++;
+    }
+  }
+
+  // 解決率と平均解決日数を計算
+  for (const key of Object.keys(assigneeStats)) {
+    const stats = assigneeStats[key];
+    const total = stats.resolvedBugs + stats.closedBugs;
+    stats.resolveRate = stats.totalBugs > 0 ? Math.round((total / stats.totalBugs) * 100) : 0;
+
+    // 平均解決日数を計算
+    const resolvedBugs = bugs.filter(
+      (b) =>
+        (b.assigneeId?.toString() || 'unassigned') === key &&
+        b.resolvedAt &&
+        [...resolvedStatuses, ...closedStatuses].includes(b.status)
+    );
+    if (resolvedBugs.length > 0) {
+      const totalDays = resolvedBugs.reduce((sum, b) => {
+        const days = Math.ceil(
+          (b.resolvedAt!.getTime() - b.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return sum + days;
+      }, 0);
+      stats.avgResolutionDays = Math.round(totalDays / resolvedBugs.length);
+    }
+  }
+
+  const unassignedBugs = assigneeStats['unassigned']?.totalBugs || 0;
+
+  return {
+    byAssignee: Object.values(assigneeStats)
+      .filter((s) => s.assigneeId !== null)
+      .sort((a, b) => b.totalBugs - a.totalBugs),
+    byReporter: Object.values(reporterStats).sort((a, b) => b.totalBugs - a.totalBugs),
+    byType: Object.values(typeStats).sort((a, b) => b.totalBugs - a.totalBugs),
+    totalBugs: bugs.length,
+    unassignedBugs,
+  };
+}

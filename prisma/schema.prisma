@@ -1638,6 +1638,7 @@ enum WidgetType {
   BURNDOWN_CHART      // バーンダウンチャート
   RELIABILITY_CHART   // 信頼度成長曲線
   ENVIRONMENT_STATS   // 環境別テスト集計
+  BUG_ANALYSIS        // 不具合分析（担当者別・報告者別）
   CUSTOM              // カスタムウィジェット
 
   @@map("widget_type")

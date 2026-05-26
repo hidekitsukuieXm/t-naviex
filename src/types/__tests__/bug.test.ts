@@ -28,6 +28,10 @@ import {
   isResolvedStatus,
   getNextStatuses,
   calculateBugStatistics,
+  getBugStatusColor,
+  getBugPriorityColor,
+  getBugSeverityColor,
+  getBugTypeColor,
   type Bug,
 } from '../bug';
 
@@ -459,6 +463,64 @@ describe('calculateBugStatistics', () => {
     expect(stats.openCount).toBe(3);
     expect(stats.closedCount).toBe(1);
     expect(stats.resolvedCount).toBe(2);
+  });
+});
+
+// ============================================
+// Color Function Tests
+// ============================================
+
+describe('getBugStatusColor', () => {
+  it.each([
+    ['NEW', 'bg-blue-100'],
+    ['OPEN', 'bg-sky-100'],
+    ['IN_PROGRESS', 'bg-yellow-100'],
+    ['RESOLVED', 'bg-green-100'],
+    ['VERIFIED', 'bg-emerald-100'],
+    ['CLOSED', 'bg-gray-100'],
+    ['REJECTED', 'bg-red-100'],
+    ['DEFERRED', 'bg-orange-100'],
+  ] as const)('should return correct color for %s', (status, expectedColor) => {
+    const color = getBugStatusColor(status);
+    expect(color).toContain(expectedColor);
+  });
+});
+
+describe('getBugPriorityColor', () => {
+  it.each([
+    ['CRITICAL', 'bg-red-100'],
+    ['HIGH', 'bg-orange-100'],
+    ['MEDIUM', 'bg-yellow-100'],
+    ['LOW', 'bg-green-100'],
+  ] as const)('should return correct color for %s', (priority, expectedColor) => {
+    const color = getBugPriorityColor(priority);
+    expect(color).toContain(expectedColor);
+  });
+});
+
+describe('getBugSeverityColor', () => {
+  it.each([
+    ['BLOCKER', 'bg-purple-100'],
+    ['CRITICAL', 'bg-red-100'],
+    ['MAJOR', 'bg-orange-100'],
+    ['MINOR', 'bg-yellow-100'],
+    ['TRIVIAL', 'bg-gray-100'],
+  ] as const)('should return correct color for %s', (severity, expectedColor) => {
+    const color = getBugSeverityColor(severity);
+    expect(color).toContain(expectedColor);
+  });
+});
+
+describe('getBugTypeColor', () => {
+  it.each([
+    ['BUG', 'bg-red-100'],
+    ['FEATURE', 'bg-blue-100'],
+    ['INQUIRY', 'bg-cyan-100'],
+    ['TASK', 'bg-indigo-100'],
+    ['IMPROVEMENT', 'bg-green-100'],
+  ] as const)('should return correct color for %s', (type, expectedColor) => {
+    const color = getBugTypeColor(type);
+    expect(color).toContain(expectedColor);
   });
 });
 

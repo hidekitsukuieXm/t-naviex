@@ -49,6 +49,8 @@ model User {
   bugHistories         BugHistory[]        @relation("BugHistoryChanger")
   createdIntegrations  ExternalIntegration[] @relation("IntegrationCreator")
   updatedIntegrations  ExternalIntegration[] @relation("IntegrationUpdater")
+  createdRequirements  Requirement[]         @relation("RequirementCreator")
+  updatedRequirements  Requirement[]         @relation("RequirementUpdater")
 
   @@map("users")
 }
@@ -201,6 +203,7 @@ model Project {
   bugSeverityMasters   BugSeverityMaster[]   @relation("ProjectBugSeverities")
   bugWorkflows         BugWorkflow[]         @relation("ProjectWorkflows")
   externalIntegrations ExternalIntegration[] @relation("ProjectIntegrations")
+  requirements         Requirement[]
 
   @@map("projects")
 }
@@ -471,6 +474,7 @@ model TestCase {
   testRunCases TestRunCase[]
   dependencies CaseDependency[] @relation("TestCaseDependencies")
   dependents   CaseDependency[] @relation("DependsOnTestCase")
+  requirements TestCaseRequirement[]
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -1521,4 +1525,98 @@ enum SyncStatus {
   CONFLICT
 
   @@map("sync_status")
+}
+
+// ============================================
+// 要求仕様管理
+// ============================================
+
+/// 要求仕様タイプ
+enum RequirementType {
+  FUNCTIONAL        // 機能要求
+  NON_FUNCTIONAL    // 非機能要求
+  CONSTRAINT        // 制約
+  INTERFACE         // インターフェース
+  DESIGN            // 設計
+  USER_STORY        // ユーザーストーリー
+
+  @@map("requirement_type")
+}
+
+/// 要求仕様ステータス
+enum RequirementStatus {
+  DRAFT             // 下書き
+  PROPOSED          // 提案中
+  APPROVED          // 承認済み
+  IMPLEMENTED       // 実装済み
+  VERIFIED          // 検証済み
+  DEPRECATED        // 非推奨
+
+  @@map("requirement_status")
+}
+
+/// 要求仕様優先度
+enum RequirementPriority {
+  MUST_HAVE         // 必須
+  SHOULD_HAVE       // 重要
+  COULD_HAVE        // あれば良い
+  WONT_HAVE         // 今回は対象外
+
+  @@map("requirement_priority")
+}
+
+/// 要求仕様
+model Requirement {
+  id              BigInt              @id @default(autoincrement())
+  projectId       BigInt              @map("project_id")
+  parentId        BigInt?             @map("parent_id")
+  code            String              @db.VarChar(50)
+  title           String              @db.VarChar(500)
+  description     String?             @db.Text
+  content         String?             @db.Text  // Markdown content
+  type            RequirementType     @default(FUNCTIONAL)
+  status          RequirementStatus   @default(DRAFT)
+  priority        RequirementPriority @default(SHOULD_HAVE)
+  version         String?             @db.VarChar(50)
+  source          String?             @db.VarChar(500)  // 要求元（顧客名、文書名等）
+  rationale       String?             @db.Text          // 根拠・理由
+  acceptance      String?             @db.Text          // 受け入れ条件
+  sortOrder       Int                 @default(0) @map("sort_order")
+  createdById     BigInt              @map("created_by_id")
+  updatedById     BigInt?             @map("updated_by_id")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  project         Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent          Requirement?        @relation("RequirementHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children        Requirement[]       @relation("RequirementHierarchy")
+  createdBy       User                @relation("RequirementCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  updatedBy       User?               @relation("RequirementUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  testCases       TestCaseRequirement[]
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([parentId])
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([sortOrder])
+  @@map("requirements")
+}
+
+/// テストケースと要求仕様の関連（多対多）
+model TestCaseRequirement {
+  testCaseId      BigInt      @map("test_case_id")
+  requirementId   BigInt      @map("requirement_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  testCase        TestCase    @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  requirement     Requirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@id([testCaseId, requirementId])
+  @@index([testCaseId])
+  @@index([requirementId])
+  @@map("test_case_requirements")
 }

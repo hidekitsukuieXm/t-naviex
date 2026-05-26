@@ -10,7 +10,7 @@ import {
   DashboardCreateDialog,
   WidgetSelectorDialog,
 } from '@/components/dashboard';
-import { ProgressSummaryWidget } from '@/components/dashboard/widgets';
+import { ProgressSummaryWidget, ProgressChartWidget } from '@/components/dashboard/widgets';
 import type { DashboardSafe, DashboardWidgetSafe } from '@/types/dashboard';
 import type { WidgetType } from '@/generated/prisma';
 import { ArrowLeft, Edit, Eye, Loader2, RefreshCw, Trash2 } from 'lucide-react';
@@ -243,6 +243,8 @@ export default function DashboardPage({ params }: DashboardPageProps) {
     switch (widget.widgetType) {
       case 'PROGRESS_SUMMARY':
         return <ProgressSummaryWidget widget={widget} projectId={projectId} />;
+      case 'PROGRESS_CHART':
+        return <ProgressChartWidget widget={widget} projectId={projectId} />;
       default:
         return null; // デフォルトのプレースホルダーを使用
     }

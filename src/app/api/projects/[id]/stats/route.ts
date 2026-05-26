@@ -9,6 +9,7 @@ import {
   getProjectTestProgress,
   getProjectBugStats,
   getProjectSummary,
+  getDailyTestExecutions,
 } from '@/repositories/stats-repository';
 
 interface RouteParams {
@@ -38,6 +39,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       case 'bugs':
         const bugs = await getProjectBugStats(projectId);
         return NextResponse.json({ bugs });
+
+      case 'daily': {
+        const daysParam = searchParams.get('days');
+        const days = daysParam ? parseInt(daysParam, 10) : 30;
+        const daily = await getDailyTestExecutions(projectId, days);
+        return NextResponse.json({ daily });
+      }
 
       case 'summary':
       default:

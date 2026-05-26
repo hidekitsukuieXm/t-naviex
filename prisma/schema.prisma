@@ -1167,6 +1167,7 @@ model Bug {
   comments     BugComment[]
   attachments  BugAttachment[]
   histories    BugHistory[]
+  bugSyncs     BugSync[]
 
   @@index([projectId])
   @@index([parentBugId])
@@ -1291,6 +1292,7 @@ model BugStatusMaster {
 
   // Relations
   project Project? @relation("ProjectBugStatuses", fields: [projectId], references: [id], onDelete: Cascade)
+  statusMappings IntegrationStatusMapping[]
 
   @@unique([projectId, code])
   @@index([projectId])
@@ -1440,10 +1442,83 @@ model ExternalIntegration {
   createdBy User     @relation("IntegrationCreator", fields: [createdById], references: [id], onDelete: Cascade)
   updatedBy User?    @relation("IntegrationUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
 
+  // Relations
+  statusMappings    IntegrationStatusMapping[]
+  bugSyncs          BugSync[]
+
   @@unique([projectId, name])
   @@index([projectId])
   @@index([integrationType])
   @@index([isEnabled])
   @@index([createdById])
   @@map("external_integrations")
+}
+
+/// 外部連携ステータスマッピング
+model IntegrationStatusMapping {
+  id                   BigInt              @id @default(autoincrement())
+  integrationId        BigInt              @map("integration_id")
+  localStatusId        BigInt              @map("local_status_id")
+  externalStatusId     String              @map("external_status_id") @db.VarChar(100)
+  externalStatusName   String              @map("external_status_name") @db.VarChar(100)
+  syncDirection        SyncDirection       @map("sync_direction")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  integration ExternalIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  localStatus BugStatusMaster     @relation(fields: [localStatusId], references: [id], onDelete: Cascade)
+
+  @@unique([integrationId, localStatusId])
+  @@unique([integrationId, externalStatusId])
+  @@index([integrationId])
+  @@map("integration_status_mappings")
+}
+
+/// 同期方向
+enum SyncDirection {
+  BIDIRECTIONAL
+  TO_EXTERNAL
+  FROM_EXTERNAL
+
+  @@map("sync_direction")
+}
+
+/// バグ同期履歴
+model BugSync {
+  id                BigInt     @id @default(autoincrement())
+  bugId             BigInt     @map("bug_id")
+  integrationId     BigInt     @map("integration_id")
+  externalIssueId   String     @map("external_issue_id") @db.VarChar(100)
+  externalIssueKey  String?    @map("external_issue_key") @db.VarChar(100)
+  externalIssueUrl  String?    @map("external_issue_url") @db.VarChar(500)
+  syncStatus        SyncStatus @map("sync_status")
+  lastSyncAt        DateTime   @map("last_sync_at")
+  lastSyncDirection SyncDirection @map("last_sync_direction")
+  lastSyncError     String?    @map("last_sync_error") @db.VarChar(500)
+  localUpdatedAt    DateTime   @map("local_updated_at")
+  externalUpdatedAt DateTime?  @map("external_updated_at")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  bug         Bug                 @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  integration ExternalIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([bugId, integrationId])
+  @@unique([integrationId, externalIssueId])
+  @@index([bugId])
+  @@index([integrationId])
+  @@index([syncStatus])
+  @@map("bug_syncs")
+}
+
+/// 同期ステータス
+enum SyncStatus {
+  SYNCED
+  PENDING
+  ERROR
+  CONFLICT
+
+  @@map("sync_status")
 }

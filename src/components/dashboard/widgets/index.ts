@@ -9,3 +9,4 @@ export { MilestoneWidget } from './milestone-widget';
 export { EnvironmentStatsWidget } from './environment-stats-widget';
 export { BugAnalysisWidget } from './bug-analysis-widget';
 export { ReliabilityChartWidget } from './reliability-chart-widget';
+export { MTBFODCWidget } from './mtbf-odc-widget';

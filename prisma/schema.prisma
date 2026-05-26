@@ -1718,3 +1718,45 @@ model AiSettings {
   @@index([isEnabled])
   @@map("ai_settings")
 }
+
+/// プロンプトテンプレートタイプ
+enum PromptTemplateType {
+  TEST_CASE_GENERATION   // テストケース生成
+  TEST_CASE_REVIEW       // テストケースレビュー
+  TEST_TECHNIQUE         // テスト技法提案
+  TESTABILITY_CHECK      // テスタビリティチェック
+  REQUIREMENT_TEST       // 要件連携テスト提案
+  TEST_PLAN_REVIEW       // テスト計画レビュー
+  EFFORT_ESTIMATION      // 工数予測
+  PROGRESS_ANALYSIS      // 進捗分析
+  RESULT_ANALYSIS        // 結果分析
+  BUG_ANALYSIS           // バグ分析
+  TREND_ANALYSIS         // 傾向分析
+  CUSTOM                 // カスタム
+
+  @@map("prompt_template_type")
+}
+
+/// プロンプトテンプレート
+model PromptTemplate {
+  id          BigInt             @id @default(autoincrement())
+  projectId   BigInt?            @map("project_id")
+  name        String             @db.VarChar(255)
+  description String?            @db.Text
+  type        PromptTemplateType
+  content     String             @db.Text
+  variables   Json?              @db.JsonB
+  isSystem    Boolean            @default(false) @map("is_system")
+  isDefault   Boolean            @default(false) @map("is_default")
+  sortOrder   Int                @default(0) @map("sort_order")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([type])
+  @@index([isSystem])
+  @@index([isDefault])
+  @@index([sortOrder])
+  @@map("prompt_templates")
+}

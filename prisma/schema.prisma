@@ -1620,3 +1620,72 @@ model TestCaseRequirement {
   @@index([requirementId])
   @@map("test_case_requirements")
 }
+
+// ============================================
+// ダッシュボード機能
+// ============================================
+
+/// ウィジェットタイプ
+enum WidgetType {
+  PROGRESS_SUMMARY    // テスト進捗サマリー
+  PROGRESS_CHART      // テスト進捗グラフ
+  BUG_SUMMARY         // バグ集計サマリー
+  BUG_CHART           // バグ分布グラフ
+  TEAM_INFO           // チーム情報
+  MILESTONE           // マイルストーン
+  RECENT_ACTIVITY     // 最近のアクティビティ
+  COVERAGE_STATS      // カバレッジ統計
+  BURNDOWN_CHART      // バーンダウンチャート
+  RELIABILITY_CHART   // 信頼度成長曲線
+  CUSTOM              // カスタムウィジェット
+
+  @@map("widget_type")
+}
+
+/// ダッシュボード
+model Dashboard {
+  id          BigInt     @id @default(autoincrement())
+  projectId   BigInt?    @map("project_id")
+  userId      BigInt     @map("user_id")
+  name        String     @db.VarChar(255)
+  description String?    @db.Text
+  isDefault   Boolean    @default(false) @map("is_default")
+  isPublic    Boolean    @default(false) @map("is_public")
+  shareToken  String?    @unique @map("share_token") @db.VarChar(64)
+  layout      Json?      @db.JsonB
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  widgets     DashboardWidget[]
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([isDefault])
+  @@index([isPublic])
+  @@map("dashboards")
+}
+
+/// ダッシュボードウィジェット
+model DashboardWidget {
+  id          BigInt     @id @default(autoincrement())
+  dashboardId BigInt     @map("dashboard_id")
+  widgetType  WidgetType @map("widget_type")
+  title       String?    @db.VarChar(255)
+  x           Int        @default(0)
+  y           Int        @default(0)
+  width       Int        @default(4)
+  height      Int        @default(3)
+  config      Json?      @db.JsonB
+  sortOrder   Int        @default(0) @map("sort_order")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  dashboard   Dashboard  @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@index([dashboardId])
+  @@index([widgetType])
+  @@index([sortOrder])
+  @@map("dashboard_widgets")
+}

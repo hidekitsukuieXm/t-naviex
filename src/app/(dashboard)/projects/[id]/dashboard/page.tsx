@@ -9,6 +9,7 @@ import {
   DashboardSelector,
   DashboardCreateDialog,
   WidgetSelectorDialog,
+  ShareDialog,
 } from '@/components/dashboard';
 import {
   ProgressSummaryWidget,
@@ -273,6 +274,40 @@ export default function DashboardPage({ params }: DashboardPageProps) {
     }
   };
 
+  // 共有URL生成
+  const handleShare = async () => {
+    if (!selectedDashboard) return;
+
+    const response = await fetch(`/api/dashboards/${selectedDashboard.id}/share`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      throw new Error('共有URLの生成に失敗しました');
+    }
+
+    const data = await response.json();
+    setSelectedDashboard(data.dashboard);
+    setDashboards((prev) => prev.map((d) => (d.id === data.dashboard.id ? data.dashboard : d)));
+  };
+
+  // 共有解除
+  const handleRevoke = async () => {
+    if (!selectedDashboard) return;
+
+    const response = await fetch(`/api/dashboards/${selectedDashboard.id}/share`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('共有の解除に失敗しました');
+    }
+
+    const data = await response.json();
+    setSelectedDashboard(data.dashboard);
+    setDashboards((prev) => prev.map((d) => (d.id === data.dashboard.id ? data.dashboard : d)));
+  };
+
   // ウィジェットレンダラー
   const renderWidget = (widget: DashboardWidgetSafe) => {
     switch (widget.widgetType) {
@@ -349,6 +384,11 @@ export default function DashboardPage({ params }: DashboardPageProps) {
                   {isEditing && (
                     <>
                       <WidgetSelectorDialog onSelect={handleAddWidget} />
+                      <ShareDialog
+                        dashboard={selectedDashboard}
+                        onShare={handleShare}
+                        onRevoke={handleRevoke}
+                      />
                       <Button
                         variant="destructive"
                         size="sm"

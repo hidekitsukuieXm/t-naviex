@@ -20,6 +20,7 @@ import { RequirementTypeBadge } from '@/components/requirements/requirement-type
 import { RequirementStatusBadge } from '@/components/requirements/requirement-status-badge';
 import { RequirementPriorityBadge } from '@/components/requirements/requirement-priority-badge';
 import { RequirementEditDialog } from '@/components/requirements/requirement-edit-dialog';
+import { RequirementTestCaseLinkDialog } from '@/components/requirements/requirement-test-case-link-dialog';
 import {
   type RequirementSafe,
   type RequirementType,
@@ -207,6 +208,12 @@ export default function RequirementDetailPage({ params }: RequirementDetailPageP
             )}
           </div>
           <div className="flex items-center gap-2">
+            <RequirementTestCaseLinkDialog
+              projectId={projectId}
+              requirementId={requirementId}
+              linkedTestCaseIds={requirement.testCases?.map((tc) => tc.testCaseId) || []}
+              onSuccess={refetchRequirement}
+            />
             <RequirementEditDialog
               projectId={projectId}
               requirement={requirement}

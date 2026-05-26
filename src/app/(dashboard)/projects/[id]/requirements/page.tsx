@@ -35,7 +35,7 @@ import {
   RequirementStatusLabels,
   RequirementPriorityLabels,
 } from '@/types/requirement';
-import { FileText, Search, X, Loader2, ArrowLeft, List, GitBranch } from 'lucide-react';
+import { FileText, Search, X, Loader2, ArrowLeft, List, GitBranch, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -218,7 +218,16 @@ export default function RequirementsPage({ params }: RequirementsPageProps) {
             <h1 className="text-2xl font-bold tracking-tight">要求仕様</h1>
             <p className="text-muted-foreground">プロジェクトの要求仕様を管理します。</p>
           </div>
-          <RequirementCreateDialog projectId={projectId} onSuccess={handleRefresh} />
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/projects/${projectId}/requirements/traceability`}
+              className={cn(buttonVariants({ variant: 'outline' }))}
+            >
+              <BarChart3 className="mr-2 size-4" />
+              トレーサビリティ
+            </Link>
+            <RequirementCreateDialog projectId={projectId} onSuccess={handleRefresh} />
+          </div>
         </div>
       </div>
 

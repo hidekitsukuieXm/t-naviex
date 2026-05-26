@@ -14,6 +14,8 @@ import {
   ProgressSummaryWidget,
   ProgressChartWidget,
   BugSummaryWidget,
+  TeamInfoWidget,
+  MilestoneWidget,
 } from '@/components/dashboard/widgets';
 import type { DashboardSafe, DashboardWidgetSafe } from '@/types/dashboard';
 import type { WidgetType } from '@/generated/prisma';
@@ -251,6 +253,10 @@ export default function DashboardPage({ params }: DashboardPageProps) {
         return <ProgressChartWidget widget={widget} projectId={projectId} />;
       case 'BUG_SUMMARY':
         return <BugSummaryWidget widget={widget} projectId={projectId} />;
+      case 'TEAM_INFO':
+        return <TeamInfoWidget widget={widget} projectId={projectId} />;
+      case 'MILESTONE':
+        return <MilestoneWidget widget={widget} projectId={projectId} />;
       default:
         return null; // デフォルトのプレースホルダーを使用
     }

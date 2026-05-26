@@ -377,3 +377,72 @@ export async function getTestRunDailyExecutions(
 
   return Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
 }
+
+// チームメンバー実行統計
+export interface TeamMemberStats {
+  userId: string;
+  userName: string | null;
+  email: string | null;
+  executedCount: number;
+  passedCount: number;
+  failedCount: number;
+  passRate: number;
+}
+
+// プロジェクトのチームメンバー実行統計取得
+export async function getTeamExecutionStats(projectId: bigint): Promise<TeamMemberStats[]> {
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: {
+        testRun: { projectId },
+      },
+      executedById: { not: null },
+    },
+    select: {
+      executedById: true,
+      status: true,
+      executedBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  const memberStats: Record<string, TeamMemberStats> = {};
+
+  for (const result of testResults) {
+    if (!result.executedById || !result.executedBy) continue;
+
+    const memberId = result.executedById.toString();
+    if (!memberStats[memberId]) {
+      memberStats[memberId] = {
+        userId: memberId,
+        userName: result.executedBy.name,
+        email: result.executedBy.email,
+        executedCount: 0,
+        passedCount: 0,
+        failedCount: 0,
+        passRate: 0,
+      };
+    }
+
+    memberStats[memberId].executedCount++;
+    if (result.status === 'PASSED') {
+      memberStats[memberId].passedCount++;
+    } else if (result.status === 'FAILED') {
+      memberStats[memberId].failedCount++;
+    }
+  }
+
+  // 合格率を計算してソート
+  const stats = Object.values(memberStats).map((member) => ({
+    ...member,
+    passRate:
+      member.executedCount > 0 ? Math.round((member.passedCount / member.executedCount) * 100) : 0,
+  }));
+
+  return stats.sort((a, b) => b.executedCount - a.executedCount);
+}

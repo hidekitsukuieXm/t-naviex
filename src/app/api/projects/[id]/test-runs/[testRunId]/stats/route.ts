@@ -9,6 +9,7 @@ import {
   getTestRunProgress,
   getTestRunDailyExecutions,
   getTestRunCumulativeProgress,
+  getTestRunBurndownData,
 } from '@/repositories/stats-repository';
 
 interface RouteParams {
@@ -43,6 +44,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         const days = daysParam ? parseInt(daysParam, 10) : 30;
         const cumulative = await getTestRunCumulativeProgress(testRunIdBigInt, days);
         return NextResponse.json({ cumulative });
+      }
+
+      case 'burndown': {
+        const burndown = await getTestRunBurndownData(testRunIdBigInt);
+        return NextResponse.json({ burndown });
       }
 
       case 'progress':

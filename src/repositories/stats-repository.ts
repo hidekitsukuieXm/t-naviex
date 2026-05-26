@@ -2011,3 +2011,469 @@ export async function getProjectMTBFODC(
 
   return { mtbf, odc };
 }
+
+// ============================================
+// クロスプロジェクトレポート機能
+// ============================================
+
+// プロジェクト別サマリー統計
+export interface ProjectSummaryStats {
+  projectId: string;
+  projectName: string;
+  testProgress: {
+    totalCases: number;
+    executedCases: number;
+    passedCases: number;
+    failedCases: number;
+    executionRate: number;
+    passRate: number;
+  };
+  bugStats: {
+    total: number;
+    openCount: number;
+    resolvedCount: number;
+    closedCount: number;
+  };
+  testRunCount: number;
+  activeTestRuns: number;
+}
+
+// クロスプロジェクトサマリー
+export interface CrossProjectSummary {
+  projects: ProjectSummaryStats[];
+  totals: {
+    totalProjects: number;
+    totalTestCases: number;
+    totalExecutedCases: number;
+    totalPassedCases: number;
+    totalFailedCases: number;
+    totalBugs: number;
+    openBugs: number;
+    resolvedBugs: number;
+    avgExecutionRate: number;
+    avgPassRate: number;
+  };
+}
+
+// ユーザー工数統計
+export interface UserWorkloadStats {
+  userId: string;
+  userName: string | null;
+  userEmail: string | null;
+  projectWorkloads: Array<{
+    projectId: string;
+    projectName: string;
+    executedTests: number;
+    executionTime: number; // 秒
+    bugsReported: number;
+    bugsAssigned: number;
+    bugsResolved: number;
+  }>;
+  totals: {
+    totalExecutedTests: number;
+    totalExecutionTime: number;
+    totalBugsReported: number;
+    totalBugsAssigned: number;
+    totalBugsResolved: number;
+    projectCount: number;
+  };
+}
+
+export interface CrossProjectUserWorkload {
+  users: UserWorkloadStats[];
+  startDate: string;
+  endDate: string;
+}
+
+// クロスプロジェクトサマリー取得
+export async function getCrossProjectSummary(projectIds?: bigint[]): Promise<CrossProjectSummary> {
+  // プロジェクトを取得（指定がなければ全プロジェクト）
+  const projects = await prisma.project.findMany({
+    where: projectIds ? { id: { in: projectIds } } : {},
+    select: {
+      id: true,
+      name: true,
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  const projectStats: ProjectSummaryStats[] = [];
+
+  for (const project of projects) {
+    // テスト進捗を取得
+    const testRunCases = await prisma.testRunCase.findMany({
+      where: {
+        testRun: { projectId: project.id },
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    const totalCases = testRunCases.length;
+    const executedCases = testRunCases.filter((c) => c.status !== 'NOT_RUN').length;
+    const passedCases = testRunCases.filter((c) => c.status === 'PASSED').length;
+    const failedCases = testRunCases.filter((c) => c.status === 'FAILED').length;
+
+    // バグ統計を取得
+    const bugs = await prisma.bug.findMany({
+      where: { projectId: project.id },
+      select: { status: true },
+    });
+
+    const openStatuses = ['NEW', 'OPEN', 'IN_PROGRESS'];
+    const resolvedStatuses = ['RESOLVED', 'VERIFIED'];
+    const closedStatuses = ['CLOSED', 'REJECTED', 'DEFERRED'];
+
+    const openCount = bugs.filter((b) => openStatuses.includes(b.status)).length;
+    const resolvedCount = bugs.filter((b) => resolvedStatuses.includes(b.status)).length;
+    const closedCount = bugs.filter((b) => closedStatuses.includes(b.status)).length;
+
+    // テストラン数
+    const testRunCount = await prisma.testRun.count({
+      where: { projectId: project.id },
+    });
+    const activeTestRuns = await prisma.testRun.count({
+      where: { projectId: project.id, status: { in: ['PLANNED', 'IN_PROGRESS'] } },
+    });
+
+    projectStats.push({
+      projectId: project.id.toString(),
+      projectName: project.name,
+      testProgress: {
+        totalCases,
+        executedCases,
+        passedCases,
+        failedCases,
+        executionRate: totalCases > 0 ? Math.round((executedCases / totalCases) * 100) : 0,
+        passRate: executedCases > 0 ? Math.round((passedCases / executedCases) * 100) : 0,
+      },
+      bugStats: {
+        total: bugs.length,
+        openCount,
+        resolvedCount,
+        closedCount,
+      },
+      testRunCount,
+      activeTestRuns,
+    });
+  }
+
+  // 合計を計算
+  const totals = projectStats.reduce(
+    (acc, p) => ({
+      totalProjects: acc.totalProjects + 1,
+      totalTestCases: acc.totalTestCases + p.testProgress.totalCases,
+      totalExecutedCases: acc.totalExecutedCases + p.testProgress.executedCases,
+      totalPassedCases: acc.totalPassedCases + p.testProgress.passedCases,
+      totalFailedCases: acc.totalFailedCases + p.testProgress.failedCases,
+      totalBugs: acc.totalBugs + p.bugStats.total,
+      openBugs: acc.openBugs + p.bugStats.openCount,
+      resolvedBugs: acc.resolvedBugs + p.bugStats.resolvedCount,
+      avgExecutionRate: 0, // 後で計算
+      avgPassRate: 0, // 後で計算
+    }),
+    {
+      totalProjects: 0,
+      totalTestCases: 0,
+      totalExecutedCases: 0,
+      totalPassedCases: 0,
+      totalFailedCases: 0,
+      totalBugs: 0,
+      openBugs: 0,
+      resolvedBugs: 0,
+      avgExecutionRate: 0,
+      avgPassRate: 0,
+    }
+  );
+
+  // 平均値を計算
+  totals.avgExecutionRate =
+    totals.totalTestCases > 0
+      ? Math.round((totals.totalExecutedCases / totals.totalTestCases) * 100)
+      : 0;
+  totals.avgPassRate =
+    totals.totalExecutedCases > 0
+      ? Math.round((totals.totalPassedCases / totals.totalExecutedCases) * 100)
+      : 0;
+
+  return {
+    projects: projectStats,
+    totals,
+  };
+}
+
+// ユーザー工数分析取得
+export async function getCrossProjectUserWorkload(
+  projectIds?: bigint[],
+  days: number = 30
+): Promise<CrossProjectUserWorkload> {
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // ユーザーを取得（テスト実行またはバグに関連するユーザー）
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  // プロジェクト一覧を取得
+  const projects = await prisma.project.findMany({
+    where: projectIds ? { id: { in: projectIds } } : {},
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  const userStats: UserWorkloadStats[] = [];
+
+  for (const user of users) {
+    const projectWorkloads = [];
+    let hasActivity = false;
+
+    for (const project of projects) {
+      // テスト実行統計
+      const testResults = await prisma.testResult.findMany({
+        where: {
+          executedById: user.id,
+          executedAt: { gte: startDate, lte: endDate },
+          testRunCase: {
+            testRun: { projectId: project.id },
+          },
+        },
+        select: {
+          executionTime: true,
+        },
+      });
+
+      const executedTests = testResults.length;
+      const executionTime = testResults.reduce((sum, r) => sum + (r.executionTime || 0), 0);
+
+      // バグ統計
+      const bugsReported = await prisma.bug.count({
+        where: {
+          reporterId: user.id,
+          projectId: project.id,
+          createdAt: { gte: startDate, lte: endDate },
+        },
+      });
+
+      const bugsAssigned = await prisma.bug.count({
+        where: {
+          assigneeId: user.id,
+          projectId: project.id,
+        },
+      });
+
+      const bugsResolved = await prisma.bug.count({
+        where: {
+          assigneeId: user.id,
+          projectId: project.id,
+          resolvedAt: { gte: startDate, lte: endDate },
+        },
+      });
+
+      if (executedTests > 0 || bugsReported > 0 || bugsAssigned > 0 || bugsResolved > 0) {
+        hasActivity = true;
+        projectWorkloads.push({
+          projectId: project.id.toString(),
+          projectName: project.name,
+          executedTests,
+          executionTime,
+          bugsReported,
+          bugsAssigned,
+          bugsResolved,
+        });
+      }
+    }
+
+    // アクティビティがあるユーザーのみ追加
+    if (hasActivity) {
+      const totals = projectWorkloads.reduce(
+        (acc, p) => ({
+          totalExecutedTests: acc.totalExecutedTests + p.executedTests,
+          totalExecutionTime: acc.totalExecutionTime + p.executionTime,
+          totalBugsReported: acc.totalBugsReported + p.bugsReported,
+          totalBugsAssigned: acc.totalBugsAssigned + p.bugsAssigned,
+          totalBugsResolved: acc.totalBugsResolved + p.bugsResolved,
+          projectCount: acc.projectCount + (p.executedTests > 0 || p.bugsReported > 0 ? 1 : 0),
+        }),
+        {
+          totalExecutedTests: 0,
+          totalExecutionTime: 0,
+          totalBugsReported: 0,
+          totalBugsAssigned: 0,
+          totalBugsResolved: 0,
+          projectCount: 0,
+        }
+      );
+
+      userStats.push({
+        userId: user.id.toString(),
+        userName: user.name,
+        userEmail: user.email,
+        projectWorkloads,
+        totals,
+      });
+    }
+  }
+
+  // 実行テスト数でソート
+  userStats.sort((a, b) => b.totals.totalExecutedTests - a.totals.totalExecutedTests);
+
+  return {
+    users: userStats,
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+  };
+}
+
+// プロジェクト比較データ
+export interface ProjectComparisonData {
+  projectId: string;
+  projectName: string;
+  metrics: {
+    testCaseCount: number;
+    executionRate: number;
+    passRate: number;
+    bugCount: number;
+    openBugRate: number;
+    avgBugResolutionDays: number | null;
+  };
+}
+
+export interface CrossProjectComparison {
+  projects: ProjectComparisonData[];
+  bestExecutionRate: { projectId: string; projectName: string; value: number } | null;
+  bestPassRate: { projectId: string; projectName: string; value: number } | null;
+  lowestOpenBugRate: { projectId: string; projectName: string; value: number } | null;
+}
+
+// プロジェクト比較データ取得
+export async function getCrossProjectComparison(
+  projectIds?: bigint[]
+): Promise<CrossProjectComparison> {
+  const projects = await prisma.project.findMany({
+    where: projectIds ? { id: { in: projectIds } } : {},
+    select: {
+      id: true,
+      name: true,
+    },
+    orderBy: { name: 'asc' },
+  });
+
+  const projectData: ProjectComparisonData[] = [];
+
+  for (const project of projects) {
+    // テストケース数と進捗
+    const testRunCases = await prisma.testRunCase.findMany({
+      where: {
+        testRun: { projectId: project.id },
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    const totalCases = testRunCases.length;
+    const executedCases = testRunCases.filter((c) => c.status !== 'NOT_RUN').length;
+    const passedCases = testRunCases.filter((c) => c.status === 'PASSED').length;
+
+    // バグ統計
+    const bugs = await prisma.bug.findMany({
+      where: { projectId: project.id },
+      select: {
+        status: true,
+        createdAt: true,
+        resolvedAt: true,
+      },
+    });
+
+    const openStatuses = ['NEW', 'OPEN', 'IN_PROGRESS'];
+    const openBugs = bugs.filter((b) => openStatuses.includes(b.status)).length;
+
+    // 平均解決日数
+    const resolvedBugs = bugs.filter((b) => b.resolvedAt !== null);
+    const avgResolutionDays =
+      resolvedBugs.length > 0
+        ? Math.round(
+            resolvedBugs.reduce((sum, b) => {
+              const days = Math.ceil(
+                (b.resolvedAt!.getTime() - b.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+              );
+              return sum + days;
+            }, 0) / resolvedBugs.length
+          )
+        : null;
+
+    projectData.push({
+      projectId: project.id.toString(),
+      projectName: project.name,
+      metrics: {
+        testCaseCount: totalCases,
+        executionRate: totalCases > 0 ? Math.round((executedCases / totalCases) * 100) : 0,
+        passRate: executedCases > 0 ? Math.round((passedCases / executedCases) * 100) : 0,
+        bugCount: bugs.length,
+        openBugRate: bugs.length > 0 ? Math.round((openBugs / bugs.length) * 100) : 0,
+        avgBugResolutionDays: avgResolutionDays,
+      },
+    });
+  }
+
+  // ベスト値を計算
+  const validProjects = projectData.filter((p) => p.metrics.testCaseCount > 0);
+
+  const bestExecutionRate =
+    validProjects.length > 0
+      ? validProjects.reduce(
+          (best, p) =>
+            p.metrics.executionRate > (best?.value || 0)
+              ? {
+                  projectId: p.projectId,
+                  projectName: p.projectName,
+                  value: p.metrics.executionRate,
+                }
+              : best,
+          null as { projectId: string; projectName: string; value: number } | null
+        )
+      : null;
+
+  const bestPassRate =
+    validProjects.length > 0
+      ? validProjects.reduce(
+          (best, p) =>
+            p.metrics.passRate > (best?.value || 0)
+              ? { projectId: p.projectId, projectName: p.projectName, value: p.metrics.passRate }
+              : best,
+          null as { projectId: string; projectName: string; value: number } | null
+        )
+      : null;
+
+  const projectsWithBugs = projectData.filter((p) => p.metrics.bugCount > 0);
+  const lowestOpenBugRate =
+    projectsWithBugs.length > 0
+      ? projectsWithBugs.reduce(
+          (best, p) =>
+            best === null || p.metrics.openBugRate < best.value
+              ? { projectId: p.projectId, projectName: p.projectName, value: p.metrics.openBugRate }
+              : best,
+          null as { projectId: string; projectName: string; value: number } | null
+        )
+      : null;
+
+  return {
+    projects: projectData,
+    bestExecutionRate,
+    bestPassRate,
+    lowestOpenBugRate,
+  };
+}

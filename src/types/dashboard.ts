@@ -18,6 +18,7 @@ export const WidgetTypes = {
   RELIABILITY_CHART: 'RELIABILITY_CHART',
   ENVIRONMENT_STATS: 'ENVIRONMENT_STATS',
   BUG_ANALYSIS: 'BUG_ANALYSIS',
+  MTBF_ODC_ANALYSIS: 'MTBF_ODC_ANALYSIS',
   CUSTOM: 'CUSTOM',
 } as const;
 
@@ -35,6 +36,7 @@ export const WidgetTypeLabels: Record<WidgetType, string> = {
   RELIABILITY_CHART: '信頼度成長曲線',
   ENVIRONMENT_STATS: '環境別集計',
   BUG_ANALYSIS: '不具合分析',
+  MTBF_ODC_ANALYSIS: 'MTBF/ODC分析',
   CUSTOM: 'カスタム',
 };
 
@@ -129,6 +131,11 @@ export interface BugAnalysisConfig {
   viewMode?: 'assignee' | 'reporter' | 'type';
 }
 
+export interface MTBFODCConfig {
+  days?: number;
+  viewMode?: 'mtbf' | 'odc';
+}
+
 export type WidgetConfig =
   | ProgressSummaryConfig
   | ProgressChartConfig
@@ -140,6 +147,7 @@ export type WidgetConfig =
   | ReliabilityChartConfig
   | EnvironmentStatsConfig
   | BugAnalysisConfig
+  | MTBFODCConfig
   | Record<string, unknown>;
 
 // 変換ユーティリティ

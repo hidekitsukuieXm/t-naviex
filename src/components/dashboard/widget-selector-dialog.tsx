@@ -116,6 +116,12 @@ const widgetOptions: {
     icon: UserCheck,
   },
   {
+    type: 'MTBF_ODC_ANALYSIS',
+    label: WidgetTypeLabels.MTBF_ODC_ANALYSIS,
+    description: 'MTBF/MTTFとODC分析を表示',
+    icon: Activity,
+  },
+  {
     type: 'CUSTOM',
     label: WidgetTypeLabels.CUSTOM,
     description: 'カスタム設定のウィジェット',

@@ -17,6 +17,7 @@ import {
   getProjectEnvironmentStats,
   getProjectBugAnalysis,
   getProjectReliabilityGrowth,
+  getProjectMTBFODC,
 } from '@/repositories/stats-repository';
 
 interface RouteParams {
@@ -93,6 +94,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         const days = daysParam ? parseInt(daysParam, 10) : 60;
         const reliabilityGrowth = await getProjectReliabilityGrowth(projectId, days);
         return NextResponse.json({ reliabilityGrowth });
+      }
+
+      case 'mtbf-odc': {
+        const daysParam = searchParams.get('days');
+        const days = daysParam ? parseInt(daysParam, 10) : 30;
+        const mtbfOdc = await getProjectMTBFODC(projectId, days);
+        return NextResponse.json({ mtbfOdc });
       }
 
       case 'summary':

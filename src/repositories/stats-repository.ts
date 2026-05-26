@@ -1590,3 +1590,424 @@ export async function getProjectReliabilityGrowth(
     endDate: endDate.toISOString().split('T')[0],
   };
 }
+
+// MTBF/MTTF データ
+export interface MTBFDataPoint {
+  date: string;
+  failures: number;
+  mtbf: number | null; // 平均故障間隔（時間）
+  cumulativeFailures: number;
+}
+
+export interface MTBFStats {
+  mtbf: number | null; // Mean Time Between Failures（時間）
+  mttf: number | null; // Mean Time To Failure（時間）
+  totalFailures: number;
+  totalExecutions: number;
+  failureRate: number; // 故障率（%）
+  reliability: number; // 信頼度（%）
+}
+
+export interface MTBFResult {
+  stats: MTBFStats;
+  data: MTBFDataPoint[];
+  startDate: string;
+  endDate: string;
+}
+
+// プロジェクトのMTBF/MTTFデータ取得
+export async function getProjectMTBF(projectId: bigint, days: number = 30): Promise<MTBFResult> {
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // テスト結果を取得
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: {
+        testRun: { projectId },
+      },
+      executedAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      executedAt: true,
+      status: true,
+      executionTime: true,
+    },
+    orderBy: { executedAt: 'asc' },
+  });
+
+  if (testResults.length === 0) {
+    return {
+      stats: {
+        mtbf: null,
+        mttf: null,
+        totalFailures: 0,
+        totalExecutions: 0,
+        failureRate: 0,
+        reliability: 100,
+      },
+      data: [],
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+    };
+  }
+
+  // 失敗した結果のみを抽出
+  const failures = testResults.filter((r) => r.status === 'FAILED');
+  const totalExecutions = testResults.length;
+  const totalFailures = failures.length;
+
+  // MTBF計算: 総実行時間 / 故障回数
+  let mtbf: number | null = null;
+  const totalExecutionTime = testResults.reduce((sum, r) => sum + (r.executionTime || 0), 0);
+
+  if (totalFailures > 0 && totalExecutionTime > 0) {
+    // 実行時間（秒）を時間に変換
+    mtbf = Math.round((totalExecutionTime / totalFailures / 3600) * 100) / 100;
+  }
+
+  // MTTF計算: 最初の故障までの累積実行時間
+  let mttf: number | null = null;
+  if (failures.length > 0) {
+    const firstFailure = failures[0];
+    const resultsBeforeFirstFailure = testResults.filter(
+      (r) => r.executedAt <= firstFailure.executedAt
+    );
+    const timeToFirstFailure = resultsBeforeFirstFailure.reduce(
+      (sum, r) => sum + (r.executionTime || 0),
+      0
+    );
+    mttf = Math.round((timeToFirstFailure / 3600) * 100) / 100;
+  }
+
+  // 故障率と信頼度
+  const failureRate =
+    totalExecutions > 0 ? Math.round((totalFailures / totalExecutions) * 10000) / 100 : 0;
+  const reliability = 100 - failureRate;
+
+  // 日別のMTBFデータを計算
+  const dailyData: Record<string, { failures: number; executionTime: number }> = {};
+
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dailyData[dateStr] = { failures: 0, executionTime: 0 };
+  }
+
+  for (const result of testResults) {
+    const dateStr = result.executedAt.toISOString().split('T')[0];
+    if (dailyData[dateStr]) {
+      dailyData[dateStr].executionTime += result.executionTime || 0;
+      if (result.status === 'FAILED') {
+        dailyData[dateStr].failures++;
+      }
+    }
+  }
+
+  // 累積と日別MTBFを計算
+  let cumulativeFailures = 0;
+  const data: MTBFDataPoint[] = [];
+  const sortedDates = Object.keys(dailyData).sort();
+
+  for (const dateStr of sortedDates) {
+    const dayData = dailyData[dateStr];
+    cumulativeFailures += dayData.failures;
+
+    const dayMtbf =
+      dayData.failures > 0 && dayData.executionTime > 0
+        ? Math.round((dayData.executionTime / dayData.failures / 3600) * 100) / 100
+        : null;
+
+    data.push({
+      date: dateStr,
+      failures: dayData.failures,
+      mtbf: dayMtbf,
+      cumulativeFailures,
+    });
+  }
+
+  return {
+    stats: {
+      mtbf,
+      mttf,
+      totalFailures,
+      totalExecutions,
+      failureRate,
+      reliability,
+    },
+    data,
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+  };
+}
+
+// ODC（Orthogonal Defect Classification）分類
+export interface ODCTypeStats {
+  type: string;
+  label: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ODCSeverityStats {
+  severity: string;
+  label: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ODCPriorityStats {
+  priority: string;
+  label: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ODCPhaseStats {
+  phase: string;
+  label: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ODCTrendDataPoint {
+  date: string;
+  bug: number;
+  feature: number;
+  inquiry: number;
+  task: number;
+  improvement: number;
+  total: number;
+}
+
+export interface ODCAnalysisResult {
+  byType: ODCTypeStats[];
+  bySeverity: ODCSeverityStats[];
+  byPriority: ODCPriorityStats[];
+  byPhase: ODCPhaseStats[];
+  trend: ODCTrendDataPoint[];
+  totalDefects: number;
+  defectsWithTestResult: number;
+  startDate: string;
+  endDate: string;
+}
+
+// プロジェクトのODC分析データ取得
+export async function getProjectODCAnalysis(
+  projectId: bigint,
+  days: number = 30
+): Promise<ODCAnalysisResult> {
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // バグを取得
+  const bugs = await prisma.bug.findMany({
+    where: {
+      projectId,
+      createdAt: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    select: {
+      type: true,
+      severity: true,
+      priority: true,
+      createdAt: true,
+      testResultId: true,
+      testResult: {
+        select: {
+          testRunCase: {
+            select: {
+              testCase: {
+                select: {
+                  testSpec: {
+                    select: {
+                      phase: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (bugs.length === 0) {
+    return {
+      byType: [],
+      bySeverity: [],
+      byPriority: [],
+      byPhase: [],
+      trend: [],
+      totalDefects: 0,
+      defectsWithTestResult: 0,
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: endDate.toISOString().split('T')[0],
+    };
+  }
+
+  const totalDefects = bugs.length;
+  const defectsWithTestResult = bugs.filter((b) => b.testResultId !== null).length;
+
+  // タイプ別集計
+  const typeLabels: Record<string, string> = {
+    BUG: '不具合',
+    FEATURE: '機能要望',
+    INQUIRY: '問い合わせ',
+    TASK: 'タスク',
+    IMPROVEMENT: '改善',
+  };
+  const typeCounts: Record<string, number> = {};
+  for (const bug of bugs) {
+    typeCounts[bug.type] = (typeCounts[bug.type] || 0) + 1;
+  }
+  const byType: ODCTypeStats[] = Object.entries(typeCounts)
+    .map(([type, count]) => ({
+      type,
+      label: typeLabels[type] || type,
+      count,
+      percentage: Math.round((count / totalDefects) * 1000) / 10,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // 重大度別集計
+  const severityLabels: Record<string, string> = {
+    BLOCKER: 'ブロッカー',
+    CRITICAL: '致命的',
+    MAJOR: '重大',
+    MINOR: '軽微',
+    TRIVIAL: '軽微（外観）',
+  };
+  const severityCounts: Record<string, number> = {};
+  for (const bug of bugs) {
+    severityCounts[bug.severity] = (severityCounts[bug.severity] || 0) + 1;
+  }
+  const bySeverity: ODCSeverityStats[] = Object.entries(severityCounts)
+    .map(([severity, count]) => ({
+      severity,
+      label: severityLabels[severity] || severity,
+      count,
+      percentage: Math.round((count / totalDefects) * 1000) / 10,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // 優先度別集計
+  const priorityLabels: Record<string, string> = {
+    CRITICAL: '緊急',
+    HIGH: '高',
+    MEDIUM: '中',
+    LOW: '低',
+  };
+  const priorityCounts: Record<string, number> = {};
+  for (const bug of bugs) {
+    priorityCounts[bug.priority] = (priorityCounts[bug.priority] || 0) + 1;
+  }
+  const byPriority: ODCPriorityStats[] = Object.entries(priorityCounts)
+    .map(([priority, count]) => ({
+      priority,
+      label: priorityLabels[priority] || priority,
+      count,
+      percentage: Math.round((count / totalDefects) * 1000) / 10,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // フェーズ別集計（テスト結果にリンクされているバグのみ）
+  const phaseCounts: Record<string, number> = {};
+  for (const bug of bugs) {
+    const phase = bug.testResult?.testRunCase?.testCase?.testSpec?.phase || 'UNKNOWN';
+    phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
+  }
+  const phaseLabels: Record<string, string> = {
+    UNIT: '単体テスト',
+    INTEGRATION: '結合テスト',
+    SYSTEM: 'システムテスト',
+    ACCEPTANCE: '受入テスト',
+    REGRESSION: '回帰テスト',
+    UNKNOWN: '未分類',
+  };
+  const byPhase: ODCPhaseStats[] = Object.entries(phaseCounts)
+    .map(([phase, count]) => ({
+      phase,
+      label: phaseLabels[phase] || phase,
+      count,
+      percentage: Math.round((count / totalDefects) * 1000) / 10,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  // 日別トレンドデータ
+  const dailyData: Record<string, ODCTrendDataPoint> = {};
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dailyData[dateStr] = {
+      date: dateStr,
+      bug: 0,
+      feature: 0,
+      inquiry: 0,
+      task: 0,
+      improvement: 0,
+      total: 0,
+    };
+  }
+
+  for (const bug of bugs) {
+    const dateStr = bug.createdAt.toISOString().split('T')[0];
+    if (dailyData[dateStr]) {
+      dailyData[dateStr].total++;
+      const typeKey = bug.type.toLowerCase() as keyof Omit<ODCTrendDataPoint, 'date' | 'total'>;
+      if (typeKey in dailyData[dateStr]) {
+        (dailyData[dateStr][typeKey] as number)++;
+      }
+    }
+  }
+
+  const trend = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    byType,
+    bySeverity,
+    byPriority,
+    byPhase,
+    trend,
+    totalDefects,
+    defectsWithTestResult,
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+  };
+}
+
+// MTBF/ODC統合結果
+export interface MTBFODCResult {
+  mtbf: MTBFResult;
+  odc: ODCAnalysisResult;
+}
+
+// プロジェクトのMTBF/ODC統合データ取得
+export async function getProjectMTBFODC(
+  projectId: bigint,
+  days: number = 30
+): Promise<MTBFODCResult> {
+  const [mtbf, odc] = await Promise.all([
+    getProjectMTBF(projectId, days),
+    getProjectODCAnalysis(projectId, days),
+  ]);
+
+  return { mtbf, odc };
+}

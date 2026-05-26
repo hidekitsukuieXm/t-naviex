@@ -8,11 +8,13 @@ import {
   getTestResultDetail,
   getTestResultsByTestRunCase,
   createTestResult,
+  updateTestResult,
   deleteTestResult,
   getTestResultCount,
   getLatestTestResult,
   testResultExists,
   testRunCaseExists,
+  getTestResultHistories,
 } from '../test-result-repository';
 import { prisma } from '@/lib/prisma';
 
@@ -24,6 +26,7 @@ vi.mock('@/lib/prisma', () => ({
       findFirst: vi.fn(),
       findMany: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
       delete: vi.fn(),
       deleteMany: vi.fn(),
       count: vi.fn(),
@@ -31,6 +34,13 @@ vi.mock('@/lib/prisma', () => ({
     testRunCase: {
       count: vi.fn(),
     },
+    testResultHistory: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      createMany: vi.fn(),
+      count: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -259,6 +269,113 @@ describe('TestResult Repository', () => {
       const exists = await testRunCaseExists(BigInt(999));
 
       expect(exists).toBe(false);
+    });
+  });
+
+  describe('updateTestResult', () => {
+    it('should update test result and record history', async () => {
+      const currentResult = {
+        id: BigInt(1),
+        testRunCaseId: BigInt(100),
+        executedById: BigInt(10),
+        status: 'PASSED',
+        executedAt: new Date('2024-01-01T10:00:00Z'),
+        executionTime: 120,
+        actualResult: 'Old result',
+        defects: null,
+        comment: 'Old comment',
+        environment: 'Chrome',
+        browserInfo: 'Windows',
+        version: 1,
+        createdAt: new Date('2024-01-01T10:00:00Z'),
+      };
+
+      const updatedResult = {
+        ...currentResult,
+        status: 'FAILED',
+        comment: 'New comment',
+        executedBy: {
+          id: BigInt(10),
+          name: 'Test User',
+          email: 'test@example.com',
+        },
+      };
+
+      mockPrisma.testResult.findUnique.mockResolvedValue(currentResult);
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          testResult: {
+            update: vi.fn().mockResolvedValue(updatedResult),
+          },
+          testResultHistory: {
+            createMany: vi.fn().mockResolvedValue({ count: 2 }),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      const result = await updateTestResult(
+        BigInt(1),
+        { status: 'FAILED', comment: 'New comment' },
+        BigInt(10)
+      );
+
+      expect(result).not.toBeNull();
+      expect(result?.status).toBe('FAILED');
+      expect(result?.comment).toBe('New comment');
+    });
+
+    it('should return null if result not found', async () => {
+      mockPrisma.testResult.findUnique.mockResolvedValue(null);
+
+      const result = await updateTestResult(BigInt(999), { status: 'FAILED' }, BigInt(10));
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getTestResultHistories', () => {
+    it('should return edit histories with editor info', async () => {
+      const mockHistories = [
+        {
+          id: BigInt(1),
+          testResultId: BigInt(1),
+          editedById: BigInt(10),
+          fieldName: 'status',
+          oldValue: 'PASSED',
+          newValue: 'FAILED',
+          editedAt: new Date('2024-01-02T10:00:00Z'),
+          editedBy: {
+            id: BigInt(10),
+            name: 'Editor',
+            email: 'editor@example.com',
+          },
+        },
+      ];
+
+      mockPrisma.testResultHistory.findMany.mockResolvedValue(mockHistories);
+      mockPrisma.testResultHistory.count.mockResolvedValue(1);
+
+      const { data, total } = await getTestResultHistories(BigInt(1));
+
+      expect(data).toHaveLength(1);
+      expect(data[0].fieldName).toBe('status');
+      expect(data[0].editedBy.name).toBe('Editor');
+      expect(total).toBe(1);
+    });
+
+    it('should apply pagination', async () => {
+      mockPrisma.testResultHistory.findMany.mockResolvedValue([]);
+      mockPrisma.testResultHistory.count.mockResolvedValue(0);
+
+      await getTestResultHistories(BigInt(1), { limit: 10, offset: 5 });
+
+      expect(mockPrisma.testResultHistory.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          take: 10,
+          skip: 5,
+        })
+      );
     });
   });
 });

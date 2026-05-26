@@ -10,6 +10,7 @@ import {
   DashboardCreateDialog,
   WidgetSelectorDialog,
 } from '@/components/dashboard';
+import { ProgressSummaryWidget } from '@/components/dashboard/widgets';
 import type { DashboardSafe, DashboardWidgetSafe } from '@/types/dashboard';
 import type { WidgetType } from '@/generated/prisma';
 import { ArrowLeft, Edit, Eye, Loader2, RefreshCw, Trash2 } from 'lucide-react';
@@ -237,6 +238,16 @@ export default function DashboardPage({ params }: DashboardPageProps) {
     });
   };
 
+  // ウィジェットレンダラー
+  const renderWidget = (widget: DashboardWidgetSafe) => {
+    switch (widget.widgetType) {
+      case 'PROGRESS_SUMMARY':
+        return <ProgressSummaryWidget widget={widget} projectId={projectId} />;
+      default:
+        return null; // デフォルトのプレースホルダーを使用
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -326,6 +337,7 @@ export default function DashboardPage({ params }: DashboardPageProps) {
               isEditing={isEditing}
               onRemoveWidget={handleRemoveWidget}
               onWidgetSettings={handleWidgetSettings}
+              renderWidget={renderWidget}
             />
           ) : (
             <div className="flex items-center justify-center py-12 text-muted-foreground">

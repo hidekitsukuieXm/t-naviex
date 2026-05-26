@@ -9,6 +9,8 @@ import {
   getProjectBugStats,
   getProjectTestRunsWithProgress,
   getProjectSummary,
+  getDailyTestExecutions,
+  getTestRunDailyExecutions,
 } from '@/repositories/stats-repository';
 
 // Prismaモック
@@ -32,6 +34,9 @@ vi.mock('@/lib/prisma', () => ({
     },
     requirement: {
       count: vi.fn(),
+    },
+    testResult: {
+      findMany: vi.fn(),
     },
   },
 }));
@@ -179,6 +184,57 @@ describe('stats-repository', () => {
       expect(result.activeTestRuns).toBe(2);
       expect(result.testProgress).toBeDefined();
       expect(result.bugStats).toBeDefined();
+    });
+  });
+
+  describe('getDailyTestExecutions', () => {
+    it('日別テスト実行データを取得する', async () => {
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      vi.mocked(prisma.testResult.findMany).mockResolvedValue([
+        { executedAt: today, status: 'PASSED' },
+        { executedAt: today, status: 'PASSED' },
+        { executedAt: today, status: 'FAILED' },
+        { executedAt: yesterday, status: 'PASSED' },
+        { executedAt: yesterday, status: 'BLOCKED' },
+      ] as never);
+
+      const result = await getDailyTestExecutions(BigInt(1), 7);
+
+      expect(result).toHaveLength(8); // 7日 + 今日
+      expect(result.every((d) => d.date && typeof d.passed === 'number')).toBe(true);
+    });
+
+    it('テスト結果がない場合は0埋めされたデータを返す', async () => {
+      vi.mocked(prisma.testResult.findMany).mockResolvedValue([]);
+
+      const result = await getDailyTestExecutions(BigInt(1), 7);
+
+      expect(result).toHaveLength(8);
+      expect(result.every((d) => d.total === 0)).toBe(true);
+    });
+  });
+
+  describe('getTestRunDailyExecutions', () => {
+    it('テストラン別の日別テスト実行データを取得する', async () => {
+      vi.mocked(prisma.testResult.findMany).mockResolvedValue([]);
+
+      const result = await getTestRunDailyExecutions(BigInt(1), 7);
+
+      // 8日分のデータ（7日前から今日まで）が返される
+      expect(result).toHaveLength(8);
+      // 各エントリが正しい形式であることを確認
+      expect(result.every((d) => d.date && typeof d.passed === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.failed === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.blocked === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.skipped === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.total === 'number')).toBe(true);
+      // 日付順にソートされていることを確認
+      const dates = result.map((d) => d.date);
+      const sortedDates = [...dates].sort();
+      expect(dates).toEqual(sortedDates);
     });
   });
 });

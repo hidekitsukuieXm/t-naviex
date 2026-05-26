@@ -237,3 +237,143 @@ export async function getProjectSummary(projectId: bigint): Promise<ProjectSumma
     activeTestRuns,
   };
 }
+
+// 日別テスト実行データ
+export interface DailyTestExecution {
+  date: string;
+  passed: number;
+  failed: number;
+  blocked: number;
+  skipped: number;
+  total: number;
+}
+
+// プロジェクトの日別テスト実行データ取得
+export async function getDailyTestExecutions(
+  projectId: bigint,
+  days: number = 30
+): Promise<DailyTestExecution[]> {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // テスト結果から日別の実行データを取得
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: {
+        testRun: { projectId },
+      },
+      executedAt: {
+        gte: startDate,
+      },
+    },
+    select: {
+      executedAt: true,
+      status: true,
+    },
+    orderBy: { executedAt: 'asc' },
+  });
+
+  // 日別に集計
+  const dailyData: Record<string, DailyTestExecution> = {};
+
+  // 日付の範囲を初期化
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dailyData[dateStr] = {
+      date: dateStr,
+      passed: 0,
+      failed: 0,
+      blocked: 0,
+      skipped: 0,
+      total: 0,
+    };
+  }
+
+  // テスト結果を日別に集計
+  for (const result of testResults) {
+    const dateStr = result.executedAt.toISOString().split('T')[0];
+    if (dailyData[dateStr]) {
+      dailyData[dateStr].total++;
+      switch (result.status) {
+        case 'PASSED':
+          dailyData[dateStr].passed++;
+          break;
+        case 'FAILED':
+          dailyData[dateStr].failed++;
+          break;
+        case 'BLOCKED':
+          dailyData[dateStr].blocked++;
+          break;
+        case 'SKIPPED':
+          dailyData[dateStr].skipped++;
+          break;
+      }
+    }
+  }
+
+  return Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// テストラン別の日別テスト実行データ取得
+export async function getTestRunDailyExecutions(
+  testRunId: bigint,
+  days: number = 30
+): Promise<DailyTestExecution[]> {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: { testRunId },
+      executedAt: { gte: startDate },
+    },
+    select: {
+      executedAt: true,
+      status: true,
+    },
+    orderBy: { executedAt: 'asc' },
+  });
+
+  const dailyData: Record<string, DailyTestExecution> = {};
+
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dailyData[dateStr] = {
+      date: dateStr,
+      passed: 0,
+      failed: 0,
+      blocked: 0,
+      skipped: 0,
+      total: 0,
+    };
+  }
+
+  for (const result of testResults) {
+    const dateStr = result.executedAt.toISOString().split('T')[0];
+    if (dailyData[dateStr]) {
+      dailyData[dateStr].total++;
+      switch (result.status) {
+        case 'PASSED':
+          dailyData[dateStr].passed++;
+          break;
+        case 'FAILED':
+          dailyData[dateStr].failed++;
+          break;
+        case 'BLOCKED':
+          dailyData[dateStr].blocked++;
+          break;
+        case 'SKIPPED':
+          dailyData[dateStr].skipped++;
+          break;
+      }
+    }
+  }
+
+  return Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+}

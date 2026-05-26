@@ -690,3 +690,116 @@ export async function getTeamExecutionStats(projectId: bigint): Promise<TeamMemb
 
   return stats.sort((a, b) => b.executedCount - a.executedCount);
 }
+
+// 累積不具合データ
+export interface CumulativeBugData {
+  date: string;
+  newBugs: number; // 当日の新規不具合数
+  resolvedBugs: number; // 当日の解決数
+  cumulativeOpen: number; // 累積オープン数
+  cumulativeResolved: number; // 累積解決数
+  cumulativeTotal: number; // 累積合計
+}
+
+// プロジェクトの累積不具合データ取得
+export async function getCumulativeBugData(
+  projectId: bigint,
+  days: number = 30
+): Promise<CumulativeBugData[]> {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // 開始日以前の不具合数（初期値）
+  const initialBugs = await prisma.bug.findMany({
+    where: {
+      projectId,
+      createdAt: { lt: startDate },
+    },
+    select: {
+      status: true,
+      resolvedAt: true,
+    },
+  });
+
+  let initialOpen = 0;
+  let initialResolved = 0;
+  for (const bug of initialBugs) {
+    if (['RESOLVED', 'VERIFIED', 'CLOSED'].includes(bug.status)) {
+      initialResolved++;
+    } else if (!['REJECTED', 'DEFERRED'].includes(bug.status)) {
+      initialOpen++;
+    }
+  }
+  const initialTotal = initialBugs.length;
+
+  // 期間中の不具合を取得
+  const bugs = await prisma.bug.findMany({
+    where: {
+      projectId,
+      OR: [{ createdAt: { gte: startDate } }, { resolvedAt: { gte: startDate } }],
+    },
+    select: {
+      createdAt: true,
+      resolvedAt: true,
+      status: true,
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // 日別データを初期化
+  const dailyData: Record<string, { newBugs: number; resolvedBugs: number }> = {};
+
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dailyData[dateStr] = { newBugs: 0, resolvedBugs: 0 };
+  }
+
+  // 新規不具合を日別に集計
+  for (const bug of bugs) {
+    const createdDateStr = bug.createdAt.toISOString().split('T')[0];
+    if (dailyData[createdDateStr] && bug.createdAt >= startDate) {
+      dailyData[createdDateStr].newBugs++;
+    }
+
+    // 解決日を日別に集計
+    if (
+      bug.resolvedAt &&
+      bug.resolvedAt >= startDate &&
+      ['RESOLVED', 'VERIFIED', 'CLOSED'].includes(bug.status)
+    ) {
+      const resolvedDateStr = bug.resolvedAt.toISOString().split('T')[0];
+      if (dailyData[resolvedDateStr]) {
+        dailyData[resolvedDateStr].resolvedBugs++;
+      }
+    }
+  }
+
+  // 累積値を計算
+  let cumulativeOpen = initialOpen;
+  let cumulativeResolved = initialResolved;
+  let cumulativeTotal = initialTotal;
+
+  const result: CumulativeBugData[] = [];
+
+  const sortedDates = Object.keys(dailyData).sort();
+  for (const dateStr of sortedDates) {
+    const dayData = dailyData[dateStr];
+    cumulativeTotal += dayData.newBugs;
+    cumulativeResolved += dayData.resolvedBugs;
+    cumulativeOpen = cumulativeTotal - cumulativeResolved;
+
+    result.push({
+      date: dateStr,
+      newBugs: dayData.newBugs,
+      resolvedBugs: dayData.resolvedBugs,
+      cumulativeOpen,
+      cumulativeResolved,
+      cumulativeTotal,
+    });
+  }
+
+  return result;
+}

@@ -378,6 +378,250 @@ export async function getTestRunDailyExecutions(
   return Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
 }
 
+// 累積テスト進捗データ（登録/実施/結果の推移）
+export interface CumulativeTestProgress {
+  date: string;
+  registered: number; // 累積登録数
+  executed: number; // 累積実行数
+  passed: number; // 累積合格数
+  failed: number; // 累積失敗数
+}
+
+// プロジェクトの累積テスト進捗データ取得
+export async function getCumulativeTestProgress(
+  projectId: bigint,
+  days: number = 30
+): Promise<CumulativeTestProgress[]> {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // 開始日以前に登録されたテストケース数（初期値）
+  const initialRegistered = await prisma.testCase.count({
+    where: {
+      testSpec: { projectId },
+      deletedAt: null,
+      createdAt: { lt: startDate },
+    },
+  });
+
+  // 期間中に登録されたテストケース（日別）
+  const newCases = await prisma.testCase.findMany({
+    where: {
+      testSpec: { projectId },
+      deletedAt: null,
+      createdAt: { gte: startDate },
+    },
+    select: { createdAt: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // 開始日以前のテスト結果（初期値）
+  const initialResults = await prisma.testResult.groupBy({
+    by: ['status'],
+    where: {
+      testRunCase: { testRun: { projectId } },
+      executedAt: { lt: startDate },
+    },
+    _count: { status: true },
+  });
+
+  let initialExecuted = 0;
+  let initialPassed = 0;
+  let initialFailed = 0;
+  for (const r of initialResults) {
+    initialExecuted += r._count.status;
+    if (r.status === 'PASSED') initialPassed = r._count.status;
+    if (r.status === 'FAILED') initialFailed = r._count.status;
+  }
+
+  // 期間中のテスト結果（日別）
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: { testRun: { projectId } },
+      executedAt: { gte: startDate },
+    },
+    select: {
+      executedAt: true,
+      status: true,
+    },
+    orderBy: { executedAt: 'asc' },
+  });
+
+  // 日別データを初期化
+  const dailyData: Record<
+    string,
+    { registered: number; executed: number; passed: number; failed: number }
+  > = {};
+
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dailyData[dateStr] = { registered: 0, executed: 0, passed: 0, failed: 0 };
+  }
+
+  // テストケース登録を日別に集計
+  for (const tc of newCases) {
+    const dateStr = tc.createdAt.toISOString().split('T')[0];
+    if (dailyData[dateStr]) {
+      dailyData[dateStr].registered++;
+    }
+  }
+
+  // テスト結果を日別に集計
+  for (const result of testResults) {
+    const dateStr = result.executedAt.toISOString().split('T')[0];
+    if (dailyData[dateStr]) {
+      dailyData[dateStr].executed++;
+      if (result.status === 'PASSED') {
+        dailyData[dateStr].passed++;
+      } else if (result.status === 'FAILED') {
+        dailyData[dateStr].failed++;
+      }
+    }
+  }
+
+  // 累積値を計算
+  let cumulativeRegistered = initialRegistered;
+  let cumulativeExecuted = initialExecuted;
+  let cumulativePassed = initialPassed;
+  let cumulativeFailed = initialFailed;
+
+  const result: CumulativeTestProgress[] = [];
+
+  const sortedDates = Object.keys(dailyData).sort();
+  for (const dateStr of sortedDates) {
+    cumulativeRegistered += dailyData[dateStr].registered;
+    cumulativeExecuted += dailyData[dateStr].executed;
+    cumulativePassed += dailyData[dateStr].passed;
+    cumulativeFailed += dailyData[dateStr].failed;
+
+    result.push({
+      date: dateStr,
+      registered: cumulativeRegistered,
+      executed: cumulativeExecuted,
+      passed: cumulativePassed,
+      failed: cumulativeFailed,
+    });
+  }
+
+  return result;
+}
+
+// テストラン別の累積テスト進捗データ取得
+export async function getTestRunCumulativeProgress(
+  testRunId: bigint,
+  days: number = 30
+): Promise<CumulativeTestProgress[]> {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  startDate.setHours(0, 0, 0, 0);
+
+  // テストランのテストケース数を取得
+  const testRunCases = await prisma.testRunCase.findMany({
+    where: { testRunId },
+    select: { createdAt: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // 開始日以前のテストランケース数（初期値）
+  const initialRegistered = testRunCases.filter((trc) => trc.createdAt < startDate).length;
+
+  // 開始日以前のテスト結果（初期値）
+  const initialResults = await prisma.testResult.groupBy({
+    by: ['status'],
+    where: {
+      testRunCase: { testRunId },
+      executedAt: { lt: startDate },
+    },
+    _count: { status: true },
+  });
+
+  let initialExecuted = 0;
+  let initialPassed = 0;
+  let initialFailed = 0;
+  for (const r of initialResults) {
+    initialExecuted += r._count.status;
+    if (r.status === 'PASSED') initialPassed = r._count.status;
+    if (r.status === 'FAILED') initialFailed = r._count.status;
+  }
+
+  // 期間中のテスト結果（日別）
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: { testRunId },
+      executedAt: { gte: startDate },
+    },
+    select: {
+      executedAt: true,
+      status: true,
+    },
+    orderBy: { executedAt: 'asc' },
+  });
+
+  // 日別データを初期化
+  const dailyData: Record<
+    string,
+    { registered: number; executed: number; passed: number; failed: number }
+  > = {};
+
+  for (let i = 0; i <= days; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateStr = date.toISOString().split('T')[0];
+    dailyData[dateStr] = { registered: 0, executed: 0, passed: 0, failed: 0 };
+  }
+
+  // テストランケース登録を日別に集計
+  for (const trc of testRunCases) {
+    if (trc.createdAt < startDate) continue;
+    const dateStr = trc.createdAt.toISOString().split('T')[0];
+    if (dailyData[dateStr]) {
+      dailyData[dateStr].registered++;
+    }
+  }
+
+  // テスト結果を日別に集計
+  for (const result of testResults) {
+    const dateStr = result.executedAt.toISOString().split('T')[0];
+    if (dailyData[dateStr]) {
+      dailyData[dateStr].executed++;
+      if (result.status === 'PASSED') {
+        dailyData[dateStr].passed++;
+      } else if (result.status === 'FAILED') {
+        dailyData[dateStr].failed++;
+      }
+    }
+  }
+
+  // 累積値を計算
+  let cumulativeRegistered = initialRegistered;
+  let cumulativeExecuted = initialExecuted;
+  let cumulativePassed = initialPassed;
+  let cumulativeFailed = initialFailed;
+
+  const result: CumulativeTestProgress[] = [];
+
+  const sortedDates = Object.keys(dailyData).sort();
+  for (const dateStr of sortedDates) {
+    cumulativeRegistered += dailyData[dateStr].registered;
+    cumulativeExecuted += dailyData[dateStr].executed;
+    cumulativePassed += dailyData[dateStr].passed;
+    cumulativeFailed += dailyData[dateStr].failed;
+
+    result.push({
+      date: dateStr,
+      registered: cumulativeRegistered,
+      executed: cumulativeExecuted,
+      passed: cumulativePassed,
+      failed: cumulativeFailed,
+    });
+  }
+
+  return result;
+}
+
 // チームメンバー実行統計
 export interface TeamMemberStats {
   userId: string;

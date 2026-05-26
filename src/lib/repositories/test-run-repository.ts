@@ -487,3 +487,117 @@ export async function getTestRunsByConfiguration(configurationId: bigint): Promi
 
   return testRuns.map((t) => serializeTestRun(t as DbTestRun));
 }
+
+// ============================================
+// Re-Run機能
+// ============================================
+
+/**
+ * Re-Run入力型
+ */
+export interface CreateReRunInput {
+  name?: string;
+  description?: string;
+  includeStatuses: string[];
+  assigneeId?: string;
+}
+
+/**
+ * 失敗/ブロックケースを抽出して新しいテストランを作成
+ */
+export async function createReRun(
+  projectId: bigint,
+  sourceTestRunId: bigint,
+  input: CreateReRunInput
+): Promise<TestRunWithRelations> {
+  // 元のテストランを取得
+  const sourceTestRun = await prisma.testRun.findUnique({
+    where: { id: sourceTestRunId },
+    include: {
+      testRunCases: {
+        where: {
+          status: {
+            in: input.includeStatuses,
+          },
+        },
+        select: {
+          testCaseId: true,
+          assignedToId: true,
+        },
+      },
+    },
+  });
+
+  if (!sourceTestRun || sourceTestRun.projectId !== projectId) {
+    throw new Error('テストランが見つかりません');
+  }
+
+  if (sourceTestRun.testRunCases.length === 0) {
+    throw new Error('対象のテストケースがありません');
+  }
+
+  // 新しいテストランを作成
+  const newTestRun = await prisma.$transaction(async (tx) => {
+    // テストランを作成
+    const testRun = await tx.testRun.create({
+      data: {
+        projectId,
+        milestoneId: sourceTestRun.milestoneId,
+        configurationId: sourceTestRun.configurationId,
+        name: input.name || `${sourceTestRun.name} - Re-Run`,
+        description: input.description || `Re-Run of ${sourceTestRun.name}`,
+        status: TEST_RUN_STATUS.PLANNED,
+        totalCases: sourceTestRun.testRunCases.length,
+        passedCases: 0,
+        failedCases: 0,
+        blockedCases: 0,
+        skippedCases: 0,
+        notes: `Re-Run from Test Run #${sourceTestRunId}`,
+      },
+      select: testRunWithRelationsSelect,
+    });
+
+    // テストランケースを作成
+    await tx.testRunCase.createMany({
+      data: sourceTestRun.testRunCases.map((tc, index) => ({
+        testRunId: testRun.id,
+        testCaseId: tc.testCaseId,
+        assignedToId: input.assigneeId ? BigInt(input.assigneeId) : tc.assignedToId,
+        status: 'NOT_RUN',
+        sortOrder: index + 1,
+      })),
+    });
+
+    return testRun;
+  });
+
+  return serializeTestRunWithRelations(newTestRun as DbTestRunWithRelations);
+}
+
+/**
+ * テストランのケースのステータス別カウントを取得
+ */
+export async function getTestRunCaseStatusCounts(
+  testRunId: bigint
+): Promise<Record<string, number>> {
+  const counts = await prisma.testRunCase.groupBy({
+    by: ['status'],
+    where: { testRunId },
+    _count: true,
+  });
+
+  const result: Record<string, number> = {
+    NOT_RUN: 0,
+    PASSED: 0,
+    FAILED: 0,
+    BLOCKED: 0,
+    SKIPPED: 0,
+    RETEST: 0,
+  };
+
+  for (const count of counts) {
+    result[count.status] = count._count;
+  }
+
+  return result;
+}

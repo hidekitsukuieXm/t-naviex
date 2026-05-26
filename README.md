@@ -473,3 +473,4 @@ gh issue list --repo hidekitsukuieXm/t-naviex --label "priority:high"
 
 _本プロジェクトはUSDM要求仕様書（SRS-TM-USDM-2026-001）に基づき設計・開発されています。_
 | 2026-05-27 | **Issue #108 実装完了**: Claude APIクライアント実装。Anthropic SDKパッケージ導入、ClaudeClientクラス（sendMessage/sendMessageStream/countTokens）、型定義（ClaudeMessage/ClaudeRequestParams/ClaudeResponse/ClaudeApiError/ClaudeModel/ClaudeUsage）、エラーハンドリング（レート制限/認証/API/タイムアウト）、リトライロジック（デフォルト3回）、ストリーミングレスポンス対応、トークン使用量追跡、シングルトンインスタンス管理（initializeClaudeClient/getClaudeClient）、単体テスト16件追加。PR #289 作成・マージ。 |
+| 2026-05-27 | **Issue #109 実装完了**: AI設定・APIキー管理画面実装。Prismaスキーマ追加（AiSettingsモデル）、AI設定画面（/settings/ai）、APIキー暗号化保存（AES-256-GCM）、マスク表示、モデル選択（claude-opus-4/claude-sonnet-4等）、最大トークン数/温度設定、使用量統計（今日/今月/累計）、接続テスト機能、AI有効/無効切り替え、REST API（GET/PATCH/test-connection）、単体テスト21件追加。PR #290 作成・マージ。 |

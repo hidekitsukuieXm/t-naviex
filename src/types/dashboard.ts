@@ -16,6 +16,7 @@ export const WidgetTypes = {
   COVERAGE_STATS: 'COVERAGE_STATS',
   BURNDOWN_CHART: 'BURNDOWN_CHART',
   RELIABILITY_CHART: 'RELIABILITY_CHART',
+  ENVIRONMENT_STATS: 'ENVIRONMENT_STATS',
   CUSTOM: 'CUSTOM',
 } as const;
 
@@ -31,6 +32,7 @@ export const WidgetTypeLabels: Record<WidgetType, string> = {
   COVERAGE_STATS: 'カバレッジ',
   BURNDOWN_CHART: 'バーンダウン',
   RELIABILITY_CHART: '信頼度成長曲線',
+  ENVIRONMENT_STATS: '環境別集計',
   CUSTOM: 'カスタム',
 };
 
@@ -116,6 +118,11 @@ export interface ReliabilityChartConfig {
   endDate?: string;
 }
 
+export interface EnvironmentStatsConfig {
+  testRunId?: string;
+  viewMode?: 'chart' | 'table';
+}
+
 export type WidgetConfig =
   | ProgressSummaryConfig
   | ProgressChartConfig
@@ -125,6 +132,7 @@ export type WidgetConfig =
   | MilestoneConfig
   | BurndownConfig
   | ReliabilityChartConfig
+  | EnvironmentStatsConfig
   | Record<string, unknown>;
 
 // 変換ユーティリティ

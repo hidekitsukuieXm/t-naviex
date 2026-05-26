@@ -953,6 +953,186 @@ export async function getTestRunBurndownData(testRunId: bigint): Promise<Burndow
   };
 }
 
+// 環境別テスト実行統計
+export interface EnvironmentStats {
+  environment: string;
+  totalExecutions: number;
+  passedCount: number;
+  failedCount: number;
+  blockedCount: number;
+  skippedCount: number;
+  passRate: number;
+  avgExecutionTime: number | null;
+}
+
+export interface EnvironmentStatsResult {
+  environments: EnvironmentStats[];
+  totalExecutions: number;
+  uniqueEnvironments: number;
+}
+
+// プロジェクトの環境別テスト実行統計取得
+export async function getProjectEnvironmentStats(
+  projectId: bigint
+): Promise<EnvironmentStatsResult> {
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: {
+        testRun: { projectId },
+      },
+    },
+    select: {
+      environment: true,
+      status: true,
+      executionTime: true,
+    },
+  });
+
+  const envStats: Record<string, EnvironmentStats> = {};
+
+  for (const result of testResults) {
+    const env = result.environment || '未設定';
+
+    if (!envStats[env]) {
+      envStats[env] = {
+        environment: env,
+        totalExecutions: 0,
+        passedCount: 0,
+        failedCount: 0,
+        blockedCount: 0,
+        skippedCount: 0,
+        passRate: 0,
+        avgExecutionTime: null,
+      };
+    }
+
+    envStats[env].totalExecutions++;
+
+    switch (result.status) {
+      case 'PASSED':
+        envStats[env].passedCount++;
+        break;
+      case 'FAILED':
+        envStats[env].failedCount++;
+        break;
+      case 'BLOCKED':
+        envStats[env].blockedCount++;
+        break;
+      case 'SKIPPED':
+        envStats[env].skippedCount++;
+        break;
+    }
+  }
+
+  // 平均実行時間と合格率を計算
+  const environments = Object.values(envStats).map((stat) => {
+    const resultsWithTime = testResults.filter(
+      (r) => (r.environment || '未設定') === stat.environment && r.executionTime !== null
+    );
+
+    const avgTime =
+      resultsWithTime.length > 0
+        ? Math.round(
+            resultsWithTime.reduce((sum, r) => sum + (r.executionTime || 0), 0) /
+              resultsWithTime.length
+          )
+        : null;
+
+    return {
+      ...stat,
+      passRate:
+        stat.totalExecutions > 0 ? Math.round((stat.passedCount / stat.totalExecutions) * 100) : 0,
+      avgExecutionTime: avgTime,
+    };
+  });
+
+  return {
+    environments: environments.sort((a, b) => b.totalExecutions - a.totalExecutions),
+    totalExecutions: testResults.length,
+    uniqueEnvironments: environments.length,
+  };
+}
+
+// テストランの環境別テスト実行統計取得
+export async function getTestRunEnvironmentStats(
+  testRunId: bigint
+): Promise<EnvironmentStatsResult> {
+  const testResults = await prisma.testResult.findMany({
+    where: {
+      testRunCase: { testRunId },
+    },
+    select: {
+      environment: true,
+      status: true,
+      executionTime: true,
+    },
+  });
+
+  const envStats: Record<string, EnvironmentStats> = {};
+
+  for (const result of testResults) {
+    const env = result.environment || '未設定';
+
+    if (!envStats[env]) {
+      envStats[env] = {
+        environment: env,
+        totalExecutions: 0,
+        passedCount: 0,
+        failedCount: 0,
+        blockedCount: 0,
+        skippedCount: 0,
+        passRate: 0,
+        avgExecutionTime: null,
+      };
+    }
+
+    envStats[env].totalExecutions++;
+
+    switch (result.status) {
+      case 'PASSED':
+        envStats[env].passedCount++;
+        break;
+      case 'FAILED':
+        envStats[env].failedCount++;
+        break;
+      case 'BLOCKED':
+        envStats[env].blockedCount++;
+        break;
+      case 'SKIPPED':
+        envStats[env].skippedCount++;
+        break;
+    }
+  }
+
+  // 平均実行時間と合格率を計算
+  const environments = Object.values(envStats).map((stat) => {
+    const resultsWithTime = testResults.filter(
+      (r) => (r.environment || '未設定') === stat.environment && r.executionTime !== null
+    );
+
+    const avgTime =
+      resultsWithTime.length > 0
+        ? Math.round(
+            resultsWithTime.reduce((sum, r) => sum + (r.executionTime || 0), 0) /
+              resultsWithTime.length
+          )
+        : null;
+
+    return {
+      ...stat,
+      passRate:
+        stat.totalExecutions > 0 ? Math.round((stat.passedCount / stat.totalExecutions) * 100) : 0,
+      avgExecutionTime: avgTime,
+    };
+  });
+
+  return {
+    environments: environments.sort((a, b) => b.totalExecutions - a.totalExecutions),
+    totalExecutions: testResults.length,
+    uniqueEnvironments: environments.length,
+  };
+}
+
 // プロジェクト全体のバーンダウンチャートデータ取得
 export async function getProjectBurndownData(projectId: bigint): Promise<BurndownStats> {
   // アクティブなテストランのテストケース数を取得

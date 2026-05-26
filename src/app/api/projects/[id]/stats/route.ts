@@ -14,6 +14,7 @@ import {
   getCumulativeTestProgress,
   getCumulativeBugData,
   getProjectBurndownData,
+  getProjectEnvironmentStats,
 } from '@/repositories/stats-repository';
 
 interface RouteParams {
@@ -73,6 +74,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       case 'burndown': {
         const burndown = await getProjectBurndownData(projectId);
         return NextResponse.json({ burndown });
+      }
+
+      case 'environment': {
+        const environment = await getProjectEnvironmentStats(projectId);
+        return NextResponse.json({ environment });
       }
 
       case 'summary':

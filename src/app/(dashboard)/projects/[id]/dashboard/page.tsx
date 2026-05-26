@@ -16,6 +16,7 @@ import {
   ProgressChartWidget,
   SummaryPieChartWidget,
   BugSummaryWidget,
+  BugChartWidget,
   TeamInfoWidget,
   MilestoneWidget,
 } from '@/components/dashboard/widgets';
@@ -318,6 +319,8 @@ export default function DashboardPage({ params }: DashboardPageProps) {
         return <ProgressChartWidget widget={widget} projectId={projectId} />;
       case 'BUG_SUMMARY':
         return <BugSummaryWidget widget={widget} projectId={projectId} />;
+      case 'BUG_CHART':
+        return <BugChartWidget widget={widget} projectId={projectId} />;
       case 'TEAM_INFO':
         return <TeamInfoWidget widget={widget} projectId={projectId} />;
       case 'MILESTONE':

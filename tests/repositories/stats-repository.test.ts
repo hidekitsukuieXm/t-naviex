@@ -13,6 +13,7 @@ import {
   getTestRunDailyExecutions,
   getCumulativeTestProgress,
   getTestRunCumulativeProgress,
+  getCumulativeBugData,
 } from '@/repositories/stats-repository';
 
 // Prismaモック
@@ -293,6 +294,34 @@ describe('stats-repository', () => {
       expect(result.every((d) => typeof d.executed === 'number')).toBe(true);
       expect(result.every((d) => typeof d.passed === 'number')).toBe(true);
       expect(result.every((d) => typeof d.failed === 'number')).toBe(true);
+    });
+  });
+
+  describe('getCumulativeBugData', () => {
+    it('累積不具合データを取得する', async () => {
+      vi.mocked(prisma.bug.findMany)
+        .mockResolvedValueOnce([]) // 初期不具合
+        .mockResolvedValueOnce([]); // 期間中の不具合
+
+      const result = await getCumulativeBugData(BigInt(1), 7);
+
+      expect(result).toHaveLength(8);
+      expect(result.every((d) => d.date && typeof d.newBugs === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.resolvedBugs === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.cumulativeOpen === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.cumulativeResolved === 'number')).toBe(true);
+      expect(result.every((d) => typeof d.cumulativeTotal === 'number')).toBe(true);
+    });
+
+    it('データがない場合はすべて0を返す', async () => {
+      vi.mocked(prisma.bug.findMany).mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+
+      const result = await getCumulativeBugData(BigInt(1), 7);
+
+      expect(result).toHaveLength(8);
+      expect(result.every((d) => d.cumulativeOpen === 0)).toBe(true);
+      expect(result.every((d) => d.cumulativeResolved === 0)).toBe(true);
+      expect(result.every((d) => d.cumulativeTotal === 0)).toBe(true);
     });
   });
 });

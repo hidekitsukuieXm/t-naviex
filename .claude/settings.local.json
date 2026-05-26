@@ -45,7 +45,9 @@
       "Bash(npx prisma:*)",
       "Bash(git restore:*)",
       "Bash(npx shadcn@4.7.0 add:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(gh pr list:*)"
     ]
   }
 }

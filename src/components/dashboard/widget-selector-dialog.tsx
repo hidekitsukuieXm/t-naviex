@@ -26,6 +26,7 @@ import {
   TrendingDown,
   LineChart,
   Settings,
+  Monitor,
 } from 'lucide-react';
 import type { WidgetType } from '@/generated/prisma';
 import { WidgetTypeLabels } from '@/types/dashboard';
@@ -100,6 +101,12 @@ const widgetOptions: {
     label: WidgetTypeLabels.RELIABILITY_CHART,
     description: '信頼度成長曲線を表示',
     icon: LineChart,
+  },
+  {
+    type: 'ENVIRONMENT_STATS',
+    label: WidgetTypeLabels.ENVIRONMENT_STATS,
+    description: '環境別のテスト実行状況を表示',
+    icon: Monitor,
   },
   {
     type: 'CUSTOM',

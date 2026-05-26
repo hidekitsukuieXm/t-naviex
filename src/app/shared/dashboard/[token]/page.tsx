@@ -14,6 +14,7 @@ import {
   BurndownChartWidget,
   TeamInfoWidget,
   MilestoneWidget,
+  EnvironmentStatsWidget,
 } from '@/components/dashboard/widgets';
 
 interface SharedDashboardPageProps {
@@ -80,6 +81,8 @@ export default function SharedDashboardPage({ params }: SharedDashboardPageProps
         return <SummaryPieChartWidget widget={widget} projectId={projectId} />;
       case 'BURNDOWN_CHART':
         return <BurndownChartWidget widget={widget} projectId={projectId} />;
+      case 'ENVIRONMENT_STATS':
+        return <EnvironmentStatsWidget widget={widget} projectId={projectId} />;
       default:
         return null;
     }

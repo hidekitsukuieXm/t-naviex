@@ -6,3 +6,4 @@ export { BugChartWidget } from './bug-chart-widget';
 export { BurndownChartWidget } from './burndown-chart-widget';
 export { TeamInfoWidget } from './team-info-widget';
 export { MilestoneWidget } from './milestone-widget';
+export { EnvironmentStatsWidget } from './environment-stats-widget';

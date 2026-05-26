@@ -20,6 +20,7 @@ import {
   BurndownChartWidget,
   TeamInfoWidget,
   MilestoneWidget,
+  EnvironmentStatsWidget,
 } from '@/components/dashboard/widgets';
 import type { DashboardSafe, DashboardWidgetSafe } from '@/types/dashboard';
 import type { WidgetType } from '@/generated/prisma';
@@ -330,6 +331,8 @@ export default function DashboardPage({ params }: DashboardPageProps) {
         return <SummaryPieChartWidget widget={widget} projectId={projectId} />;
       case 'BURNDOWN_CHART':
         return <BurndownChartWidget widget={widget} projectId={projectId} />;
+      case 'ENVIRONMENT_STATS':
+        return <EnvironmentStatsWidget widget={widget} projectId={projectId} />;
       default:
         return null; // デフォルトのプレースホルダーを使用
     }

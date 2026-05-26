@@ -10,6 +10,7 @@ import {
   getTestRunDailyExecutions,
   getTestRunCumulativeProgress,
   getTestRunBurndownData,
+  getTestRunEnvironmentStats,
 } from '@/repositories/stats-repository';
 
 interface RouteParams {
@@ -49,6 +50,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       case 'burndown': {
         const burndown = await getTestRunBurndownData(testRunIdBigInt);
         return NextResponse.json({ burndown });
+      }
+
+      case 'environment': {
+        const environment = await getTestRunEnvironmentStats(testRunIdBigInt);
+        return NextResponse.json({ environment });
       }
 
       case 'progress':

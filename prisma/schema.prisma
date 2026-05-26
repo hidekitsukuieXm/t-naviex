@@ -1637,6 +1637,7 @@ enum WidgetType {
   COVERAGE_STATS      // カバレッジ統計
   BURNDOWN_CHART      // バーンダウンチャート
   RELIABILITY_CHART   // 信頼度成長曲線
+  ENVIRONMENT_STATS   // 環境別テスト集計
   CUSTOM              // カスタムウィジェット
 
   @@map("widget_type")

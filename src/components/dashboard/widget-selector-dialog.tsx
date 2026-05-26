@@ -86,8 +86,8 @@ const widgetOptions: {
   {
     type: 'COVERAGE_STATS',
     label: WidgetTypeLabels.COVERAGE_STATS,
-    description: '要求仕様のカバレッジ統計',
-    icon: Target,
+    description: 'テスト結果の比率を円グラフで表示',
+    icon: PieChart,
   },
   {
     type: 'BURNDOWN_CHART',

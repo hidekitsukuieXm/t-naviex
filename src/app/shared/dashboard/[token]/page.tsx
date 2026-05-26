@@ -8,6 +8,7 @@ import { DashboardGrid } from '@/components/dashboard';
 import {
   ProgressSummaryWidget,
   ProgressChartWidget,
+  SummaryPieChartWidget,
   BugSummaryWidget,
   TeamInfoWidget,
   MilestoneWidget,
@@ -71,6 +72,8 @@ export default function SharedDashboardPage({ params }: SharedDashboardPageProps
         return <TeamInfoWidget widget={widget} projectId={projectId} />;
       case 'MILESTONE':
         return <MilestoneWidget widget={widget} projectId={projectId} />;
+      case 'COVERAGE_STATS':
+        return <SummaryPieChartWidget widget={widget} projectId={projectId} />;
       default:
         return null;
     }

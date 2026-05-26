@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { pushBugToRedmine, pullBugFromRedmine } from '@/services/redmine-sync';
+import { pushBugToBacklog, pullBugFromBacklog } from '@/services/backlog-sync';
 
 interface RouteParams {
   params: Promise<{ bugId: string }>;
@@ -127,6 +128,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           result = await pushBugToRedmine(bugIdBigInt, integrationId);
         } else {
           result = await pullBugFromRedmine(bugIdBigInt, integrationId);
+        }
+        break;
+
+      case 'BACKLOG':
+        if (direction === 'push') {
+          result = await pushBugToBacklog(bugIdBigInt, integrationId);
+        } else {
+          result = await pullBugFromBacklog(bugIdBigInt, integrationId);
         }
         break;
 

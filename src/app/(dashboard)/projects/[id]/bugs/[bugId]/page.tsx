@@ -14,6 +14,7 @@ import { BugEditDialog } from '@/components/bugs/bug-edit-dialog';
 import { BugCommentSection } from '@/components/bugs/bug-comment-section';
 import { BugAttachmentSection } from '@/components/bugs/bug-attachment-section';
 import { BugHistorySection } from '@/components/bugs/bug-history-section';
+import { BugSubtaskSection } from '@/components/bugs/bug-subtask-section';
 import {
   type BugWithRelations,
   type BugStatus,
@@ -413,6 +414,14 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
               )}
             </CardContent>
           </Card>
+
+          <BugSubtaskSection
+            projectId={projectId}
+            bugId={bugId}
+            parentBug={bug.parentBug}
+            childBugs={bug.childBugs}
+            onSubtaskCreated={fetchBug}
+          />
 
           {(bug.environment || bug.version || bug.fixedVersion) && (
             <Card>

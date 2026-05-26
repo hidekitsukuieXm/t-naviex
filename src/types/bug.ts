@@ -328,6 +328,56 @@ export interface BugStatistics {
   resolvedCount: number;
 }
 
+// ============================================
+// Color Functions
+// ============================================
+
+export function getBugStatusColor(status: BugStatus): string {
+  const colors: Record<BugStatus, string> = {
+    NEW: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+    OPEN: 'bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-300',
+    IN_PROGRESS: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    RESOLVED: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+    VERIFIED: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300',
+    CLOSED: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+    REJECTED: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    DEFERRED: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+  };
+  return colors[status] || 'bg-gray-100 text-gray-800';
+}
+
+export function getBugPriorityColor(priority: BugPriority): string {
+  const colors: Record<BugPriority, string> = {
+    CRITICAL: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    HIGH: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+    MEDIUM: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    LOW: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+  };
+  return colors[priority] || 'bg-gray-100 text-gray-800';
+}
+
+export function getBugSeverityColor(severity: BugSeverity): string {
+  const colors: Record<BugSeverity, string> = {
+    BLOCKER: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+    CRITICAL: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    MAJOR: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+    MINOR: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300',
+    TRIVIAL: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+  };
+  return colors[severity] || 'bg-gray-100 text-gray-800';
+}
+
+export function getBugTypeColor(type: BugType): string {
+  const colors: Record<BugType, string> = {
+    BUG: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300',
+    FEATURE: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+    INQUIRY: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300',
+    TASK: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
+    IMPROVEMENT: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+  };
+  return colors[type] || 'bg-gray-100 text-gray-800';
+}
+
 export function calculateBugStatistics(bugs: Bug[]): BugStatistics {
   const stats: BugStatistics = {
     total: bugs.length,

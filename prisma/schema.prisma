@@ -193,6 +193,10 @@ model Project {
   tasks                Task[]
   testRuns             TestRun[]
   bugs                 Bug[]
+  bugTypeMasters       BugTypeMaster[]       @relation("ProjectBugTypes")
+  bugStatusMasters     BugStatusMaster[]     @relation("ProjectBugStatuses")
+  bugPriorityMasters   BugPriorityMaster[]   @relation("ProjectBugPriorities")
+  bugSeverityMasters   BugSeverityMaster[]   @relation("ProjectBugSeverities")
 
   @@map("projects")
 }
@@ -1237,4 +1241,109 @@ model BugHistory {
   @@index([changedById])
   @@index([changedAt])
   @@map("bug_histories")
+}
+
+/// バグ種別マスタ
+model BugTypeMaster {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt?  @map("project_id")
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  color       String   @db.VarChar(50)
+  icon        String?  @db.VarChar(50)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isEnabled   Boolean  @default(true) @map("is_enabled")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project? @relation("ProjectBugTypes", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([isEnabled])
+  @@index([sortOrder])
+  @@map("bug_type_masters")
+}
+
+/// バグステータスマスタ
+model BugStatusMaster {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt?  @map("project_id")
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  color       String   @db.VarChar(50)
+  icon        String?  @db.VarChar(50)
+  category    String   @db.VarChar(20) // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  sortOrder   Int      @default(0) @map("sort_order")
+  isEnabled   Boolean  @default(true) @map("is_enabled")
+  isDefault   Boolean  @default(false) @map("is_default")
+  isFinal     Boolean  @default(false) @map("is_final")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project? @relation("ProjectBugStatuses", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([isEnabled])
+  @@index([category])
+  @@index([sortOrder])
+  @@map("bug_status_masters")
+}
+
+/// バグ優先度マスタ
+model BugPriorityMaster {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt?  @map("project_id")
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  color       String   @db.VarChar(50)
+  icon        String?  @db.VarChar(50)
+  level       Int      @default(0)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isEnabled   Boolean  @default(true) @map("is_enabled")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project? @relation("ProjectBugPriorities", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([isEnabled])
+  @@index([sortOrder])
+  @@map("bug_priority_masters")
+}
+
+/// バグ重要度マスタ
+model BugSeverityMaster {
+  id          BigInt   @id @default(autoincrement())
+  projectId   BigInt?  @map("project_id")
+  code        String   @db.VarChar(50)
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  color       String   @db.VarChar(50)
+  icon        String?  @db.VarChar(50)
+  level       Int      @default(0)
+  sortOrder   Int      @default(0) @map("sort_order")
+  isEnabled   Boolean  @default(true) @map("is_enabled")
+  isDefault   Boolean  @default(false) @map("is_default")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project? @relation("ProjectBugSeverities", fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, code])
+  @@index([projectId])
+  @@index([isEnabled])
+  @@index([sortOrder])
+  @@map("bug_severity_masters")
 }

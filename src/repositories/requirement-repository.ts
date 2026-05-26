@@ -439,3 +439,180 @@ export async function reorderRequirements(
     )
   );
 }
+
+// ============================================
+// カバレッジ計算
+// ============================================
+
+export interface RequirementCoverage {
+  requirementId: bigint;
+  code: string;
+  title: string;
+  type: RequirementType;
+  status: RequirementStatus;
+  priority: RequirementPriority;
+  testCaseCount: number;
+  isCovered: boolean;
+}
+
+export interface ProjectCoverageStats {
+  totalRequirements: number;
+  coveredRequirements: number;
+  uncoveredRequirements: number;
+  coveragePercentage: number;
+  byType: Record<string, { total: number; covered: number; percentage: number }>;
+  byPriority: Record<string, { total: number; covered: number; percentage: number }>;
+}
+
+export async function getRequirementCoverage(projectId: bigint): Promise<RequirementCoverage[]> {
+  const requirements = await prisma.requirement.findMany({
+    where: { projectId },
+    select: {
+      id: true,
+      code: true,
+      title: true,
+      type: true,
+      status: true,
+      priority: true,
+      _count: {
+        select: {
+          testCases: true,
+        },
+      },
+    },
+    orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
+  });
+
+  return requirements.map((r) => ({
+    requirementId: r.id,
+    code: r.code,
+    title: r.title,
+    type: r.type as RequirementType,
+    status: r.status as RequirementStatus,
+    priority: r.priority as RequirementPriority,
+    testCaseCount: r._count.testCases,
+    isCovered: r._count.testCases > 0,
+  }));
+}
+
+export async function getProjectCoverageStats(projectId: bigint): Promise<ProjectCoverageStats> {
+  const coverage = await getRequirementCoverage(projectId);
+
+  const totalRequirements = coverage.length;
+  const coveredRequirements = coverage.filter((r) => r.isCovered).length;
+  const uncoveredRequirements = totalRequirements - coveredRequirements;
+  const coveragePercentage =
+    totalRequirements > 0 ? Math.round((coveredRequirements / totalRequirements) * 100) : 0;
+
+  // Group by type
+  const byType: Record<string, { total: number; covered: number; percentage: number }> = {};
+  coverage.forEach((r) => {
+    if (!byType[r.type]) {
+      byType[r.type] = { total: 0, covered: 0, percentage: 0 };
+    }
+    byType[r.type].total++;
+    if (r.isCovered) {
+      byType[r.type].covered++;
+    }
+  });
+  Object.keys(byType).forEach((type) => {
+    byType[type].percentage =
+      byType[type].total > 0 ? Math.round((byType[type].covered / byType[type].total) * 100) : 0;
+  });
+
+  // Group by priority
+  const byPriority: Record<string, { total: number; covered: number; percentage: number }> = {};
+  coverage.forEach((r) => {
+    if (!byPriority[r.priority]) {
+      byPriority[r.priority] = { total: 0, covered: 0, percentage: 0 };
+    }
+    byPriority[r.priority].total++;
+    if (r.isCovered) {
+      byPriority[r.priority].covered++;
+    }
+  });
+  Object.keys(byPriority).forEach((priority) => {
+    byPriority[priority].percentage =
+      byPriority[priority].total > 0
+        ? Math.round((byPriority[priority].covered / byPriority[priority].total) * 100)
+        : 0;
+  });
+
+  return {
+    totalRequirements,
+    coveredRequirements,
+    uncoveredRequirements,
+    coveragePercentage,
+    byType,
+    byPriority,
+  };
+}
+
+// ============================================
+// トレーサビリティマトリクス
+// ============================================
+
+export interface TraceabilityMatrixRow {
+  requirement: {
+    id: bigint;
+    code: string;
+    title: string;
+    type: RequirementType;
+    status: RequirementStatus;
+    priority: RequirementPriority;
+  };
+  testCases: Array<{
+    id: bigint;
+    title: string;
+    testSpecId: bigint;
+    testSpecTitle: string;
+  }>;
+}
+
+export async function getTraceabilityMatrix(projectId: bigint): Promise<TraceabilityMatrixRow[]> {
+  const requirements = await prisma.requirement.findMany({
+    where: { projectId },
+    select: {
+      id: true,
+      code: true,
+      title: true,
+      type: true,
+      status: true,
+      priority: true,
+      testCases: {
+        select: {
+          testCase: {
+            select: {
+              id: true,
+              title: true,
+              testSpecId: true,
+              testSpec: {
+                select: {
+                  title: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: [{ sortOrder: 'asc' }, { code: 'asc' }],
+  });
+
+  return requirements.map((r) => ({
+    requirement: {
+      id: r.id,
+      code: r.code,
+      title: r.title,
+      type: r.type as RequirementType,
+      status: r.status as RequirementStatus,
+      priority: r.priority as RequirementPriority,
+    },
+    testCases: r.testCases.map((tc) => ({
+      id: tc.testCase.id,
+      title: tc.testCase.title,
+      testSpecId: tc.testCase.testSpecId,
+      testSpecTitle: tc.testCase.testSpec.title,
+    })),
+  }));
+}

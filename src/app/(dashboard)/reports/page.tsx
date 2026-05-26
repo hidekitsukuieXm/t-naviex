@@ -25,21 +25,21 @@ const reportTypes: ReportType[] = [
     description: 'テストケースの詳細レポート',
     href: '/reports/cases',
     icon: FileSpreadsheet,
-    available: false,
+    available: true,
   },
   {
     title: '欠陥レポート',
     description: 'バグ・欠陥の詳細レポート',
     href: '/reports/defects',
     icon: FileText,
-    available: false,
+    available: true,
   },
   {
     title: '結果レポート',
     description: 'テスト結果の詳細レポート',
     href: '/reports/results',
     icon: TrendingUp,
-    available: false,
+    available: true,
   },
 ];
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use, useEffect, useCallback } from 'react';
+import { useState, use, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,9 +38,6 @@ import {
   Clock,
   SkipForward,
   RotateCcw,
-  Play,
-  Pause,
-  Square,
   ChevronLeft,
   ChevronRight,
   User,
@@ -50,6 +47,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Stopwatch, type StopwatchRef } from '@/components/stopwatch';
 import { useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { type TestRunWithRelations, TEST_RUN_STATUS_LABELS } from '@/types/test-run';
@@ -59,7 +57,6 @@ import {
   TEST_RUN_CASE_STATUS,
   getTestRunCaseStatusLabel,
   getTestRunCaseStatusColor,
-  formatExecutionTime,
   REPRODUCIBILITY_OPTIONS,
   REPRODUCIBILITY_LABELS,
 } from '@/types/test-run-case';
@@ -111,6 +108,8 @@ function ResultInputForm({
 }: ResultInputFormProps) {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const stopwatchRef = useRef<StopwatchRef>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(testRunCase.executionTime || 0);
 
   // Form state initialized from props
   const [formStatus, setFormStatus] = useState<TestRunCaseStatus>(testRunCase.status);
@@ -119,43 +118,10 @@ function ResultInputForm({
   const [formComment, setFormComment] = useState(testRunCase.comment || '');
   const [formReproducibility, setFormReproducibility] = useState(testRunCase.reproducibility || '');
 
-  // Timer state
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [elapsedSeconds, setElapsedSeconds] = useState(testRunCase.executionTime || 0);
-  const [timerStartTime, setTimerStartTime] = useState<number | null>(null);
-
-  // Timer effect
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isTimerRunning && timerStartTime) {
-      interval = setInterval(() => {
-        const now = Date.now();
-        const elapsed = Math.floor((now - timerStartTime) / 1000);
-        setElapsedSeconds(elapsed);
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTimerRunning, timerStartTime]);
-
-  const startTimer = () => {
-    if (!isTimerRunning) {
-      const now = Date.now();
-      setTimerStartTime(now - elapsedSeconds * 1000);
-      setIsTimerRunning(true);
-    }
-  };
-
-  const pauseTimer = () => {
-    setIsTimerRunning(false);
-  };
-
-  const resetTimer = () => {
-    setIsTimerRunning(false);
-    setElapsedSeconds(0);
-    setTimerStartTime(null);
-  };
+  // Handle time change from stopwatch
+  const handleTimeChange = useCallback((seconds: number) => {
+    setElapsedSeconds(seconds);
+  }, []);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -191,7 +157,7 @@ function ResultInputForm({
         description: '結果を保存しました。',
       });
 
-      pauseTimer();
+      stopwatchRef.current?.pause();
     } catch (err) {
       toast({
         title: 'エラー',
@@ -308,30 +274,15 @@ function ResultInputForm({
             </div>
           </div>
 
-          {/* Timer */}
+          {/* Stopwatch */}
           <div className="space-y-2">
             <Label>実行時間</Label>
-            <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-3">
-              <div className="font-mono text-2xl tabular-nums">
-                {formatExecutionTime(elapsedSeconds) === '-'
-                  ? '0:00'
-                  : formatExecutionTime(elapsedSeconds)}
-              </div>
-              <div className="flex gap-1">
-                {!isTimerRunning ? (
-                  <Button variant="outline" size="icon" onClick={startTimer}>
-                    <Play className="size-4" />
-                  </Button>
-                ) : (
-                  <Button variant="outline" size="icon" onClick={pauseTimer}>
-                    <Pause className="size-4" />
-                  </Button>
-                )}
-                <Button variant="outline" size="icon" onClick={resetTimer}>
-                  <Square className="size-4" />
-                </Button>
-              </div>
-            </div>
+            <Stopwatch
+              ref={stopwatchRef}
+              initialSeconds={testRunCase.executionTime || 0}
+              onTimeChange={handleTimeChange}
+              size="md"
+            />
           </div>
 
           {/* Actual result */}

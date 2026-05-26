@@ -16,6 +16,7 @@ import {
   getProjectBurndownData,
   getProjectEnvironmentStats,
   getProjectBugAnalysis,
+  getProjectReliabilityGrowth,
 } from '@/repositories/stats-repository';
 
 interface RouteParams {
@@ -85,6 +86,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       case 'bug-analysis': {
         const bugAnalysis = await getProjectBugAnalysis(projectId);
         return NextResponse.json({ bugAnalysis });
+      }
+
+      case 'reliability-growth': {
+        const daysParam = searchParams.get('days');
+        const days = daysParam ? parseInt(daysParam, 10) : 60;
+        const reliabilityGrowth = await getProjectReliabilityGrowth(projectId, days);
+        return NextResponse.json({ reliabilityGrowth });
       }
 
       case 'summary':

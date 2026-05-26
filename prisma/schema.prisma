@@ -47,6 +47,8 @@ model User {
   bugComments          BugComment[]        @relation("BugCommentAuthor")
   bugAttachments       BugAttachment[]     @relation("BugAttachmentUploader")
   bugHistories         BugHistory[]        @relation("BugHistoryChanger")
+  createdIntegrations  ExternalIntegration[] @relation("IntegrationCreator")
+  updatedIntegrations  ExternalIntegration[] @relation("IntegrationUpdater")
 
   @@map("users")
 }
@@ -198,6 +200,7 @@ model Project {
   bugPriorityMasters   BugPriorityMaster[]   @relation("ProjectBugPriorities")
   bugSeverityMasters   BugSeverityMaster[]   @relation("ProjectBugSeverities")
   bugWorkflows         BugWorkflow[]         @relation("ProjectWorkflows")
+  externalIntegrations ExternalIntegration[] @relation("ProjectIntegrations")
 
   @@map("projects")
 }
@@ -1393,4 +1396,54 @@ model BugWorkflowTransition {
   @@index([fromStatus])
   @@index([toStatus])
   @@map("bug_workflow_transitions")
+}
+
+// ============================================
+// 外部連携設定
+// ============================================
+
+/// 外部連携タイプ
+enum IntegrationType {
+  REDMINE
+  BACKLOG
+  JIRA
+  GITHUB
+  GITLAB
+  AZURE_DEVOPS
+
+  @@map("integration_type")
+}
+
+/// 外部連携設定
+model ExternalIntegration {
+  id              BigInt          @id @default(autoincrement())
+  projectId       BigInt?         @map("project_id")
+  name            String          @db.VarChar(100)
+  integrationType IntegrationType @map("integration_type")
+  baseUrl         String          @map("base_url") @db.VarChar(500)
+  apiKeyEncrypted String?         @map("api_key_encrypted") @db.Text
+  username        String?         @db.VarChar(100)
+  passwordEncrypted String?       @map("password_encrypted") @db.Text
+  projectKey      String?         @map("project_key") @db.VarChar(100)
+  options         Json?           @db.JsonB
+  isEnabled       Boolean         @default(true) @map("is_enabled")
+  lastTestedAt    DateTime?       @map("last_tested_at")
+  lastTestResult  Boolean?        @map("last_test_result")
+  lastTestError   String?         @map("last_test_error") @db.VarChar(500)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  createdById     BigInt          @map("created_by_id")
+  updatedById     BigInt?         @map("updated_by_id")
+
+  // Relations
+  project   Project? @relation("ProjectIntegrations", fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User     @relation("IntegrationCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  updatedBy User?    @relation("IntegrationUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([integrationType])
+  @@index([isEnabled])
+  @@index([createdById])
+  @@map("external_integrations")
 }

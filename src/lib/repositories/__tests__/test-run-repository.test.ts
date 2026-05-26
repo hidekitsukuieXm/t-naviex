@@ -12,6 +12,8 @@ import {
   getTestRunCount,
   getTestRunsByMilestone,
   getTestRunsByConfiguration,
+  createReRun,
+  getTestRunCaseStatusCounts,
 } from '../test-run-repository';
 
 // Mock prisma
@@ -35,6 +37,11 @@ vi.mock('@/lib/prisma', () => ({
     configuration: {
       findFirst: vi.fn(),
     },
+    testRunCase: {
+      groupBy: vi.fn(),
+      createMany: vi.fn(),
+    },
+    $transaction: vi.fn(),
   },
 }));
 
@@ -442,6 +449,82 @@ describe('TestRun Repository', () => {
           where: { configurationId: BigInt(20) },
         })
       );
+    });
+  });
+
+  describe('getTestRunCaseStatusCounts', () => {
+    it('should return status counts', async () => {
+      mockPrisma.testRunCase.groupBy.mockResolvedValue([
+        { status: 'PASSED', _count: 5 },
+        { status: 'FAILED', _count: 3 },
+        { status: 'BLOCKED', _count: 2 },
+      ]);
+
+      const result = await getTestRunCaseStatusCounts(BigInt(1));
+
+      expect(result.PASSED).toBe(5);
+      expect(result.FAILED).toBe(3);
+      expect(result.BLOCKED).toBe(2);
+      expect(result.NOT_RUN).toBe(0);
+    });
+  });
+
+  describe('createReRun', () => {
+    it('should create new test run from failed/blocked cases', async () => {
+      const sourceTestRun = {
+        id: BigInt(1),
+        projectId: BigInt(100),
+        milestoneId: BigInt(10),
+        configurationId: BigInt(20),
+        name: 'Original Test Run',
+        testRunCases: [
+          { testCaseId: BigInt(1), assignedToId: BigInt(5) },
+          { testCaseId: BigInt(2), assignedToId: BigInt(6) },
+        ],
+      };
+
+      mockPrisma.testRun.findUnique.mockResolvedValue(sourceTestRun);
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
+        const mockTx = {
+          testRun: {
+            create: vi.fn().mockResolvedValue({
+              ...mockDbTestRunWithRelations,
+              name: 'Original Test Run - Re-Run',
+            }),
+          },
+          testRunCase: {
+            createMany: vi.fn().mockResolvedValue({ count: 2 }),
+          },
+        };
+        return callback(mockTx);
+      });
+
+      const result = await createReRun(BigInt(100), BigInt(1), {
+        includeStatuses: ['FAILED', 'BLOCKED'],
+      });
+
+      expect(result).not.toBeNull();
+      expect(result.name).toBe('Original Test Run - Re-Run');
+    });
+
+    it('should throw error if test run not found', async () => {
+      mockPrisma.testRun.findUnique.mockResolvedValue(null);
+
+      await expect(
+        createReRun(BigInt(100), BigInt(999), { includeStatuses: ['FAILED'] })
+      ).rejects.toThrow('テストランが見つかりません');
+    });
+
+    it('should throw error if no matching cases', async () => {
+      mockPrisma.testRun.findUnique.mockResolvedValue({
+        id: BigInt(1),
+        projectId: BigInt(100),
+        testRunCases: [],
+      });
+
+      await expect(
+        createReRun(BigInt(100), BigInt(1), { includeStatuses: ['FAILED'] })
+      ).rejects.toThrow('対象のテストケースがありません');
     });
   });
 });

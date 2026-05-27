@@ -231,6 +231,7 @@ model Project {
   combinatorialDefinitions  CombinatorialDefinition[]
   changeSets                ChangeSet[]
   recommendedTestSets       RecommendedTestSet[]
+  branchHistories           BranchHistory[]
 
   @@map("projects")
 }
@@ -516,6 +517,7 @@ model TestCase {
   combinatorialDefinitions CombinatorialDefinition[]
   versions                 TestCaseVersion[]
   editHistories            TestCaseEditHistory[]
+  reviews                  TestCaseReview[]
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -594,6 +596,106 @@ model TestCaseEditHistory {
   @@index([editedAt])
   @@index([editedBy])
   @@map("test_case_edit_histories")
+}
+
+/// レビューステータス
+enum ReviewStatus {
+  PENDING    // 未レビュー
+  IN_REVIEW  // レビュー中
+  APPROVED   // 承認
+  REJECTED   // 却下
+  CANCELLED  // キャンセル
+}
+
+/// レビュー優先度
+enum ReviewPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+/// レビューリクエスト
+model TestCaseReview {
+  id            BigInt         @id @default(autoincrement())
+  testCaseId    BigInt         @map("test_case_id")
+  requesterId   BigInt         @map("requester_id")
+  reviewerId    BigInt?        @map("reviewer_id")
+  status        ReviewStatus   @default(PENDING)
+  priority      ReviewPriority @default(MEDIUM)
+  title         String         @db.VarChar(500)
+  description   String?        @db.Text
+  dueDate       DateTime?      @map("due_date")
+  reviewedAt    DateTime?      @map("reviewed_at")
+  versionId     BigInt?        @map("version_id") // レビュー対象のバージョン
+  metadata      Json?          @db.JsonB
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  testCase  TestCase         @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  comments  ReviewComment[]
+  histories ReviewHistory[]
+
+  @@index([testCaseId])
+  @@index([requesterId])
+  @@index([reviewerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("test_case_reviews")
+}
+
+/// レビューコメント
+model ReviewComment {
+  id         BigInt   @id @default(autoincrement())
+  reviewId   BigInt   @map("review_id")
+  authorId   BigInt   @map("author_id")
+  content    String   @db.Text
+  lineRef    String?  @map("line_ref") @db.VarChar(100) // フィールド参照 (例: "step.1.action")
+  isResolved Boolean  @default(false) @map("is_resolved")
+  parentId   BigInt?  @map("parent_id") // 返信用
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  review  TestCaseReview  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  parent  ReviewComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies ReviewComment[] @relation("CommentReplies")
+
+  @@index([reviewId])
+  @@index([authorId])
+  @@index([parentId])
+  @@map("review_comments")
+}
+
+/// レビュー履歴アクション
+enum ReviewAction {
+  CREATED    // レビュー作成
+  ASSIGNED   // レビュアー割当
+  COMMENTED  // コメント追加
+  APPROVED   // 承認
+  REJECTED   // 却下
+  REOPENED   // 再オープン
+  CANCELLED  // キャンセル
+  RESOLVED   // コメント解決
+}
+
+/// レビュー履歴
+model ReviewHistory {
+  id        BigInt       @id @default(autoincrement())
+  reviewId  BigInt       @map("review_id")
+  userId    BigInt       @map("user_id")
+  action    ReviewAction
+  details   Json?        @db.JsonB // 追加情報
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  review TestCaseReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("review_histories")
 }
 
 /// テストケース依存関係タイプ

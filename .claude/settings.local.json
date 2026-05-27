@@ -48,7 +48,10 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(gh pr list:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(gh api:*)",
+      "Bash(git branch:*)",
+      "Bash(gh pr close:*)"
     ]
   }
 }

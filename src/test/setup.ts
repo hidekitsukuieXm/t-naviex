@@ -41,6 +41,29 @@ vi.mock('@/generated/prisma', () => ({
     ARCHIVED: 'ARCHIVED',
   },
 
+  // Bug Countermeasure enums
+  BugCountermeasureCategory: {
+    PREVENTION: 'PREVENTION',
+    DETECTION: 'DETECTION',
+    CORRECTION: 'CORRECTION',
+    ROOT_CAUSE: 'ROOT_CAUSE',
+    PROCESS: 'PROCESS',
+    TOOL: 'TOOL',
+    OTHER: 'OTHER',
+  },
+  BugCountermeasureStatus: {
+    DRAFT: 'DRAFT',
+    ACTIVE: 'ACTIVE',
+    DEPRECATED: 'DEPRECATED',
+    ARCHIVED: 'ARCHIVED',
+  },
+  BugSeverityLevel: {
+    CRITICAL: 'CRITICAL',
+    MAJOR: 'MAJOR',
+    MINOR: 'MINOR',
+    TRIVIAL: 'TRIVIAL',
+  },
+
   // Other common enums used in tests
   TestCasePriority: { CRITICAL: 'CRITICAL', HIGH: 'HIGH', MEDIUM: 'MEDIUM', LOW: 'LOW' },
   TestSpecStatus: { DRAFT: 'DRAFT', REVIEW: 'REVIEW', APPROVED: 'APPROVED', ARCHIVED: 'ARCHIVED' },

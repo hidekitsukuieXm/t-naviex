@@ -397,12 +397,15 @@ model TestSpec {
 
 /// テスト仕様書バージョン履歴
 model TestSpecVersion {
-  id         BigInt   @id @default(autoincrement())
-  testSpecId BigInt   @map("test_spec_id")
-  version    String   @db.VarChar(50)
-  changeNote String?  @map("change_note") @db.Text
-  createdBy  BigInt?  @map("created_by")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          BigInt   @id @default(autoincrement())
+  testSpecId  BigInt   @map("test_spec_id")
+  version     String   @db.VarChar(50)
+  changeNote  String?  @map("change_note") @db.Text
+  content     Json?    @db.JsonB // スナップショット（セクション、テストケース）
+  sectionCount Int?    @map("section_count")
+  testCaseCount Int?   @map("test_case_count")
+  createdBy   BigInt?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
 
   // Relations
   testSpec TestSpec @relation(fields: [testSpecId], references: [id], onDelete: Cascade)

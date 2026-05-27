@@ -226,6 +226,7 @@ model Project {
   bugCountermeasures   BugCountermeasure[]
   customFieldDefinitions CustomFieldDefinition[]
   stepDefinitions        StepDefinition[]
+  matrixTemplates        MatrixTemplate[]
 
   @@map("projects")
 }
@@ -500,7 +501,8 @@ model TestCase {
   requirements TestCaseRequirement[]
   testSets     TestSetCase[]
   baselineItems BaselineItem[]
-  bddTestCase  BddTestCase?
+  bddTestCase      BddTestCase?
+  matrixTestCase   MatrixTestCase?
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -2529,4 +2531,112 @@ model BddTestCase {
   @@index([language])
   @@index([isValid])
   @@map("bdd_test_cases")
+}
+
+// ============================================
+// マトリクステストケース関連モデル
+// ============================================
+
+/// マトリクス軸タイプ
+enum MatrixAxisType {
+  TEXT
+  CONDITION
+  INPUT
+  STATE
+  ENVIRONMENT
+  USER_TYPE
+  FEATURE
+  CUSTOM
+
+  @@map("matrix_axis_type")
+}
+
+/// マトリクスセル値
+enum MatrixCellValue {
+  EMPTY
+  YES
+  NO
+  NA
+  PASS
+  FAIL
+  PENDING
+  CUSTOM
+
+  @@map("matrix_cell_value")
+}
+
+/// マトリクステンプレート
+model MatrixTemplate {
+  id              BigInt          @id @default(autoincrement())
+  projectId       BigInt          @map("project_id")
+  name            String          @db.VarChar(255)
+  description     String?         @db.Text
+  rowAxisName     String          @map("row_axis_name") @db.VarChar(100)
+  rowAxisType     MatrixAxisType  @map("row_axis_type")
+  rowAxisItems    Json            @map("row_axis_items") @db.JsonB
+  columnAxisName  String          @map("column_axis_name") @db.VarChar(100)
+  columnAxisType  MatrixAxisType  @map("column_axis_type")
+  columnAxisItems Json            @map("column_axis_items") @db.JsonB
+  defaultCellValue MatrixCellValue @default(EMPTY) @map("default_cell_value")
+  isDefault       Boolean         @default(false) @map("is_default")
+  usageCount      Int             @default(0) @map("usage_count")
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  project         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([isDefault])
+  @@index([isActive])
+  @@map("matrix_templates")
+}
+
+/// マトリクステストケース
+model MatrixTestCase {
+  id              BigInt          @id @default(autoincrement())
+  testCaseId      BigInt          @unique @map("test_case_id")
+  name            String          @db.VarChar(255)
+  description     String?         @db.Text
+  rowAxisName     String          @map("row_axis_name") @db.VarChar(100)
+  rowAxisType     MatrixAxisType  @map("row_axis_type")
+  rowAxisItems    Json            @map("row_axis_items") @db.JsonB
+  columnAxisName  String          @map("column_axis_name") @db.VarChar(100)
+  columnAxisType  MatrixAxisType  @map("column_axis_type")
+  columnAxisItems Json            @map("column_axis_items") @db.JsonB
+  cells           Json            @db.JsonB // マトリクスセルデータ
+  metadata        Json?           @db.JsonB
+  isExpanded      Boolean         @default(false) @map("is_expanded")
+  expansionStrategy String?       @map("expansion_strategy") @db.VarChar(50)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  testCase        TestCase        @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  expandedCases   MatrixExpandedCase[]
+
+  @@index([testCaseId])
+  @@index([isExpanded])
+  @@map("matrix_test_cases")
+}
+
+/// マトリクス展開テストケース
+model MatrixExpandedCase {
+  id              BigInt          @id @default(autoincrement())
+  matrixTestCaseId BigInt         @map("matrix_test_case_id")
+  rowIndex        Int             @map("row_index")
+  columnIndex     Int             @map("column_index")
+  generatedTestCaseId BigInt?     @map("generated_test_case_id")
+  generatedTitle  String          @map("generated_title") @db.VarChar(500)
+  generatedSteps  Json?           @map("generated_steps") @db.JsonB
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  matrixTestCase  MatrixTestCase  @relation(fields: [matrixTestCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([matrixTestCaseId, rowIndex, columnIndex])
+  @@index([matrixTestCaseId])
+  @@index([generatedTestCaseId])
+  @@map("matrix_expanded_cases")
 }

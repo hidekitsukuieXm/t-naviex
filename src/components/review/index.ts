@@ -9,3 +9,4 @@ export { ReviewDetail } from './ReviewDetail';
 export { ReviewComments } from './ReviewComments';
 export { ReviewForm } from './ReviewForm';
 export { ReviewManager } from './ReviewManager';
+export { ReviewDashboard } from './ReviewDashboard';

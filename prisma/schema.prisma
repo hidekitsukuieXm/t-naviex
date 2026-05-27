@@ -3257,3 +3257,125 @@ model MfaAuthLog {
   @@index([createdAt])
   @@map("mfa_auth_logs")
 }
+
+// ============================================
+// SSO（シングルサインオン）モデル
+// ============================================
+
+/// SSOプロバイダータイプ
+enum SsoProviderType {
+  OAUTH2     // OAuth 2.0
+  OIDC       // OpenID Connect
+  SAML       // SAML 2.0
+
+  @@map("sso_provider_type")
+}
+
+/// SSOプロバイダー名
+enum SsoProviderName {
+  GOOGLE       // Google Workspace
+  MICROSOFT    // Microsoft Entra ID (Azure AD)
+  GITHUB       // GitHub
+  GITLAB       // GitLab
+  OKTA         // Okta
+  AUTH0        // Auth0
+  KEYCLOAK     // Keycloak
+  CUSTOM       // カスタムプロバイダー
+
+  @@map("sso_provider_name")
+}
+
+/// SSO設定ステータス
+enum SsoConfigStatus {
+  ACTIVE       // 有効
+  INACTIVE     // 無効
+  TESTING      // テスト中
+  ERROR        // エラー状態
+
+  @@map("sso_config_status")
+}
+
+/// SSO設定
+model SsoConfiguration {
+  id              BigInt          @id @default(autoincrement())
+  name            String          @db.VarChar(255)
+  displayName     String          @map("display_name") @db.VarChar(255)
+  providerType    SsoProviderType @map("provider_type")
+  providerName    SsoProviderName @map("provider_name")
+  status          SsoConfigStatus @default(INACTIVE)
+
+  // OAuth2/OIDC設定
+  clientId        String?         @map("client_id") @db.VarChar(500)
+  clientSecret    String?         @map("client_secret") @db.VarChar(1000) // 暗号化
+  authorizationUrl String?        @map("authorization_url") @db.VarChar(500)
+  tokenUrl        String?         @map("token_url") @db.VarChar(500)
+  userInfoUrl     String?         @map("user_info_url") @db.VarChar(500)
+  scopes          String[]        @default([])
+
+  // SAML設定
+  entityId        String?         @map("entity_id") @db.VarChar(500)
+  ssoUrl          String?         @map("sso_url") @db.VarChar(500)
+  sloUrl          String?         @map("slo_url") @db.VarChar(500)
+  certificate     String?         @db.Text // X.509証明書
+  privateKey      String?         @map("private_key") @db.Text // 暗号化
+
+  // 共通設定
+  allowedDomains  String[]        @default([]) @map("allowed_domains")
+  autoProvision   Boolean         @default(true) @map("auto_provision") // 自動ユーザー作成
+  defaultRoleId   BigInt?         @map("default_role_id") // デフォルトロール
+  metadata        Json?           @db.JsonB
+
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  roleMappings    SsoRoleMapping[]
+  loginLogs       SsoLoginLog[]
+
+  @@unique([name])
+  @@index([providerName])
+  @@index([status])
+  @@map("sso_configurations")
+}
+
+/// SSOロールマッピング
+model SsoRoleMapping {
+  id              BigInt          @id @default(autoincrement())
+  configId        BigInt          @map("config_id")
+  ssoGroupName    String          @map("sso_group_name") @db.VarChar(255) // SSOプロバイダーのグループ/ロール名
+  localRoleId     BigInt          @map("local_role_id") // ローカルロールID
+  priority        Int             @default(0) // マッピング優先度
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  configuration   SsoConfiguration @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([configId, ssoGroupName])
+  @@index([configId])
+  @@map("sso_role_mappings")
+}
+
+/// SSOログインログ
+model SsoLoginLog {
+  id              BigInt          @id @default(autoincrement())
+  configId        BigInt          @map("config_id")
+  userId          BigInt?         @map("user_id") // ログイン成功時のユーザーID
+  ssoUserId       String?         @map("sso_user_id") @db.VarChar(255) // SSOプロバイダーのユーザーID
+  ssoEmail        String?         @map("sso_email") @db.VarChar(255)
+  success         Boolean
+  errorCode       String?         @map("error_code") @db.VarChar(100)
+  errorMessage    String?         @map("error_message") @db.VarChar(1000)
+  ipAddress       String?         @map("ip_address") @db.VarChar(45)
+  userAgent       String?         @map("user_agent") @db.VarChar(500)
+  metadata        Json?           @db.JsonB
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  configuration   SsoConfiguration @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([configId])
+  @@index([userId])
+  @@index([ssoEmail])
+  @@index([createdAt])
+  @@map("sso_login_logs")
+}

@@ -381,11 +381,13 @@ model TestSpec {
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
   // Relations
-  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  versions  TestSpecVersion[]
-  sections  TestSection[]
-  testCases TestCase[]
-  baselines Baseline[]
+  project       Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  versions      TestSpecVersion[]
+  sections      TestSection[]
+  testCases     TestCase[]
+  baselines     Baseline[]
+  branches      TestSpecBranch[]
+  mergeRequests MergeRequest[]
 
   @@index([projectId])
   @@index([status])
@@ -2886,4 +2888,135 @@ model RecommendedTestSet {
   @@index([changeSetId])
   @@index([createdAt])
   @@map("recommended_test_sets")
+}
+
+// ========================================
+// ブランチ管理（Issue #141）
+// ========================================
+
+/// ブランチステータス
+enum TestSpecBranchStatus {
+  ACTIVE  @map("active")
+  MERGED  @map("merged")
+  DELETED @map("deleted")
+  FROZEN  @map("frozen")
+}
+
+/// ブランチタイプ
+enum TestSpecBranchType {
+  MASTER       @map("master")
+  FEATURE      @map("feature")
+  RELEASE      @map("release")
+  HOTFIX       @map("hotfix")
+  EXPERIMENTAL @map("experimental")
+}
+
+/// マージステータス
+enum MergeRequestStatus {
+  PENDING     @map("pending")
+  IN_PROGRESS @map("in_progress")
+  COMPLETED   @map("completed")
+  CONFLICT    @map("conflict")
+  CANCELLED   @map("cancelled")
+}
+
+/// テスト仕様書ブランチ
+model TestSpecBranch {
+  id             String               @id @default(uuid()) @db.Uuid
+  testSpecId     BigInt               @map("test_spec_id")
+  name           String               @db.VarChar(100)
+  description    String?              @db.Text
+  type           TestSpecBranchType   @default(FEATURE)
+  status         TestSpecBranchStatus @default(ACTIVE)
+  parentBranchId String?              @map("parent_branch_id") @db.Uuid
+  createdBy      BigInt               @map("created_by")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  metadata       Json?                @db.JsonB
+
+  // Relations
+  testSpec          TestSpec           @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
+  parentBranch      TestSpecBranch?    @relation("BranchHierarchy", fields: [parentBranchId], references: [id], onDelete: SetNull)
+  childBranches     TestSpecBranch[]   @relation("BranchHierarchy")
+  snapshots         BranchSnapshot[]
+  sourceMerges      MergeRequest[]     @relation("SourceBranch")
+  targetMerges      MergeRequest[]     @relation("TargetBranch")
+  histories         BranchHistory[]
+
+  @@unique([testSpecId, name])
+  @@index([testSpecId])
+  @@index([status])
+  @@index([type])
+  @@index([parentBranchId])
+  @@map("test_spec_branches")
+}
+
+/// ブランチスナップショット
+model BranchSnapshot {
+  id            String   @id @default(uuid()) @db.Uuid
+  branchId      String   @map("branch_id") @db.Uuid
+  version       Int
+  commitMessage String   @map("commit_message") @db.VarChar(500)
+  testCases     Json     @db.JsonB // TestCaseSnapshot[]
+  createdBy     BigInt   @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  metadata      Json?    @db.JsonB
+
+  // Relations
+  branch TestSpecBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, version])
+  @@index([branchId])
+  @@index([createdAt])
+  @@map("branch_snapshots")
+}
+
+/// マージリクエスト
+model MergeRequest {
+  id             String             @id @default(uuid()) @db.Uuid
+  testSpecId     BigInt             @map("test_spec_id")
+  sourceBranchId String             @map("source_branch_id") @db.Uuid
+  targetBranchId String             @map("target_branch_id") @db.Uuid
+  title          String             @db.VarChar(200)
+  description    String?            @db.Text
+  status         MergeRequestStatus @default(PENDING)
+  conflicts      Json?              @db.JsonB // MergeConflict[]
+  createdBy      BigInt             @map("created_by")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  mergedAt       DateTime?          @map("merged_at")
+  mergedBy       BigInt?            @map("merged_by")
+  metadata       Json?              @db.JsonB
+
+  // Relations
+  testSpec     TestSpec       @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
+  sourceBranch TestSpecBranch @relation("SourceBranch", fields: [sourceBranchId], references: [id], onDelete: Cascade)
+  targetBranch TestSpecBranch @relation("TargetBranch", fields: [targetBranchId], references: [id], onDelete: Cascade)
+
+  @@index([testSpecId])
+  @@index([sourceBranchId])
+  @@index([targetBranchId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("merge_requests")
+}
+
+/// ブランチ履歴
+model BranchHistory {
+  id          String   @id @default(uuid()) @db.Uuid
+  projectId   BigInt   @map("project_id")
+  branchId    String   @map("branch_id") @db.Uuid
+  action      String   @db.VarChar(50)
+  description String   @db.VarChar(500)
+  userId      BigInt   @map("user_id")
+  timestamp   DateTime @default(now())
+  metadata    Json?    @db.JsonB
+
+  // Relations
+  project Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  branch  TestSpecBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([branchId])
+  @@index([timestamp])
+  @@map("branch_histories")
 }

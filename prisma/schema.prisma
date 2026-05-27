@@ -63,6 +63,9 @@ model User {
   createdTestDesignKnowledges TestDesignKnowledge[] @relation("TestDesignKnowledgeCreatedBy")
   updatedTestDesignKnowledges TestDesignKnowledge[] @relation("TestDesignKnowledgeUpdatedBy")
   testDesignKnowledgeFeedbacks TestDesignKnowledgeFeedback[]
+  createdBugCountermeasures BugCountermeasure[] @relation("BugCountermeasureCreatedBy")
+  updatedBugCountermeasures BugCountermeasure[] @relation("BugCountermeasureUpdatedBy")
+  bugCountermeasureFeedbacks BugCountermeasureFeedback[]
 
   @@map("users")
 }
@@ -220,6 +223,7 @@ model Project {
   testSets             TestSet[]
   bestPractices        BestPractice[]
   testDesignKnowledges TestDesignKnowledge[]
+  bugCountermeasures   BugCountermeasure[]
 
   @@map("projects")
 }
@@ -576,6 +580,7 @@ model Tag {
   testSetTags            TestSetTag[]
   bestPracticeTags       BestPracticeTag[]
   testDesignKnowledgeTags TestDesignKnowledgeTag[]
+  bugCountermeasureTags  BugCountermeasureTag[]
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -2230,4 +2235,133 @@ model TestDesignKnowledgeFeedback {
   @@index([userId])
   @@index([rating])
   @@map("test_design_knowledge_feedbacks")
+}
+
+/// バグ対策カテゴリ
+enum BugCountermeasureCategory {
+  PREVENTION      // 予防策
+  DETECTION       // 検出策
+  CORRECTION      // 修正策
+  ROOT_CAUSE      // 根本原因対策
+  PROCESS         // プロセス改善
+  TOOL            // ツール活用
+  OTHER           // その他
+
+  @@map("bug_countermeasure_category")
+}
+
+/// バグ対策ナレッジステータス
+enum BugCountermeasureStatus {
+  DRAFT
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+
+  @@map("bug_countermeasure_status")
+}
+
+/// バグ深刻度レベル
+enum BugSeverityLevel {
+  CRITICAL
+  MAJOR
+  MINOR
+  TRIVIAL
+
+  @@map("bug_severity_level")
+}
+
+/// バグ対策ナレッジ（バグ対策パターン・ノウハウ）
+model BugCountermeasure {
+  id                   BigInt                    @id @default(autoincrement())
+  projectId            BigInt?                   @map("project_id")
+  title                String                    @db.VarChar(255)
+  description          String?                   @db.Text
+  content              String                    @db.Text
+  bugPattern           String                    @db.VarChar(100) @map("bug_pattern") // バグパターン名
+  category             BugCountermeasureCategory @default(PREVENTION)
+  status               BugCountermeasureStatus   @default(DRAFT)
+  severityLevel        BugSeverityLevel?         @map("severity_level") // 対象バグの深刻度
+
+  // Arrays stored as JSON
+  rootCauses           Json                      @default("[]") @map("root_causes") @db.JsonB // string[] - 根本原因
+  symptoms             Json                      @default("[]") @db.JsonB // string[] - 症状・兆候
+  preventionMeasures   Json                      @default("[]") @map("prevention_measures") @db.JsonB // string[] - 予防策
+  detectionMethods     Json                      @default("[]") @map("detection_methods") @db.JsonB // string[] - 検出方法
+  correctionSteps      Json                      @default("[]") @map("correction_steps") @db.JsonB // string[] - 修正手順
+  affectedAreas        Json                      @default("[]") @map("affected_areas") @db.JsonB // string[] - 影響範囲
+  testCoverage         Json                      @default("[]") @map("test_coverage") @db.JsonB // string[] - テストカバレッジ
+  examples             Json                      @default("[]") @db.JsonB // string[] - 事例
+  references           Json                      @default("[]") @db.JsonB // string[] - 参考資料
+
+  // Rating and usage
+  rating               Decimal                   @default(0) @db.Decimal(3, 2)
+  ratingCount          Int                       @default(0) @map("rating_count")
+  usageCount           Int                       @default(0) @map("usage_count")
+  lastUsedAt           DateTime?                 @map("last_used_at")
+
+  // Metadata
+  metadata             Json?                     @db.JsonB
+  version              String                    @default("1.0.0") @db.VarChar(20)
+
+  // Audit fields
+  createdById          BigInt?                   @map("created_by_id")
+  updatedById          BigInt?                   @map("updated_by_id")
+  createdAt            DateTime                  @default(now()) @map("created_at")
+  updatedAt            DateTime                  @updatedAt @map("updated_at")
+
+  // Relations
+  project              Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy            User?                     @relation("BugCountermeasureCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy            User?                     @relation("BugCountermeasureUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  tags                 BugCountermeasureTag[]
+  feedbacks            BugCountermeasureFeedback[]
+
+  @@unique([projectId, title])
+  @@index([projectId])
+  @@index([bugPattern])
+  @@index([category])
+  @@index([status])
+  @@index([severityLevel])
+  @@index([rating])
+  @@index([createdById])
+  @@map("bug_countermeasures")
+}
+
+/// バグ対策ナレッジタグ中間テーブル
+model BugCountermeasureTag {
+  id                   BigInt            @id @default(autoincrement())
+  bugCountermeasureId  BigInt            @map("bug_countermeasure_id")
+  tagId                BigInt            @map("tag_id")
+  createdAt            DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  bugCountermeasure    BugCountermeasure @relation(fields: [bugCountermeasureId], references: [id], onDelete: Cascade)
+  tag                  Tag               @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([bugCountermeasureId, tagId])
+  @@index([bugCountermeasureId])
+  @@index([tagId])
+  @@map("bug_countermeasure_tags")
+}
+
+/// バグ対策ナレッジフィードバック
+model BugCountermeasureFeedback {
+  id                   BigInt            @id @default(autoincrement())
+  bugCountermeasureId  BigInt            @map("bug_countermeasure_id")
+  userId               BigInt            @map("user_id")
+  rating               Int               @db.SmallInt // 1-5
+  comment              String?           @db.Text
+  isHelpful            Boolean?          @map("is_helpful")
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  bugCountermeasure    BugCountermeasure @relation(fields: [bugCountermeasureId], references: [id], onDelete: Cascade)
+  user                 User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bugCountermeasureId, userId])
+  @@index([bugCountermeasureId])
+  @@index([userId])
+  @@index([rating])
+  @@map("bug_countermeasure_feedbacks")
 }

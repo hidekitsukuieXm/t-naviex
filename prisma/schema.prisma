@@ -57,6 +57,9 @@ model User {
   updatedTestSets      TestSet[]             @relation("TestSetUpdatedBy")
   createdBaselines     Baseline[]            @relation("BaselineCreatedBy")
   approvedBaselines    Baseline[]            @relation("BaselineApprovedBy")
+  createdBestPractices BestPractice[]        @relation("BestPracticeCreatedBy")
+  updatedBestPractices BestPractice[]        @relation("BestPracticeUpdatedBy")
+  bestPracticeFeedbacks BestPracticeFeedback[]
 
   @@map("users")
 }
@@ -212,6 +215,7 @@ model Project {
   requirements         Requirement[]
   catalogItems         CatalogItem[]
   testSets             TestSet[]
+  bestPractices        BestPractice[]
 
   @@map("projects")
 }
@@ -562,10 +566,11 @@ model Tag {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  testCaseTags    TestCaseTag[]
-  catalogItemTags CatalogItemTag[]
-  testSetTags     TestSetTag[]
+  project          Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testCaseTags     TestCaseTag[]
+  catalogItemTags  CatalogItemTag[]
+  testSetTags      TestSetTag[]
+  bestPracticeTags BestPracticeTag[]
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -1996,4 +2001,116 @@ model BaselineItem {
   @@index([testCaseId])
   @@index([sortOrder])
   @@map("baseline_items")
+}
+
+// ============================================
+// AIナレッジ管理系モデル
+// ============================================
+
+/// ベストプラクティス複雑度
+enum BestPracticeComplexity {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("best_practice_complexity")
+}
+
+/// ベストプラクティスステータス
+enum BestPracticeStatus {
+  DRAFT
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+
+  @@map("best_practice_status")
+}
+
+/// ベストプラクティス（再利用可能なテスト知見）
+model BestPractice {
+  id            BigInt                 @id @default(autoincrement())
+  projectId     BigInt?                @map("project_id")
+  title         String                 @db.VarChar(255)
+  description   String?                @db.Text
+  content       String                 @db.Text
+  category      String                 @db.VarChar(100)
+  complexity    BestPracticeComplexity @default(MEDIUM)
+  status        BestPracticeStatus     @default(DRAFT)
+
+  // Arrays stored as JSON
+  applicability Json                   @default("[]") @db.JsonB // string[]
+  examples      Json                   @default("[]") @db.JsonB // string[]
+  benefits      Json                   @default("[]") @db.JsonB // string[]
+  risks         Json                   @default("[]") @db.JsonB // string[]
+
+  // Rating and usage
+  rating        Decimal                @default(0) @db.Decimal(3, 2) // 0.00 - 5.00
+  ratingCount   Int                    @default(0) @map("rating_count")
+  usageCount    Int                    @default(0) @map("usage_count")
+  lastUsedAt    DateTime?              @map("last_used_at")
+
+  // Metadata
+  metadata      Json?                  @db.JsonB
+  version       String                 @default("1.0.0") @db.VarChar(20)
+
+  // Audit fields
+  createdById   BigInt?                @map("created_by_id")
+  updatedById   BigInt?                @map("updated_by_id")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  // Relations
+  project       Project?               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy     User?                  @relation("BestPracticeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy     User?                  @relation("BestPracticeUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  tags          BestPracticeTag[]
+  feedbacks     BestPracticeFeedback[]
+
+  @@unique([projectId, title])
+  @@index([projectId])
+  @@index([category])
+  @@index([complexity])
+  @@index([status])
+  @@index([rating])
+  @@index([createdById])
+  @@map("best_practices")
+}
+
+/// ベストプラクティスタグ中間テーブル
+model BestPracticeTag {
+  id              BigInt       @id @default(autoincrement())
+  bestPracticeId  BigInt       @map("best_practice_id")
+  tagId           BigInt       @map("tag_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  bestPractice    BestPractice @relation(fields: [bestPracticeId], references: [id], onDelete: Cascade)
+  tag             Tag          @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([bestPracticeId, tagId])
+  @@index([bestPracticeId])
+  @@index([tagId])
+  @@map("best_practice_tags")
+}
+
+/// ベストプラクティスフィードバック
+model BestPracticeFeedback {
+  id              BigInt       @id @default(autoincrement())
+  bestPracticeId  BigInt       @map("best_practice_id")
+  userId          BigInt       @map("user_id")
+  rating          Int          @db.SmallInt // 1-5
+  comment         String?      @db.Text
+  isHelpful       Boolean?     @map("is_helpful")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  bestPractice    BestPractice @relation(fields: [bestPracticeId], references: [id], onDelete: Cascade)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bestPracticeId, userId])
+  @@index([bestPracticeId])
+  @@index([userId])
+  @@index([rating])
+  @@map("best_practice_feedbacks")
 }

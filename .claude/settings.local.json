@@ -47,7 +47,8 @@
       "Bash(npx shadcn@4.7.0 add:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(gh pr list:*)"
+      "Bash(gh pr list:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

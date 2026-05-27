@@ -60,6 +60,9 @@ model User {
   createdBestPractices BestPractice[]        @relation("BestPracticeCreatedBy")
   updatedBestPractices BestPractice[]        @relation("BestPracticeUpdatedBy")
   bestPracticeFeedbacks BestPracticeFeedback[]
+  createdTestDesignKnowledges TestDesignKnowledge[] @relation("TestDesignKnowledgeCreatedBy")
+  updatedTestDesignKnowledges TestDesignKnowledge[] @relation("TestDesignKnowledgeUpdatedBy")
+  testDesignKnowledgeFeedbacks TestDesignKnowledgeFeedback[]
 
   @@map("users")
 }
@@ -216,6 +219,7 @@ model Project {
   catalogItems         CatalogItem[]
   testSets             TestSet[]
   bestPractices        BestPractice[]
+  testDesignKnowledges TestDesignKnowledge[]
 
   @@map("projects")
 }
@@ -567,10 +571,11 @@ model Tag {
 
   // Relations
   project          Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  testCaseTags     TestCaseTag[]
-  catalogItemTags  CatalogItemTag[]
-  testSetTags      TestSetTag[]
-  bestPracticeTags BestPracticeTag[]
+  testCaseTags           TestCaseTag[]
+  catalogItemTags        CatalogItemTag[]
+  testSetTags            TestSetTag[]
+  bestPracticeTags       BestPracticeTag[]
+  testDesignKnowledgeTags TestDesignKnowledgeTag[]
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -2113,4 +2118,116 @@ model BestPracticeFeedback {
   @@index([userId])
   @@index([rating])
   @@map("best_practice_feedbacks")
+}
+
+/// テスト技法カテゴリ
+enum TestTechniqueCategory {
+  BLACK_BOX        // ブラックボックス技法
+  WHITE_BOX        // ホワイトボックス技法
+  EXPERIENCE_BASED // 経験ベース技法
+  STRUCTURE_BASED  // 構造ベース技法
+
+  @@map("test_technique_category")
+}
+
+/// テスト設計ナレッジステータス
+enum TestDesignKnowledgeStatus {
+  DRAFT
+  ACTIVE
+  DEPRECATED
+  ARCHIVED
+
+  @@map("test_design_knowledge_status")
+}
+
+/// テスト設計ナレッジ（テスト設計パターン・技法）
+model TestDesignKnowledge {
+  id                   BigInt                    @id @default(autoincrement())
+  projectId            BigInt?                   @map("project_id")
+  title                String                    @db.VarChar(255)
+  description          String?                   @db.Text
+  content              String                    @db.Text
+  technique            String                    @db.VarChar(100) // テスト技法名
+  category             TestTechniqueCategory     @default(BLACK_BOX)
+  status               TestDesignKnowledgeStatus @default(DRAFT)
+
+  // Arrays stored as JSON
+  applicableScenarios  Json                      @default("[]") @map("applicable_scenarios") @db.JsonB // string[]
+  considerations       Json                      @default("[]") @db.JsonB // string[]
+  examples             Json                      @default("[]") @db.JsonB // string[]
+  tools                Json                      @default("[]") @db.JsonB // string[]
+  references           Json                      @default("[]") @db.JsonB // string[]
+  inputTypes           Json                      @default("[]") @map("input_types") @db.JsonB // string[]
+  outputTypes          Json                      @default("[]") @map("output_types") @db.JsonB // string[]
+
+  // Rating and usage
+  rating               Decimal                   @default(0) @db.Decimal(3, 2)
+  ratingCount          Int                       @default(0) @map("rating_count")
+  usageCount           Int                       @default(0) @map("usage_count")
+  lastUsedAt           DateTime?                 @map("last_used_at")
+
+  // Metadata
+  metadata             Json?                     @db.JsonB
+  version              String                    @default("1.0.0") @db.VarChar(20)
+
+  // Audit fields
+  createdById          BigInt?                   @map("created_by_id")
+  updatedById          BigInt?                   @map("updated_by_id")
+  createdAt            DateTime                  @default(now()) @map("created_at")
+  updatedAt            DateTime                  @updatedAt @map("updated_at")
+
+  // Relations
+  project              Project?                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy            User?                     @relation("TestDesignKnowledgeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy            User?                     @relation("TestDesignKnowledgeUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  tags                 TestDesignKnowledgeTag[]
+  feedbacks            TestDesignKnowledgeFeedback[]
+
+  @@unique([projectId, title])
+  @@index([projectId])
+  @@index([technique])
+  @@index([category])
+  @@index([status])
+  @@index([rating])
+  @@index([createdById])
+  @@map("test_design_knowledges")
+}
+
+/// テスト設計ナレッジタグ中間テーブル
+model TestDesignKnowledgeTag {
+  id                    BigInt              @id @default(autoincrement())
+  testDesignKnowledgeId BigInt              @map("test_design_knowledge_id")
+  tagId                 BigInt              @map("tag_id")
+  createdAt             DateTime            @default(now()) @map("created_at")
+
+  // Relations
+  testDesignKnowledge   TestDesignKnowledge @relation(fields: [testDesignKnowledgeId], references: [id], onDelete: Cascade)
+  tag                   Tag                 @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([testDesignKnowledgeId, tagId])
+  @@index([testDesignKnowledgeId])
+  @@index([tagId])
+  @@map("test_design_knowledge_tags")
+}
+
+/// テスト設計ナレッジフィードバック
+model TestDesignKnowledgeFeedback {
+  id                    BigInt              @id @default(autoincrement())
+  testDesignKnowledgeId BigInt              @map("test_design_knowledge_id")
+  userId                BigInt              @map("user_id")
+  rating                Int                 @db.SmallInt // 1-5
+  comment               String?             @db.Text
+  isHelpful             Boolean?            @map("is_helpful")
+  createdAt             DateTime            @default(now()) @map("created_at")
+  updatedAt             DateTime            @updatedAt @map("updated_at")
+
+  // Relations
+  testDesignKnowledge   TestDesignKnowledge @relation(fields: [testDesignKnowledgeId], references: [id], onDelete: Cascade)
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([testDesignKnowledgeId, userId])
+  @@index([testDesignKnowledgeId])
+  @@index([userId])
+  @@index([rating])
+  @@map("test_design_knowledge_feedbacks")
 }

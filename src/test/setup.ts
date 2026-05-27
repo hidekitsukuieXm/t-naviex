@@ -27,6 +27,20 @@ vi.mock('@/generated/prisma', () => ({
     ARCHIVED: 'ARCHIVED',
   },
 
+  // Test Design Knowledge enums
+  TestTechniqueCategory: {
+    BLACK_BOX: 'BLACK_BOX',
+    WHITE_BOX: 'WHITE_BOX',
+    EXPERIENCE_BASED: 'EXPERIENCE_BASED',
+    STRUCTURE_BASED: 'STRUCTURE_BASED',
+  },
+  TestDesignKnowledgeStatus: {
+    DRAFT: 'DRAFT',
+    ACTIVE: 'ACTIVE',
+    DEPRECATED: 'DEPRECATED',
+    ARCHIVED: 'ARCHIVED',
+  },
+
   // Other common enums used in tests
   TestCasePriority: { CRITICAL: 'CRITICAL', HIGH: 'HIGH', MEDIUM: 'MEDIUM', LOW: 'LOW' },
   TestSpecStatus: { DRAFT: 'DRAFT', REVIEW: 'REVIEW', APPROVED: 'APPROVED', ARCHIVED: 'ARCHIVED' },

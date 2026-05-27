@@ -51,6 +51,8 @@ model User {
   updatedIntegrations  ExternalIntegration[] @relation("IntegrationUpdater")
   createdRequirements  Requirement[]         @relation("RequirementCreator")
   updatedRequirements  Requirement[]         @relation("RequirementUpdater")
+  createdCatalogItems  CatalogItem[]         @relation("CatalogItemCreatedBy")
+  updatedCatalogItems  CatalogItem[]         @relation("CatalogItemUpdatedBy")
 
   @@map("users")
 }
@@ -204,6 +206,7 @@ model Project {
   bugWorkflows         BugWorkflow[]         @relation("ProjectWorkflows")
   externalIntegrations ExternalIntegration[] @relation("ProjectIntegrations")
   requirements         Requirement[]
+  catalogItems         CatalogItem[]
 
   @@map("projects")
 }
@@ -551,8 +554,9 @@ model Tag {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  testCaseTags TestCaseTag[]
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  testCaseTags    TestCaseTag[]
+  catalogItemTags CatalogItemTag[]
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -1759,4 +1763,81 @@ model PromptTemplate {
   @@index([isDefault])
   @@index([sortOrder])
   @@map("prompt_templates")
+}
+
+/// カタログアイテムタイプ
+enum CatalogItemType {
+  TEST_CASE          // テストケース
+  TEST_PROCEDURE     // テスト手順
+  TEST_DATA          // テストデータ
+  PRECONDITION       // 前提条件
+  EXPECTED_RESULT    // 期待結果
+  SHARED_STEP        // 共有ステップ
+  TEMPLATE           // テンプレート
+  OTHER              // その他
+
+  @@map("catalog_item_type")
+}
+
+/// カタログアイテムステータス
+enum CatalogItemStatus {
+  DRAFT              // 下書き
+  ACTIVE             // 有効
+  DEPRECATED         // 非推奨
+  ARCHIVED           // アーカイブ
+
+  @@map("catalog_item_status")
+}
+
+/// カタログアイテム（再利用可能なテスト資産）
+model CatalogItem {
+  id            BigInt            @id @default(autoincrement())
+  projectId     BigInt            @map("project_id")
+  name          String            @db.VarChar(255)
+  description   String?           @db.Text
+  type          CatalogItemType
+  status        CatalogItemStatus @default(DRAFT)
+  category      String?           @db.VarChar(100)
+  content       String            @db.Text
+  metadata      Json?             @db.JsonB
+  version       String            @default("1.0.0") @db.VarChar(20)
+  usageCount    Int               @default(0) @map("usage_count")
+  lastUsedAt    DateTime?         @map("last_used_at")
+  createdById   BigInt?           @map("created_by_id")
+  updatedById   BigInt?           @map("updated_by_id")
+  sortOrder     Int               @default(0) @map("sort_order")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  project       Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy     User?              @relation("CatalogItemCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy     User?              @relation("CatalogItemUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  tags          CatalogItemTag[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+  @@index([category])
+  @@index([createdById])
+  @@index([sortOrder])
+  @@map("catalog_items")
+}
+
+/// カタログアイテムタグ中間テーブル
+model CatalogItemTag {
+  id            BigInt      @id @default(autoincrement())
+  catalogItemId BigInt      @map("catalog_item_id")
+  tagId         BigInt      @map("tag_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  // Relations
+  catalogItem   CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([catalogItemId, tagId])
+  @@index([catalogItemId])
+  @@index([tagId])
+  @@map("catalog_item_tags")
 }

@@ -53,6 +53,8 @@ model User {
   updatedRequirements  Requirement[]         @relation("RequirementUpdater")
   createdCatalogItems  CatalogItem[]         @relation("CatalogItemCreatedBy")
   updatedCatalogItems  CatalogItem[]         @relation("CatalogItemUpdatedBy")
+  createdTestSets      TestSet[]             @relation("TestSetCreatedBy")
+  updatedTestSets      TestSet[]             @relation("TestSetUpdatedBy")
 
   @@map("users")
 }
@@ -207,6 +209,7 @@ model Project {
   externalIntegrations ExternalIntegration[] @relation("ProjectIntegrations")
   requirements         Requirement[]
   catalogItems         CatalogItem[]
+  testSets             TestSet[]
 
   @@map("projects")
 }
@@ -478,6 +481,7 @@ model TestCase {
   dependencies CaseDependency[] @relation("TestCaseDependencies")
   dependents   CaseDependency[] @relation("DependsOnTestCase")
   requirements TestCaseRequirement[]
+  testSets     TestSetCase[]
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -557,6 +561,7 @@ model Tag {
   project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   testCaseTags    TestCaseTag[]
   catalogItemTags CatalogItemTag[]
+  testSetTags     TestSetTag[]
 
   @@unique([projectId, name])
   @@index([projectId])
@@ -1840,4 +1845,84 @@ model CatalogItemTag {
   @@index([catalogItemId])
   @@index([tagId])
   @@map("catalog_item_tags")
+}
+
+/// テストセットステータス
+enum TestSetStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+/// テストセット
+model TestSet {
+  id          BigInt        @id @default(autoincrement())
+  projectId   BigInt        @map("project_id")
+  name        String        @db.VarChar(255)
+  description String?       @db.Text
+  status      TestSetStatus @default(DRAFT)
+  version     String        @default("1.0.0") @db.VarChar(50)
+  sortOrder   Int           @default(0) @map("sort_order")
+  metadata    Json?         @db.JsonB
+
+  // Tracking fields
+  executionCount Int       @default(0) @map("execution_count")
+  lastExecutedAt DateTime? @map("last_executed_at")
+
+  // Audit fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdById BigInt    @map("created_by_id")
+  updatedById BigInt?   @map("updated_by_id")
+
+  // Relations
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User         @relation("TestSetCreatedBy", fields: [createdById], references: [id])
+  updatedBy   User?        @relation("TestSetUpdatedBy", fields: [updatedById], references: [id])
+  testCases   TestSetCase[]
+  tags        TestSetTag[]
+
+  @@unique([projectId, name])
+  @@index([projectId])
+  @@index([status])
+  @@index([createdById])
+  @@index([sortOrder])
+  @@map("test_sets")
+}
+
+/// テストセットケース中間テーブル
+model TestSetCase {
+  id         BigInt   @id @default(autoincrement())
+  testSetId  BigInt   @map("test_set_id")
+  testCaseId BigInt   @map("test_case_id")
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  testSet  TestSet  @relation(fields: [testSetId], references: [id], onDelete: Cascade)
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([testSetId, testCaseId])
+  @@index([testSetId])
+  @@index([testCaseId])
+  @@index([sortOrder])
+  @@map("test_set_cases")
+}
+
+/// テストセットタグ中間テーブル
+model TestSetTag {
+  id        BigInt   @id @default(autoincrement())
+  testSetId BigInt   @map("test_set_id")
+  tagId     BigInt   @map("tag_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  testSet TestSet @relation(fields: [testSetId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([testSetId, tagId])
+  @@index([testSetId])
+  @@index([tagId])
+  @@map("test_set_tags")
 }

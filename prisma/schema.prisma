@@ -3199,3 +3199,61 @@ model EditLock {
   @@index([expiresAt])
   @@map("edit_locks")
 }
+
+/// MFAタイプ
+enum MfaType {
+  TOTP       // Time-based One-Time Password
+  SMS        // SMS認証
+  EMAIL      // メール認証
+
+  @@map("mfa_type")
+}
+
+/// MFA設定
+model MfaSetting {
+  id            BigInt    @id @default(autoincrement())
+  userId        BigInt    @map("user_id")
+  mfaType       MfaType   @default(TOTP) @map("mfa_type")
+  secret        String    @db.VarChar(500) // 暗号化されたTOTPシークレット
+  isEnabled     Boolean   @default(false) @map("is_enabled")
+  isVerified    Boolean   @default(false) @map("is_verified")
+  lastUsedAt    DateTime? @map("last_used_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  backupCodes MfaBackupCode[]
+
+  @@unique([userId, mfaType])
+  @@index([userId])
+  @@map("mfa_settings")
+}
+
+/// MFAバックアップコード
+model MfaBackupCode {
+  id           BigInt    @id @default(autoincrement())
+  mfaSettingId BigInt    @map("mfa_setting_id")
+  codeHash     String    @map("code_hash") @db.VarChar(255) // ハッシュ化されたコード
+  isUsed       Boolean   @default(false) @map("is_used")
+  usedAt       DateTime? @map("used_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  mfaSetting MfaSetting @relation(fields: [mfaSettingId], references: [id], onDelete: Cascade)
+
+  @@index([mfaSettingId])
+  @@map("mfa_backup_codes")
+}
+
+/// MFA認証ログ
+model MfaAuthLog {
+  id         BigInt   @id @default(autoincrement())
+  userId     BigInt   @map("user_id")
+  mfaType    MfaType  @map("mfa_type")
+  success    Boolean
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(500)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("mfa_auth_logs")
+}

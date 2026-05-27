@@ -224,6 +224,7 @@ model Project {
   bestPractices        BestPractice[]
   testDesignKnowledges TestDesignKnowledge[]
   bugCountermeasures   BugCountermeasure[]
+  customFieldDefinitions CustomFieldDefinition[]
 
   @@map("projects")
 }
@@ -2364,4 +2365,95 @@ model BugCountermeasureFeedback {
   @@index([userId])
   @@index([rating])
   @@map("bug_countermeasure_feedbacks")
+}
+
+// ============================================
+// カスタムフィールドモデル
+// ============================================
+
+/// カスタムフィールドタイプ
+enum CustomFieldType {
+  TEXT           // テキスト
+  NUMBER         // 数値
+  DATE           // 日付
+  SELECT_SINGLE  // 単一選択
+  SELECT_MULTI   // 複数選択
+  CHECKBOX       // チェックボックス
+  URL            // URL
+  EMAIL          // メールアドレス
+
+  @@map("custom_field_type")
+}
+
+/// カスタムフィールド対象エンティティ
+enum CustomFieldTargetEntity {
+  TEST_CASE    // テストケース
+  BUG          // バグ
+  TEST_SPEC    // テスト仕様書
+  TEST_RESULT  // テスト結果
+  TEST_RUN     // テスト実行
+
+  @@map("custom_field_target_entity")
+}
+
+/// カスタムフィールド定義
+model CustomFieldDefinition {
+  id                BigInt                  @id @default(autoincrement())
+  projectId         BigInt                  @map("project_id")
+  name              String                  @db.VarChar(100) // 内部名（英数字）
+  displayName       String                  @map("display_name") @db.VarChar(255) // 表示名
+  description       String?                 @db.Text
+  fieldType         CustomFieldType         @map("field_type")
+  targetEntity      CustomFieldTargetEntity @map("target_entity")
+  isRequired        Boolean                 @default(false) @map("is_required")
+  isSearchable      Boolean                 @default(true) @map("is_searchable") // 検索可能か
+  isFilterable      Boolean                 @default(true) @map("is_filterable") // フィルター可能か
+  isVisibleInList   Boolean                 @default(true) @map("is_visible_in_list") // 一覧表示するか
+  sortOrder         Int                     @default(0) @map("sort_order")
+  defaultValue      String?                 @map("default_value") @db.Text // デフォルト値（JSON形式）
+  options           Json?                   @db.JsonB // 選択肢（SELECT_SINGLE, SELECT_MULTI用）
+  validationRules   Json?                   @map("validation_rules") @db.JsonB // バリデーションルール
+  metadata          Json?                   @db.JsonB // その他メタデータ
+  isActive          Boolean                 @default(true) @map("is_active")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+
+  // Relations
+  project           Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  values            CustomFieldValue[]
+
+  @@unique([projectId, name, targetEntity])
+  @@index([projectId])
+  @@index([targetEntity])
+  @@index([fieldType])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("custom_field_definitions")
+}
+
+/// カスタムフィールド値
+model CustomFieldValue {
+  id                BigInt                @id @default(autoincrement())
+  definitionId      BigInt                @map("definition_id")
+  entityId          BigInt                @map("entity_id") // 対象エンティティのID
+  entityType        CustomFieldTargetEntity @map("entity_type") // 対象エンティティタイプ
+  textValue         String?               @map("text_value") @db.Text // テキスト値
+  numberValue       Decimal?              @map("number_value") @db.Decimal(20, 6) // 数値
+  dateValue         DateTime?             @map("date_value") // 日付値
+  booleanValue      Boolean?              @map("boolean_value") // チェックボックス値
+  jsonValue         Json?                 @map("json_value") @db.JsonB // JSON値（複数選択など）
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  // Relations
+  definition        CustomFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+
+  @@unique([definitionId, entityId, entityType])
+  @@index([definitionId])
+  @@index([entityId, entityType])
+  @@index([textValue])
+  @@index([numberValue])
+  @@index([dateValue])
+  @@index([booleanValue])
+  @@map("custom_field_values")
 }

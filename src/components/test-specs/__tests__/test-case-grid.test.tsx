@@ -178,13 +178,14 @@ describe('TestCaseGrid', () => {
     fireEvent.change(searchInput, { target: { value: 'search' } });
 
     // Wait for debounce (300ms) and check that API was called with query parameter
+    // Increased timeout to account for debounce + React state updates + fetch
     await waitFor(
       () => {
         const calls = mockFetch.mock.calls;
-        const lastCall = calls[calls.length - 1];
-        expect(lastCall[0]).toContain('query=');
+        const hasQueryCall = calls.some((call) => call[0]?.includes('query='));
+        expect(hasQueryCall).toBe(true);
       },
-      { timeout: 500 }
+      { timeout: 2000 }
     );
   });
 

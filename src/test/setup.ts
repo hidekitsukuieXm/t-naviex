@@ -2,6 +2,54 @@ import '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+// Mock Prisma generated enums
+vi.mock('@/generated/prisma', () => ({
+  // User enums
+  UserStatus: {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE',
+    SUSPENDED: 'SUSPENDED',
+    PENDING: 'PENDING',
+  },
+  ProjectStatus: {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE',
+    ARCHIVED: 'ARCHIVED',
+    PLANNING: 'PLANNING',
+  },
+
+  // Best Practice enums
+  BestPracticeComplexity: { LOW: 'LOW', MEDIUM: 'MEDIUM', HIGH: 'HIGH' },
+  BestPracticeStatus: {
+    DRAFT: 'DRAFT',
+    ACTIVE: 'ACTIVE',
+    DEPRECATED: 'DEPRECATED',
+    ARCHIVED: 'ARCHIVED',
+  },
+
+  // Other common enums used in tests
+  TestCasePriority: { CRITICAL: 'CRITICAL', HIGH: 'HIGH', MEDIUM: 'MEDIUM', LOW: 'LOW' },
+  TestSpecStatus: { DRAFT: 'DRAFT', REVIEW: 'REVIEW', APPROVED: 'APPROVED', ARCHIVED: 'ARCHIVED' },
+  WidgetType: { TEST_STATUS: 'TEST_STATUS', BUG_STATUS: 'BUG_STATUS', PROGRESS: 'PROGRESS' },
+  BaselineStatus: { DRAFT: 'DRAFT', APPROVED: 'APPROVED', LOCKED: 'LOCKED', ARCHIVED: 'ARCHIVED' },
+  CatalogItemType: {
+    TEST_CASE: 'TEST_CASE',
+    TEST_STEP: 'TEST_STEP',
+    TEMPLATE: 'TEMPLATE',
+    CHECKLIST: 'CHECKLIST',
+  },
+  CatalogItemStatus: {
+    DRAFT: 'DRAFT',
+    ACTIVE: 'ACTIVE',
+    DEPRECATED: 'DEPRECATED',
+    ARCHIVED: 'ARCHIVED',
+  },
+  TestSetStatus: { DRAFT: 'DRAFT', ACTIVE: 'ACTIVE', COMPLETED: 'COMPLETED', ARCHIVED: 'ARCHIVED' },
+
+  // Prisma namespace mock (for type operations)
+  Prisma: {},
+}));
+
 // Mock ResizeObserver for tests
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),

@@ -55,6 +55,8 @@ model User {
   updatedCatalogItems  CatalogItem[]         @relation("CatalogItemUpdatedBy")
   createdTestSets      TestSet[]             @relation("TestSetCreatedBy")
   updatedTestSets      TestSet[]             @relation("TestSetUpdatedBy")
+  createdBaselines     Baseline[]            @relation("BaselineCreatedBy")
+  approvedBaselines    Baseline[]            @relation("BaselineApprovedBy")
 
   @@map("users")
 }
@@ -364,6 +366,7 @@ model TestSpec {
   versions  TestSpecVersion[]
   sections  TestSection[]
   testCases TestCase[]
+  baselines Baseline[]
 
   @@index([projectId])
   @@index([status])
@@ -482,6 +485,7 @@ model TestCase {
   dependents   CaseDependency[] @relation("DependsOnTestCase")
   requirements TestCaseRequirement[]
   testSets     TestSetCase[]
+  baselineItems BaselineItem[]
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -1925,4 +1929,71 @@ model TestSetTag {
   @@index([testSetId])
   @@index([tagId])
   @@map("test_set_tags")
+}
+
+/// ベースラインステータス
+enum BaselineStatus {
+  DRAFT
+  APPROVED
+  LOCKED
+  ARCHIVED
+}
+
+/// ベースライン（テスト仕様書のスナップショット）
+model Baseline {
+  id          BigInt         @id @default(autoincrement())
+  testSpecId  BigInt         @map("test_spec_id")
+  name        String         @db.VarChar(255)
+  description String?        @db.Text
+  version     String         @db.VarChar(50)
+  status      BaselineStatus @default(DRAFT)
+  snapshotAt  DateTime       @default(now()) @map("snapshot_at")
+  metadata    Json?          @db.JsonB
+
+  // Statistics at snapshot time
+  totalCases  Int @default(0) @map("total_cases")
+  totalSteps  Int @default(0) @map("total_steps")
+
+  // Audit fields
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdById BigInt    @map("created_by_id")
+  approvedAt  DateTime? @map("approved_at")
+  approvedById BigInt?  @map("approved_by_id")
+
+  // Relations
+  testSpec    TestSpec       @relation(fields: [testSpecId], references: [id], onDelete: Cascade)
+  createdBy   User           @relation("BaselineCreatedBy", fields: [createdById], references: [id])
+  approvedBy  User?          @relation("BaselineApprovedBy", fields: [approvedById], references: [id])
+  items       BaselineItem[]
+
+  @@unique([testSpecId, version])
+  @@index([testSpecId])
+  @@index([status])
+  @@index([createdById])
+  @@index([snapshotAt])
+  @@map("baselines")
+}
+
+/// ベースラインアイテム（テストケースのスナップショット）
+model BaselineItem {
+  id           BigInt   @id @default(autoincrement())
+  baselineId   BigInt   @map("baseline_id")
+  testCaseId   BigInt?  @map("test_case_id")
+  sortOrder    Int      @default(0) @map("sort_order")
+
+  // Snapshot data (stored as JSON for flexibility)
+  snapshotData Json     @map("snapshot_data") @db.JsonB
+  checksum     String   @db.VarChar(64)
+
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  baseline     Baseline  @relation(fields: [baselineId], references: [id], onDelete: Cascade)
+  testCase     TestCase? @relation(fields: [testCaseId], references: [id], onDelete: SetNull)
+
+  @@index([baselineId])
+  @@index([testCaseId])
+  @@index([sortOrder])
+  @@map("baseline_items")
 }

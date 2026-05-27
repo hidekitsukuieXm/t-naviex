@@ -515,6 +515,7 @@ model TestCase {
   transitionDiagrams       TransitionDiagram[]
   combinatorialDefinitions CombinatorialDefinition[]
   versions                 TestCaseVersion[]
+  editHistories            TestCaseEditHistory[]
 
   @@index([testSpecId])
   @@index([sectionId])
@@ -566,6 +567,33 @@ model TestCaseVersion {
   @@index([testCaseId])
   @@index([createdAt])
   @@map("test_case_versions")
+}
+
+/// 編集操作タイプ
+enum EditOperationType {
+  CREATE  // 作成
+  UPDATE  // 更新
+  DELETE  // 削除
+  RESTORE // 復元
+}
+
+/// テストケース編集履歴
+model TestCaseEditHistory {
+  id           BigInt            @id @default(autoincrement())
+  testCaseId   BigInt            @map("test_case_id")
+  operation    EditOperationType @default(UPDATE)
+  fieldChanges Json              @map("field_changes") @db.JsonB // [{field, previousValue, newValue}]
+  summary      String?           @db.VarChar(500) // 変更サマリー
+  editedBy     BigInt?           @map("edited_by")
+  editedAt     DateTime          @default(now()) @map("edited_at")
+
+  // Relations
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@index([testCaseId])
+  @@index([editedAt])
+  @@index([editedBy])
+  @@map("test_case_edit_histories")
 }
 
 /// テストケース依存関係タイプ

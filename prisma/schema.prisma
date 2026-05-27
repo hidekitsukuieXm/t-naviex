@@ -3173,3 +3173,29 @@ model BranchHistory {
   @@index([timestamp])
   @@map("branch_histories")
 }
+
+/// 編集ロック対象タイプ
+enum LockTargetType {
+  TEST_CASE
+  TEST_SPEC
+  TEST_SECTION
+
+  @@map("lock_target_type")
+}
+
+/// 編集ロック
+model EditLock {
+  id         BigInt         @id @default(autoincrement())
+  targetType LockTargetType @map("target_type")
+  targetId   BigInt         @map("target_id")
+  userId     BigInt         @map("user_id")
+  userName   String?        @map("user_name") @db.VarChar(255)
+  lockedAt   DateTime       @default(now()) @map("locked_at")
+  expiresAt  DateTime       @map("expires_at")
+  metadata   Json?          @db.JsonB
+
+  @@unique([targetType, targetId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("edit_locks")
+}

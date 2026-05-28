@@ -3382,6 +3382,152 @@ model SsoLoginLog {
 }
 
 // ============================================
+// メール・SMTP設定モデル（Issue #155-157）
+// ============================================
+
+/// SMTP設定（シングルトン：1レコードのみ）
+model SmtpSettings {
+  id                BigInt   @id @default(autoincrement())
+  host              String   @db.VarChar(255)
+  port              Int      @default(587)
+  secure            Boolean  @default(false) // true for SSL/TLS
+  authEnabled       Boolean  @default(true) @map("auth_enabled")
+  username          String?  @db.VarChar(255)
+  password          String?  @db.VarChar(500) // 暗号化
+  fromEmail         String   @map("from_email") @db.VarChar(255)
+  fromName          String?  @map("from_name") @db.VarChar(255)
+  isEnabled         Boolean  @default(false) @map("is_enabled")
+  lastTestedAt      DateTime? @map("last_tested_at")
+  lastTestSuccess   Boolean?  @map("last_test_success")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("smtp_settings")
+}
+
+/// メールテンプレートタイプ
+enum EmailTemplateType {
+  WELCOME              // ウェルカムメール
+  PASSWORD_RESET       // パスワードリセット
+  TEST_ASSIGNED        // テスト割当通知
+  TEST_COMPLETED       // テスト完了通知
+  BUG_REPORTED         // バグ報告通知
+  BUG_ASSIGNED         // バグ割当通知
+  BUG_UPDATED          // バグ更新通知
+  BUG_RESOLVED         // バグ解決通知
+  REVIEW_REQUEST       // レビュー依頼
+  MILESTONE_REMINDER   // マイルストーンリマインダー
+  DAILY_DIGEST         // 日次ダイジェスト
+  CUSTOM               // カスタム
+
+  @@map("email_template_type")
+}
+
+/// メールテンプレート
+model EmailTemplate {
+  id          BigInt            @id @default(autoincrement())
+  name        String            @unique @db.VarChar(100)
+  type        EmailTemplateType @default(CUSTOM)
+  subject     String            @db.VarChar(500)
+  body        String            @db.Text // HTML形式
+  variables   Json              @default("[]") @db.JsonB // 使用可能な変数リスト
+  description String?           @db.VarChar(500)
+  isActive    Boolean           @default(true) @map("is_active")
+  isDefault   Boolean           @default(false) @map("is_default")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  @@index([type])
+  @@index([isActive])
+  @@map("email_templates")
+}
+
+/// 通知設定タイプ
+enum NotificationSettingType {
+  TEST_ASSIGNED        // テスト割当
+  TEST_COMPLETED       // テスト完了
+  BUG_REPORTED         // バグ報告
+  BUG_ASSIGNED         // バグ割当
+  BUG_UPDATED          // バグ更新
+  BUG_RESOLVED         // バグ解決
+  REVIEW_REQUEST       // レビュー依頼
+  MILESTONE_REMINDER   // マイルストーンリマインダー
+  DAILY_DIGEST         // 日次ダイジェスト
+
+  @@map("notification_setting_type")
+}
+
+/// ユーザー通知設定
+model UserNotificationSettings {
+  id                  BigInt                  @id @default(autoincrement())
+  userId              BigInt                  @map("user_id")
+  notificationType    NotificationSettingType @map("notification_type")
+  emailEnabled        Boolean                 @default(true) @map("email_enabled")
+  inAppEnabled        Boolean                 @default(true) @map("in_app_enabled")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+
+  @@unique([userId, notificationType])
+  @@index([userId])
+  @@map("user_notification_settings")
+}
+
+/// メールキューステータス
+enum EmailQueueStatus {
+  PENDING    // 送信待ち
+  SENDING    // 送信中
+  SENT       // 送信完了
+  FAILED     // 送信失敗
+  CANCELLED  // キャンセル
+
+  @@map("email_queue_status")
+}
+
+/// メール送信キュー
+model EmailQueue {
+  id            BigInt           @id @default(autoincrement())
+  templateId    BigInt?          @map("template_id")
+  toEmail       String           @map("to_email") @db.VarChar(255)
+  toName        String?          @map("to_name") @db.VarChar(255)
+  subject       String           @db.VarChar(500)
+  body          String           @db.Text
+  variables     Json?            @db.JsonB // テンプレート変数
+  status        EmailQueueStatus @default(PENDING)
+  priority      Int              @default(0) // 優先度（高い方が先）
+  attempts      Int              @default(0) // 送信試行回数
+  maxAttempts   Int              @default(3) @map("max_attempts")
+  errorMessage  String?          @map("error_message") @db.Text
+  scheduledAt   DateTime?        @map("scheduled_at") // 送信予定時刻
+  sentAt        DateTime?        @map("sent_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@map("email_queue")
+}
+
+/// メール送信ログ
+model EmailSendLog {
+  id            BigInt   @id @default(autoincrement())
+  queueId       BigInt?  @map("queue_id")
+  templateId    BigInt?  @map("template_id")
+  toEmail       String   @map("to_email") @db.VarChar(255)
+  subject       String   @db.VarChar(500)
+  success       Boolean
+  errorMessage  String?  @map("error_message") @db.Text
+  messageId     String?  @map("message_id") @db.VarChar(255) // SMTPメッセージID
+  sentAt        DateTime @default(now()) @map("sent_at")
+
+  @@index([toEmail])
+  @@index([success])
+  @@index([sentAt])
+  @@map("email_send_logs")
+}
+
+// ============================================
 // APIトークン管理モデル（Issue #158-162）
 // ============================================
 
@@ -3514,4 +3660,144 @@ model TenantSettings {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("tenant_settings")
+}
+
+// ============================================
+// UIスクリプトモデル（Issue #175）
+// ============================================
+
+/// UIスクリプトトリガーイベント
+enum UiScriptTrigger {
+  PAGE_LOAD       // ページ読み込み時
+  FORM_SUBMIT     // フォーム送信時
+  BUTTON_CLICK    // ボタンクリック時
+  MODAL_OPEN      // モーダルオープン時
+  MODAL_CLOSE     // モーダルクローズ時
+  CUSTOM          // カスタムイベント
+}
+
+/// UIスクリプト
+model UiScript {
+  id          BigInt          @id @default(autoincrement())
+  name        String          @db.VarChar(255)
+  description String?         @db.Text
+  trigger     UiScriptTrigger @default(PAGE_LOAD)
+  targetPage  String?         @map("target_page") @db.VarChar(255) // 対象ページパス（nullの場合は全ページ）
+  script      String?         @db.Text // JavaScriptコード
+  css         String?         @db.Text // CSSコード
+  isActive    Boolean         @default(true) @map("is_active")
+  priority    Int             @default(0) // 実行優先度（低い順）
+  metadata    Json?           @db.JsonB
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([trigger])
+  @@index([targetPage])
+  @@index([priority])
+  @@map("ui_scripts")
+}
+
+// ============================================
+// プロジェクトレベルモデル（Issue #176）
+// ============================================
+
+/// プロジェクトレベル
+model ProjectLevel {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  displayName String   @map("display_name") @db.VarChar(255)
+  description String?  @db.Text
+  features    String[] @default([]) // 有効な機能フラグ
+  limits      Json     @default("{}") @db.JsonB // 制限設定（maxUsers, maxTestCases等）
+  isDefault   Boolean  @default(false) @map("is_default")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([isDefault])
+  @@index([sortOrder])
+  @@map("project_levels")
+}
+
+// ============================================
+// テストパラメーターモデル（Issue #177）
+// ============================================
+
+/// テストパラメーター
+model TestParameter {
+  id          BigInt   @id @default(autoincrement())
+  testCaseId  BigInt   @map("test_case_id")
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  values      String[] @default([]) // パラメーター値リスト
+  isRequired  Boolean  @default(false) @map("is_required")
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([testCaseId, name])
+  @@index([testCaseId])
+  @@index([sortOrder])
+  @@map("test_parameters")
+}
+
+// ============================================
+// 監査（再鑑）モードモデル（Issue #178）
+// ============================================
+
+/// 監査レビューステータス
+enum AuditReviewStatus {
+  PENDING   // レビュー待ち
+  APPROVED  // 承認済み
+  REJECTED  // 却下
+}
+
+/// テストラン監査レビュー
+model TestRunAuditReview {
+  id            BigInt            @id @default(autoincrement())
+  testRunId     BigInt            @map("test_run_id")
+  requesterId   BigInt            @map("requester_id") // レビュー依頼者
+  reviewerId    BigInt?           @map("reviewer_id") // レビュアー
+  status        AuditReviewStatus @default(PENDING)
+  comment       String?           @db.Text
+  reviewComment String?           @map("review_comment") @db.Text
+  reviewedAt    DateTime?         @map("reviewed_at")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  @@index([testRunId])
+  @@index([requesterId])
+  @@index([reviewerId])
+  @@index([status])
+  @@map("test_run_audit_reviews")
+}
+
+// ============================================
+// ウォッチリストモデル（Issue #179）
+// ============================================
+
+/// ウォッチリストエンティティタイプ
+enum WatchlistEntityType {
+  PROJECT
+  TEST_SPEC
+  TEST_CASE
+  TEST_RUN
+  BUG
+}
+
+/// ウォッチリスト
+model Watchlist {
+  id          BigInt              @id @default(autoincrement())
+  userId      BigInt              @map("user_id")
+  entityType  WatchlistEntityType @map("entity_type")
+  entityId    BigInt              @map("entity_id")
+  notifyEmail Boolean             @default(true) @map("notify_email")
+  notifyInApp Boolean             @default(true) @map("notify_in_app")
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@map("watchlists")
 }

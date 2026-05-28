@@ -291,13 +291,10 @@ export async function withApiAuth<T>(
   } catch (error) {
     console.error('API authentication error:', error);
 
-    // 使用ログを記録（エラーの場合）
-    const responseTime = Date.now() - startTime;
+    // エラーログを記録
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    // 簡略化したエラーログ（トークンなしの場合もログ）
     console.error(
-      `API Error: ${request.method} ${new URL(request.url).pathname} - ${errorMessage}`
+      `API Error: ${request.method} ${new URL(request.url).pathname} - ${errorMessage} (${Date.now() - startTime}ms)`
     );
 
     return createErrorResponse(

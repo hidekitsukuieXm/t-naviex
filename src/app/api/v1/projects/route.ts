@@ -10,7 +10,6 @@ import {
   type ApiResponse,
 } from '@/lib/middleware/api-auth';
 import {
-  getAllProjects,
   getProjects,
   createProject,
   isProjectNameTaken,

@@ -66,6 +66,7 @@ model User {
   createdBugCountermeasures BugCountermeasure[] @relation("BugCountermeasureCreatedBy")
   updatedBugCountermeasures BugCountermeasure[] @relation("BugCountermeasureUpdatedBy")
   bugCountermeasureFeedbacks BugCountermeasureFeedback[]
+  apiTokens                 ApiToken[]
 
   @@map("users")
 }
@@ -3378,4 +3379,139 @@ model SsoLoginLog {
   @@index([ssoEmail])
   @@index([createdAt])
   @@map("sso_login_logs")
+}
+
+// ============================================
+// APIトークン管理モデル（Issue #158-162）
+// ============================================
+
+/// APIトークンスコープ
+enum ApiTokenScope {
+  READ_PROJECTS       // プロジェクト読み取り
+  WRITE_PROJECTS      // プロジェクト書き込み
+  READ_TEST_SPECS     // テスト仕様書読み取り
+  WRITE_TEST_SPECS    // テスト仕様書書き込み
+  READ_TEST_CASES     // テストケース読み取り
+  WRITE_TEST_CASES    // テストケース書き込み
+  READ_TEST_RUNS      // テストラン読み取り
+  WRITE_TEST_RUNS     // テストラン書き込み
+  READ_BUGS           // バグ読み取り
+  WRITE_BUGS          // バグ書き込み
+  READ_USERS          // ユーザー読み取り
+  WRITE_USERS         // ユーザー書き込み
+  ADMIN               // 管理者権限（全アクセス）
+
+  @@map("api_token_scope")
+}
+
+/// APIトークン
+model ApiToken {
+  id              BigInt           @id @default(autoincrement())
+  userId          BigInt           @map("user_id")
+  name            String           @db.VarChar(255)
+  tokenHash       String           @unique @map("token_hash") @db.VarChar(255)
+  tokenPrefix     String           @map("token_prefix") @db.VarChar(10) // トークン先頭部分（識別用）
+  scopes          ApiTokenScope[]
+  expiresAt       DateTime?        @map("expires_at") // nullの場合は無期限
+  lastUsedAt      DateTime?        @map("last_used_at")
+  lastUsedIp      String?          @map("last_used_ip") @db.VarChar(45)
+  isActive        Boolean          @default(true) @map("is_active")
+  revokedAt       DateTime?        @map("revoked_at")
+  revokedReason   String?          @map("revoked_reason") @db.VarChar(500)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usageLogs       ApiTokenUsageLog[]
+  rateLimits      ApiRateLimit[]
+  ipWhitelists    ApiTokenIpWhitelist[]
+
+  @@index([userId])
+  @@index([tokenPrefix])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@map("api_tokens")
+}
+
+/// APIトークン使用ログ
+model ApiTokenUsageLog {
+  id              BigInt           @id @default(autoincrement())
+  tokenId         BigInt           @map("token_id")
+  method          String           @db.VarChar(10) // GET, POST, PUT, DELETE etc.
+  endpoint        String           @db.VarChar(500)
+  statusCode      Int              @map("status_code")
+  ipAddress       String?          @map("ip_address") @db.VarChar(45)
+  userAgent       String?          @map("user_agent") @db.VarChar(500)
+  requestBody     Json?            @map("request_body") @db.JsonB // リクエストボディ（機密情報除外）
+  responseTime    Int?             @map("response_time") // ミリ秒
+  errorMessage    String?          @map("error_message") @db.VarChar(1000)
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  token           ApiToken         @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@index([tokenId])
+  @@index([method])
+  @@index([endpoint])
+  @@index([statusCode])
+  @@index([createdAt])
+  @@map("api_token_usage_logs")
+}
+
+/// APIレート制限
+model ApiRateLimit {
+  id              BigInt           @id @default(autoincrement())
+  tokenId         BigInt           @map("token_id")
+  windowStart     DateTime         @map("window_start")
+  requestCount    Int              @default(0) @map("request_count")
+  maxRequests     Int              @default(1000) @map("max_requests") // デフォルト1000リクエスト/時
+  windowMinutes   Int              @default(60) @map("window_minutes") // デフォルト60分
+
+  // Relations
+  token           ApiToken         @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenId, windowStart])
+  @@index([tokenId])
+  @@index([windowStart])
+  @@map("api_rate_limits")
+}
+
+/// APIトークンIPホワイトリスト
+model ApiTokenIpWhitelist {
+  id              BigInt           @id @default(autoincrement())
+  tokenId         BigInt           @map("token_id")
+  ipAddress       String           @map("ip_address") @db.VarChar(45) // IPアドレスまたはCIDR
+  description     String?          @db.VarChar(255)
+  createdAt       DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  token           ApiToken         @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenId, ipAddress])
+  @@index([tokenId])
+  @@map("api_token_ip_whitelists")
+}
+
+// ============================================
+// テナント・ブランディング設定モデル（Issue #173）
+// ============================================
+
+/// テナント設定（ブランディング）
+model TenantSettings {
+  id              BigInt   @id @default(autoincrement())
+  logo            String?  @db.VarChar(500) // ロゴ画像URL/パス
+  logoFile        Bytes?   @map("logo_file") // ロゴファイル（Base64 or バイナリ）
+  logoMimeType    String?  @map("logo_mime_type") @db.VarChar(100)
+  primaryColor    String   @default("#3B82F6") @map("primary_color") @db.VarChar(20) // プライマリカラー
+  secondaryColor  String   @default("#6366F1") @map("secondary_color") @db.VarChar(20) // セカンダリカラー
+  accentColor     String   @default("#8B5CF6") @map("accent_color") @db.VarChar(20) // アクセントカラー
+  companyName     String?  @map("company_name") @db.VarChar(255) // 会社名
+  faviconUrl      String?  @map("favicon_url") @db.VarChar(500) // ファビコンURL
+  customCss       String?  @map("custom_css") @db.Text // カスタムCSS
+  metadata        Json?    @db.JsonB // その他メタデータ
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("tenant_settings")
 }

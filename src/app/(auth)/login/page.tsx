@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') ?? '/dashboard';
@@ -50,6 +50,84 @@ export default function LoginPage() {
   };
 
   return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {loginError && (
+        <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          <AlertCircle className="size-4" />
+          <span>{loginError}</span>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        <Label htmlFor="email">メールアドレス</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="example@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          disabled={isLoading}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="password">パスワード</Label>
+        <Input
+          id="password"
+          type="password"
+          placeholder="パスワードを入力"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          disabled={isLoading}
+        />
+      </div>
+
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 size-4 animate-spin" />
+            ログイン中...
+          </>
+        ) : (
+          'ログイン'
+        )}
+      </Button>
+
+      <div className="text-center text-sm">
+        <Link
+          href="/forgot-password"
+          className="text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+        >
+          パスワードをお忘れですか？
+        </Link>
+      </div>
+    </form>
+  );
+}
+
+function LoginFormFallback() {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="email">メールアドレス</Label>
+        <Input id="email" type="email" placeholder="example@example.com" disabled />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">パスワード</Label>
+        <Input id="password" type="password" placeholder="パスワードを入力" disabled />
+      </div>
+      <Button className="w-full" disabled>
+        <Loader2 className="mr-2 size-4 animate-spin" />
+        読み込み中...
+      </Button>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
@@ -57,60 +135,9 @@ export default function LoginPage() {
           <CardDescription>テスト管理システムにログイン</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {loginError && (
-              <div className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                <AlertCircle className="size-4" />
-                <span>{loginError}</span>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="email">メールアドレス</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="example@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">パスワード</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="パスワードを入力"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  ログイン中...
-                </>
-              ) : (
-                'ログイン'
-              )}
-            </Button>
-
-            <div className="text-center text-sm">
-              <Link
-                href="/forgot-password"
-                className="text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
-              >
-                パスワードをお忘れですか？
-              </Link>
-            </div>
-          </form>
+          <Suspense fallback={<LoginFormFallback />}>
+            <LoginForm />
+          </Suspense>
         </CardContent>
       </Card>
     </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import {
   ColumnVisibilityDialog,
   GRID_COLUMN_LABELS,
@@ -10,6 +10,101 @@ import {
   type ColumnConfig,
 } from '../column-visibility-dialog';
 import type { VisibilityState } from '@tanstack/react-table';
+
+// Mock dialog components to avoid Base UI render prop issues
+vi.mock('@/components/ui/dialog', async () => {
+  const React = await import('react');
+
+  const DialogContext = React.createContext<{
+    open: boolean;
+    setOpen: (open: boolean) => void;
+  }>({ open: false, setOpen: () => {} });
+
+  const Dialog = ({ children }: { children: React.ReactNode }) => {
+    const [open, setOpen] = React.useState(false);
+    return (
+      <DialogContext.Provider value={{ open, setOpen }}>
+        <div data-testid="dialog-root">{children}</div>
+      </DialogContext.Provider>
+    );
+  };
+
+  const DialogTrigger = ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => {
+    const { setOpen } = React.useContext(DialogContext);
+    return (
+      <button type="button" className={className} onClick={() => setOpen(true)}>
+        {children}
+      </button>
+    );
+  };
+
+  const DialogContent = ({ children }: { children: React.ReactNode; className?: string }) => {
+    const { open } = React.useContext(DialogContext);
+    if (!open) return null;
+    return (
+      <div data-testid="dialog-content" role="dialog">
+        {children}
+      </div>
+    );
+  };
+
+  const DialogHeader = ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dialog-header">{children}</div>
+  );
+
+  const DialogTitle = ({ children }: { children: React.ReactNode }) => (
+    <h2 data-testid="dialog-title">{children}</h2>
+  );
+
+  const DialogDescription = ({ children }: { children: React.ReactNode }) => (
+    <p data-testid="dialog-description">{children}</p>
+  );
+
+  const DialogFooter = ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dialog-footer">{children}</div>
+  );
+
+  const DialogClose = ({
+    children,
+  }: {
+    children: React.ReactNode;
+    render?: React.ReactElement;
+  }) => {
+    const { setOpen } = React.useContext(DialogContext);
+    return (
+      <button type="button" data-testid="dialog-close" onClick={() => setOpen(false)}>
+        {children}
+      </button>
+    );
+  };
+
+  const DialogPortal = ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dialog-portal">{children}</div>
+  );
+
+  const DialogOverlay = ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dialog-overlay">{children}</div>
+  );
+
+  return {
+    Dialog,
+    DialogTrigger,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
+    DialogPortal,
+    DialogOverlay,
+  };
+});
 
 describe('ColumnVisibilityDialog', () => {
   const mockColumns: ColumnConfig[] = [

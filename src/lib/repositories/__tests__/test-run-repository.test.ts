@@ -41,6 +41,7 @@ vi.mock('@/lib/prisma', () => ({
       findFirst: vi.fn(),
     },
     testRunCase: {
+      findMany: vi.fn(),
       groupBy: vi.fn(),
       createMany: vi.fn(),
     },
@@ -69,6 +70,12 @@ const mockPrisma = prisma as unknown as {
   configuration: {
     findFirst: ReturnType<typeof vi.fn>;
   };
+  testRunCase: {
+    findMany: ReturnType<typeof vi.fn>;
+    groupBy: ReturnType<typeof vi.fn>;
+    createMany: ReturnType<typeof vi.fn>;
+  };
+  $transaction: ReturnType<typeof vi.fn>;
 };
 
 describe('TestRun Repository', () => {
@@ -480,13 +487,15 @@ describe('TestRun Repository', () => {
         milestoneId: BigInt(10),
         configurationId: BigInt(20),
         name: 'Original Test Run',
-        testRunCases: [
-          { testCaseId: BigInt(1), assignedToId: BigInt(5) },
-          { testCaseId: BigInt(2), assignedToId: BigInt(6) },
-        ],
       };
 
+      const testRunCases = [
+        { testCaseId: BigInt(1), assignedToId: BigInt(5) },
+        { testCaseId: BigInt(2), assignedToId: BigInt(6) },
+      ];
+
       mockPrisma.testRun.findUnique.mockResolvedValue(sourceTestRun);
+      mockPrisma.testRunCase.findMany.mockResolvedValue(testRunCases);
       mockPrisma.$transaction.mockImplementation(async (callback) => {
         const mockTx = {
           testRun: {
@@ -522,8 +531,8 @@ describe('TestRun Repository', () => {
       mockPrisma.testRun.findUnique.mockResolvedValue({
         id: BigInt(1),
         projectId: BigInt(100),
-        testRunCases: [],
       });
+      mockPrisma.testRunCase.findMany.mockResolvedValue([]);
 
       await expect(
         createReRun(BigInt(100), BigInt(1), { includeStatuses: ['FAILED'] })

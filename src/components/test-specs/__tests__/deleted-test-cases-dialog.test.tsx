@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { DeletedTestCasesDialog } from '../deleted-test-cases-dialog';
+import { Button } from '@/components/ui/button';
 import type { TestCase } from '@/types/test-case';
 
 // Mock fetch
@@ -14,6 +15,9 @@ vi.mock('sonner', () => ({
     error: vi.fn(),
   },
 }));
+
+// Custom trigger component that works with Base UI Dialog
+const TestTrigger = <Button>削除済みを表示</Button>;
 
 describe('DeletedTestCasesDialog', () => {
   const mockDeletedTestCases: TestCase[] = [
@@ -107,9 +111,9 @@ describe('DeletedTestCasesDialog', () => {
           }),
       });
 
-      render(<DeletedTestCasesDialog {...defaultProps} />);
+      render(<DeletedTestCasesDialog {...defaultProps} trigger={TestTrigger} />);
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       await waitFor(() => {
@@ -136,9 +140,9 @@ describe('DeletedTestCasesDialog', () => {
           }),
       });
 
-      render(<DeletedTestCasesDialog {...defaultProps} />);
+      render(<DeletedTestCasesDialog {...defaultProps} trigger={TestTrigger} />);
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       await waitFor(() => {
@@ -153,14 +157,14 @@ describe('DeletedTestCasesDialog', () => {
       });
       mockFetch.mockReturnValueOnce(fetchPromise);
 
-      render(<DeletedTestCasesDialog {...defaultProps} />);
+      render(<DeletedTestCasesDialog {...defaultProps} trigger={TestTrigger} />);
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       // Should show loading spinner
       await waitFor(() => {
-        expect(screen.getByRole('dialog')).toBeDefined();
+        expect(screen.getByText('削除済みテストケース')).toBeDefined();
       });
 
       // Resolve the fetch
@@ -208,9 +212,9 @@ describe('DeletedTestCasesDialog', () => {
             }),
         });
 
-      render(<DeletedTestCasesDialog {...defaultProps} />);
+      render(<DeletedTestCasesDialog {...defaultProps} trigger={TestTrigger} />);
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       await waitFor(() => {
@@ -218,7 +222,7 @@ describe('DeletedTestCasesDialog', () => {
       });
 
       // Find and click restore button
-      const restoreButtons = screen.getAllByRole('button', { name: '復元' });
+      const restoreButtons = screen.getAllByRole('button', { name: /復元/ });
       fireEvent.click(restoreButtons[0]);
 
       await waitFor(() => {
@@ -258,16 +262,18 @@ describe('DeletedTestCasesDialog', () => {
             }),
         });
 
-      render(<DeletedTestCasesDialog {...defaultProps} onRestore={onRestore} />);
+      render(
+        <DeletedTestCasesDialog {...defaultProps} onRestore={onRestore} trigger={TestTrigger} />
+      );
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       await waitFor(() => {
         expect(screen.getByText('Deleted Test Case 1')).toBeDefined();
       });
 
-      const restoreButtons = screen.getAllByRole('button', { name: '復元' });
+      const restoreButtons = screen.getAllByRole('button', { name: /復元/ });
       fireEvent.click(restoreButtons[0]);
 
       await waitFor(() => {
@@ -305,16 +311,16 @@ describe('DeletedTestCasesDialog', () => {
             }),
         });
 
-      render(<DeletedTestCasesDialog {...defaultProps} />);
+      render(<DeletedTestCasesDialog {...defaultProps} trigger={TestTrigger} />);
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       await waitFor(() => {
         expect(screen.getByText('Deleted Test Case 1')).toBeDefined();
       });
 
-      const restoreButtons = screen.getAllByRole('button', { name: '復元' });
+      const restoreButtons = screen.getAllByRole('button', { name: /復元/ });
       fireEvent.click(restoreButtons[0]);
 
       await waitFor(() => {
@@ -335,16 +341,16 @@ describe('DeletedTestCasesDialog', () => {
           }),
       });
 
-      render(<DeletedTestCasesDialog {...defaultProps} isLocked />);
+      render(<DeletedTestCasesDialog {...defaultProps} isLocked trigger={TestTrigger} />);
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       await waitFor(() => {
         expect(screen.getByText('Deleted Test Case 1')).toBeDefined();
       });
 
-      const restoreButtons = screen.getAllByRole('button', { name: '復元' });
+      const restoreButtons = screen.getAllByRole('button', { name: /復元/ });
       expect(restoreButtons[0]).toHaveProperty('disabled', true);
     });
   });
@@ -357,9 +363,9 @@ describe('DeletedTestCasesDialog', () => {
         json: () => Promise.resolve({ error: 'Fetch failed' }),
       });
 
-      render(<DeletedTestCasesDialog {...defaultProps} />);
+      render(<DeletedTestCasesDialog {...defaultProps} trigger={TestTrigger} />);
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       await waitFor(() => {
@@ -386,16 +392,16 @@ describe('DeletedTestCasesDialog', () => {
           json: () => Promise.resolve({ error: 'Restore failed' }),
         });
 
-      render(<DeletedTestCasesDialog {...defaultProps} />);
+      render(<DeletedTestCasesDialog {...defaultProps} trigger={TestTrigger} />);
 
-      const trigger = screen.getByText(/削除済み/);
+      const trigger = screen.getByRole('button', { name: '削除済みを表示' });
       fireEvent.click(trigger);
 
       await waitFor(() => {
         expect(screen.getByText('Deleted Test Case 1')).toBeDefined();
       });
 
-      const restoreButtons = screen.getAllByRole('button', { name: '復元' });
+      const restoreButtons = screen.getAllByRole('button', { name: /復元/ });
       fireEvent.click(restoreButtons[0]);
 
       await waitFor(() => {

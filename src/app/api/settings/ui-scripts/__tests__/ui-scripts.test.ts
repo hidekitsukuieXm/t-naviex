@@ -10,6 +10,7 @@ vi.mock('@/lib/prisma', () => ({
     uiScript: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
@@ -30,6 +31,7 @@ import { GET as GET_SCRIPT, PUT, DELETE } from '../[id]/route';
 const mockAuth = vi.mocked(auth);
 const mockFindMany = vi.mocked(prisma.uiScript.findMany);
 const mockFindUnique = vi.mocked(prisma.uiScript.findUnique);
+const mockFindFirst = vi.mocked(prisma.uiScript.findFirst);
 const mockCreate = vi.mocked(prisma.uiScript.create);
 const mockUpdate = vi.mocked(prisma.uiScript.update);
 const mockDelete = vi.mocked(prisma.uiScript.delete);
@@ -120,9 +122,9 @@ describe('UI Scripts API', () => {
 
     it('should return 400 when duplicate name exists', async () => {
       mockAuth.mockReset();
-      mockFindUnique.mockReset();
+      mockFindFirst.mockReset();
       mockAuth.mockResolvedValue(mockSession);
-      mockFindUnique.mockResolvedValue(mockUiScript);
+      mockFindFirst.mockResolvedValue(mockUiScript);
 
       const request = new Request('http://localhost/api/settings/ui-scripts', {
         method: 'POST',
@@ -138,10 +140,10 @@ describe('UI Scripts API', () => {
 
     it('should create script when valid', async () => {
       mockAuth.mockReset();
-      mockFindUnique.mockReset();
+      mockFindFirst.mockReset();
       mockCreate.mockReset();
       mockAuth.mockResolvedValue(mockSession);
-      mockFindUnique.mockResolvedValue(null);
+      mockFindFirst.mockResolvedValue(null);
       mockCreate.mockResolvedValue(mockUiScript);
 
       const request = new Request('http://localhost/api/settings/ui-scripts', {

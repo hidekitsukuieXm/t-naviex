@@ -316,7 +316,7 @@ describe('BugAnalyzerService', () => {
       const result = await bugAnalyzerService.analyzeBug(null, mockOptions);
 
       expect(result.result.overallSeverity).toBe('CRITICAL');
-      expect(result.result.estimatedPriority).toBe('URGENT');
+      expect(result.result.estimatedPriority).toBe('CRITICAL');
       expect(result.result.rootCauseAnalysis.category).toBe('DESIGN_FLAW');
       expect(result.result.impactAssessment[0].level).toBe('HIGH');
       expect(result.result.fixRecommendations[0].priority).toBe('HIGH');

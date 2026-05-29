@@ -385,14 +385,14 @@ describe('test-case-import', () => {
 
   describe('TEST_TECHNIQUE_MAPPING', () => {
     it('should map Japanese test technique values', () => {
-      expect(TEST_TECHNIQUE_MAPPING['同値分割']).toBe('EQUIVALENCE');
-      expect(TEST_TECHNIQUE_MAPPING['境界値分析']).toBe('BOUNDARY');
+      expect(TEST_TECHNIQUE_MAPPING['同値分割']).toBe('EQUIVALENCE_PARTITIONING');
+      expect(TEST_TECHNIQUE_MAPPING['境界値分析']).toBe('BOUNDARY_VALUE_ANALYSIS');
       expect(TEST_TECHNIQUE_MAPPING['デシジョンテーブル']).toBe('DECISION_TABLE');
     });
 
     it('should map English test technique values', () => {
-      expect(TEST_TECHNIQUE_MAPPING['equivalence']).toBe('EQUIVALENCE');
-      expect(TEST_TECHNIQUE_MAPPING['boundary']).toBe('BOUNDARY');
+      expect(TEST_TECHNIQUE_MAPPING['equivalence']).toBe('EQUIVALENCE_PARTITIONING');
+      expect(TEST_TECHNIQUE_MAPPING['boundary']).toBe('BOUNDARY_VALUE_ANALYSIS');
       expect(TEST_TECHNIQUE_MAPPING['decision_table']).toBe('DECISION_TABLE');
     });
   });

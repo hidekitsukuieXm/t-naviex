@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
 import {
   TestCaseFilterPanel,
   DEFAULT_FILTER_STATE,
@@ -7,6 +8,106 @@ import {
   countActiveFilters,
 } from '../test-case-filter-panel';
 import type { TestCaseFilterState } from '@/types/test-case';
+
+// Mock the Popover component from @/components/ui/popover
+vi.mock('@/components/ui/popover', () => ({
+  Popover: ({ children, open }: { children: React.ReactNode; open?: boolean }) => (
+    <div data-testid="popover" data-open={open}>
+      {children}
+    </div>
+  ),
+  PopoverTrigger: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <button type="button" className={className} data-testid="popover-trigger">
+      {children}
+    </button>
+  ),
+  PopoverContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div data-testid="popover-content" className={className}>
+      {children}
+    </div>
+  ),
+}));
+
+// Mock the Select component from @/components/ui/select
+vi.mock('@/components/ui/select', () => ({
+  Select: ({
+    children,
+    value,
+    onValueChange,
+  }: {
+    children: React.ReactNode;
+    value?: string;
+    onValueChange?: (value: string) => void;
+  }) => (
+    <div data-testid="select" data-value={value}>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(
+            child as React.ReactElement<{ onValueChange?: (value: string) => void }>,
+            {
+              onValueChange,
+            }
+          );
+        }
+        return child;
+      })}
+    </div>
+  ),
+  SelectTrigger: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <button type="button" role="combobox" className={className} data-testid="select-trigger">
+      {children}
+    </button>
+  ),
+  SelectValue: ({ placeholder }: { placeholder?: string }) => (
+    <span data-testid="select-value">{placeholder}</span>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="select-content">{children}</div>
+  ),
+  SelectItem: ({
+    children,
+    value,
+    onValueChange,
+  }: {
+    children: React.ReactNode;
+    value: string;
+    onValueChange?: (value: string) => void;
+  }) => (
+    <button
+      type="button"
+      role="option"
+      data-testid={`select-item-${value}`}
+      onClick={() => onValueChange?.(value)}
+    >
+      {children}
+    </button>
+  ),
+}));
+
+// Mock the Collapsible component from @/components/ui/collapsible
+vi.mock('@/components/ui/collapsible', () => ({
+  Collapsible: ({ children, open }: { children: React.ReactNode; open?: boolean }) => (
+    <div data-testid="collapsible" data-open={open}>
+      {children}
+    </div>
+  ),
+  CollapsibleTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => (
+    <div data-testid="collapsible-trigger" data-aschild={asChild}>
+      {children}
+    </div>
+  ),
+  CollapsibleContent: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <div data-testid="collapsible-content" className={className}>
+      {children}
+    </div>
+  ),
+}));
 
 describe('TestCaseFilterPanel', () => {
   const defaultProps = {
@@ -107,7 +208,9 @@ describe('TestCaseFilterPanel', () => {
           filters={{ ...DEFAULT_FILTER_STATE, query: 'test' }}
         />
       );
-      expect(screen.getByRole('button', { name: /クリア/ })).toBeDefined();
+      // There are two clear buttons: one in the popover and one outside
+      const clearButtons = screen.getAllByRole('button', { name: /クリア/ });
+      expect(clearButtons.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -132,8 +235,10 @@ describe('TestCaseFilterPanel', () => {
         />
       );
 
-      const clearButton = screen.getByRole('button', { name: /クリア/ });
-      fireEvent.click(clearButton);
+      // There are two clear buttons: one in the popover and one outside
+      // Use the last one (the one outside the popover which has size-4 icon)
+      const clearButtons = screen.getAllByRole('button', { name: /クリア/ });
+      fireEvent.click(clearButtons[clearButtons.length - 1]);
 
       expect(onFilterChange).toHaveBeenCalledWith(DEFAULT_FILTER_STATE);
     });

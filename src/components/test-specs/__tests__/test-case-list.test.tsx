@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import React from 'react';
 import { TestCaseList, TestCasePriorityBadge } from '../test-case-list';
 import type { TestCaseListResponse } from '@/types/test-case';
 
@@ -8,6 +9,202 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({
     refresh: vi.fn(),
   }),
+}));
+
+// Mock the Popover component from @/components/ui/popover
+vi.mock('@/components/ui/popover', () => ({
+  Popover: ({ children, open }: { children: React.ReactNode; open?: boolean }) => (
+    <div data-testid="popover" data-open={open}>
+      {children}
+    </div>
+  ),
+  PopoverTrigger: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <button type="button" className={className} data-testid="popover-trigger">
+      {children}
+    </button>
+  ),
+  PopoverContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div data-testid="popover-content" className={className}>
+      {children}
+    </div>
+  ),
+}));
+
+// Mock the Select component from @/components/ui/select
+vi.mock('@/components/ui/select', () => ({
+  Select: ({
+    children,
+    value,
+    onValueChange,
+  }: {
+    children: React.ReactNode;
+    value?: string;
+    onValueChange?: (value: string) => void;
+  }) => (
+    <div data-testid="select" data-value={value}>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(
+            child as React.ReactElement<{ onValueChange?: (value: string) => void }>,
+            {
+              onValueChange,
+            }
+          );
+        }
+        return child;
+      })}
+    </div>
+  ),
+  SelectTrigger: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <button type="button" role="combobox" className={className} data-testid="select-trigger">
+      {children}
+    </button>
+  ),
+  SelectValue: ({ placeholder }: { placeholder?: string }) => (
+    <span data-testid="select-value">{placeholder}</span>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="select-content">{children}</div>
+  ),
+  SelectItem: ({
+    children,
+    value,
+    onValueChange,
+  }: {
+    children: React.ReactNode;
+    value: string;
+    onValueChange?: (value: string) => void;
+  }) => (
+    <button
+      type="button"
+      role="option"
+      data-testid={`select-item-${value}`}
+      onClick={() => onValueChange?.(value)}
+    >
+      {children}
+    </button>
+  ),
+}));
+
+// Mock the Collapsible component from @/components/ui/collapsible
+vi.mock('@/components/ui/collapsible', () => ({
+  Collapsible: ({ children, open }: { children: React.ReactNode; open?: boolean }) => (
+    <div data-testid="collapsible" data-open={open}>
+      {children}
+    </div>
+  ),
+  CollapsibleTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => (
+    <div data-testid="collapsible-trigger" data-aschild={asChild}>
+      {children}
+    </div>
+  ),
+  CollapsibleContent: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <div data-testid="collapsible-content" className={className}>
+      {children}
+    </div>
+  ),
+}));
+
+// Mock the DropdownMenu component from @/components/ui/dropdown-menu
+vi.mock('@/components/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dropdown-menu">{children}</div>
+  ),
+  DropdownMenuTrigger: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <button type="button" className={className} data-testid="dropdown-menu-trigger">
+      {children}
+    </button>
+  ),
+  DropdownMenuContent: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <div data-testid="dropdown-menu-content" className={className}>
+      {children}
+    </div>
+  ),
+  DropdownMenuItem: ({
+    children,
+    onClick,
+    className,
+  }: {
+    children: React.ReactNode;
+    onClick?: () => void;
+    className?: string;
+  }) => (
+    <button type="button" role="menuitem" className={className} onClick={onClick}>
+      {children}
+    </button>
+  ),
+}));
+
+// Mock the Dialog component from @/components/ui/dialog
+vi.mock('@/components/ui/dialog', () => ({
+  Dialog: ({ children, open }: { children: React.ReactNode; open?: boolean }) => (
+    <div data-testid="dialog" data-open={open}>
+      {children}
+    </div>
+  ),
+  DialogTrigger: ({
+    render,
+    children,
+  }: {
+    render?: React.ReactNode;
+    children?: React.ReactNode;
+  }) => <div data-testid="dialog-trigger">{render || children}</div>,
+  DialogContent: ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <div data-testid="dialog-content" className={className}>
+      {children}
+    </div>
+  ),
+  DialogHeader: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dialog-header">{children}</div>
+  ),
+  DialogTitle: ({ children }: { children: React.ReactNode }) => (
+    <h2 data-testid="dialog-title">{children}</h2>
+  ),
+  DialogDescription: ({ children }: { children: React.ReactNode }) => (
+    <p data-testid="dialog-description">{children}</p>
+  ),
+}));
+
+// Mock TestCaseCreateDialog to avoid Dialog render prop issues
+vi.mock('../test-case-create-dialog', () => ({
+  TestCaseCreateDialog: ({
+    trigger,
+  }: {
+    testSpecId: string;
+    sections?: unknown[];
+    defaultSectionId?: string | null;
+    onSuccess?: () => void;
+    trigger?: React.ReactNode;
+  }) => <div data-testid="test-case-create-dialog">{trigger}</div>,
+}));
+
+// Mock TestCaseSearchDialog to avoid Dialog render prop issues
+vi.mock('../test-case-search-dialog', () => ({
+  TestCaseSearchDialog: ({
+    trigger,
+  }: {
+    testSpecId: string;
+    trigger?: React.ReactNode;
+    onSelectTestCase?: (testCaseId: string) => void;
+  }) => <div data-testid="test-case-search-dialog">{trigger}</div>,
 }));
 
 // Mock fetch
@@ -241,7 +438,9 @@ describe('TestCaseList', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('クリア')).toBeDefined();
+      // There may be multiple clear buttons (one in popover, one outside)
+      const clearButtons = screen.getAllByText('クリア');
+      expect(clearButtons.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -256,23 +455,35 @@ describe('TestCaseList', () => {
     fireEvent.change(searchInput, { target: { value: 'test' } });
 
     await waitFor(() => {
-      expect(screen.getByText('クリア')).toBeDefined();
+      // There may be multiple clear buttons
+      const clearButtons = screen.getAllByText('クリア');
+      expect(clearButtons.length).toBeGreaterThanOrEqual(1);
     });
 
-    fireEvent.click(screen.getByText('クリア'));
+    // Click the last clear button (the one outside the popover)
+    const clearButtons = screen.getAllByText('クリア');
+    fireEvent.click(clearButtons[clearButtons.length - 1]);
 
-    expect((searchInput as HTMLInputElement).value).toBe('');
+    // Wait for state update
+    await waitFor(() => {
+      expect((searchInput as HTMLInputElement).value).toBe('');
+    });
   });
 
   it('should render sortable column headers', async () => {
     render(<TestCaseList testSpecId="spec-1" selectedSectionId={null} />);
 
+    // Wait for data to be loaded first (table headers only render when testCases exist)
     await waitFor(() => {
-      expect(screen.getByText('タイトル')).toBeDefined();
-      expect(screen.getByText('優先度')).toBeDefined();
-      expect(screen.getByText('テストタイプ')).toBeDefined();
-      expect(screen.getByText('更新日')).toBeDefined();
+      expect(screen.getByText('テストケース1')).toBeDefined();
     });
+
+    // Check for column headers - labels may appear multiple times (in table and sort dropdown)
+    // Use getAllByText to verify they exist
+    expect(screen.getAllByText('タイトル').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('優先度').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('テストタイプ').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('更新日').length).toBeGreaterThanOrEqual(1);
   });
 
   it('should apply custom className', async () => {

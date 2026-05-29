@@ -19,6 +19,161 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+// Mock Base UI components that use render props (Popover, Select, Dialog, DropdownMenu, ContextMenu, Collapsible)
+vi.mock('@/components/ui/popover', () => ({
+  Popover: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="popover">{children}</div>
+  ),
+  PopoverTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="popover-trigger">{children}</div>
+  ),
+  PopoverContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="popover-content">{children}</div>
+  ),
+  PopoverHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PopoverTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  PopoverDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock('@/components/ui/select', () => ({
+  Select: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="select">{children}</div>
+  ),
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => (
+    <button data-testid="select-trigger">{children}</button>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="select-content">{children}</div>
+  ),
+  SelectItem: ({ children, value }: { children: React.ReactNode; value: string }) => (
+    <div data-value={value}>{children}</div>
+  ),
+  SelectValue: ({ placeholder }: { placeholder?: string }) => <span>{placeholder}</span>,
+  SelectGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SelectLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  SelectSeparator: () => <hr />,
+  SelectScrollUpButton: () => null,
+  SelectScrollDownButton: () => null,
+}));
+
+vi.mock('@/components/ui/dialog', () => ({
+  Dialog: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dialog">{children}</div>
+  ),
+  DialogTrigger: ({
+    children,
+    render,
+  }: {
+    children?: React.ReactNode;
+    render?: React.ReactNode;
+  }) => <div data-testid="dialog-trigger">{render || children}</div>,
+  DialogContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dialog-content">{children}</div>
+  ),
+  DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogDescription: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogFooter: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogClose: ({ children }: { children: React.ReactNode }) => <button>{children}</button>,
+  DialogPortal: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogOverlay: () => null,
+}));
+
+vi.mock('@/components/ui/dropdown-menu', () => ({
+  DropdownMenu: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dropdown-menu">{children}</div>
+  ),
+  DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <button data-testid="dropdown-menu-trigger">{children}</button>
+  ),
+  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="dropdown-menu-content">{children}</div>
+  ),
+  DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuSeparator: () => <hr />,
+  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuCheckboxItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuRadioGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuRadioItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuSub: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuSubTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuShortcut: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
+
+vi.mock('@/components/ui/context-menu', () => ({
+  ContextMenu: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="context-menu">{children}</div>
+  ),
+  ContextMenuTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="context-menu-trigger">{children}</div>
+  ),
+  ContextMenuContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="context-menu-content">{children}</div>
+  ),
+  ContextMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuSeparator: () => <hr />,
+  ContextMenuSub: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuSubTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuSubContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuShortcut: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+  ContextMenuGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuCheckboxItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuRadioGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuRadioItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  ContextMenuPortal: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
+
+vi.mock('@/components/ui/collapsible', () => ({
+  Collapsible: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="collapsible">{children}</div>
+  ),
+  CollapsibleTrigger: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => {
+    // When asChild is true, return the children directly to avoid nesting issues
+    if (asChild) {
+      return <>{children}</>;
+    }
+    return <div data-testid="collapsible-trigger">{children}</div>;
+  },
+  CollapsibleContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="collapsible-content">{children}</div>
+  ),
+}));
+
+// Mock dnd-kit-sortable-tree to avoid complex drag-and-drop setup
+vi.mock('dnd-kit-sortable-tree', () => ({
+  SortableTree: ({
+    items,
+  }: {
+    items: Array<{ id: string; name: string; children?: Array<{ id: string; name: string }> }>;
+  }) => {
+    const renderItems = (
+      itemList: Array<{ id: string; name: string; children?: Array<{ id: string; name: string }> }>
+    ) => {
+      return itemList.map((item) => (
+        <div key={item.id} data-testid={`tree-item-${item.id}`}>
+          <span>{item.name}</span>
+          {item.children && item.children.length > 0 && (
+            <div data-testid={`tree-item-children-${item.id}`}>{renderItems(item.children)}</div>
+          )}
+        </div>
+      ));
+    };
+    return <div data-testid="sortable-tree">{renderItems(items)}</div>;
+  },
+  SimpleTreeItemWrapper: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
+
+// Mock sonner toast
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 // Mock fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -169,12 +324,19 @@ describe('TestSpecDetailPage', () => {
       );
     });
 
+    // Wait for loading to complete by checking for test spec name
     await waitFor(
       () => {
-        expect(screen.getByText('セクション1')).toBeDefined();
+        expect(screen.getByText('テスト仕様書1')).toBeDefined();
       },
       { timeout: 5000 }
     );
+
+    // Verify section tree is rendered (via the sortable-tree mock)
+    expect(screen.getByTestId('sortable-tree')).toBeDefined();
+    // The section name should be rendered (may appear multiple times due to mock and actual component)
+    const sectionElements = screen.getAllByText('セクション1');
+    expect(sectionElements.length).toBeGreaterThan(0);
   });
 
   it('should render error state when test spec fetch fails', async () => {

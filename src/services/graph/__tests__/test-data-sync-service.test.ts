@@ -90,7 +90,7 @@ describe('Test Data Sync Service', () => {
           testType: 'FUNCTIONAL',
           preconditions: 'Preconditions',
           status: 'ACTIVE',
-          steps: [
+          testSteps: [
             {
               id: 'step-1',
               stepNo: 1,
@@ -98,7 +98,7 @@ describe('Test Data Sync Service', () => {
               expectedMd: 'Expected 1',
             },
           ],
-          tags: [
+          testCaseTags: [
             {
               tag: { id: 'tag-1', name: 'smoke', color: '#ff0000' },
             },
@@ -257,8 +257,10 @@ describe('Test Data Sync Service', () => {
         {
           id: 'bug-1',
           title: 'Bug 1',
-          testRunCase: {
-            testCase: { id: 'tc-1' },
+          testResult: {
+            testRunCase: {
+              testCase: { id: 'tc-1' },
+            },
           },
         },
       ] as never);
@@ -350,7 +352,7 @@ describe('Test Data Sync Service', () => {
     it('should sync a single test case', async () => {
       vi.mocked(verifyConnection).mockResolvedValue(true);
       vi.mocked(prisma.testCase.findUnique).mockResolvedValue({
-        id: 'tc-1',
+        id: BigInt(1),
         title: 'Test Case 1',
         description: 'Description',
         testSpecId: 'spec-1',
@@ -358,12 +360,12 @@ describe('Test Data Sync Service', () => {
         testType: 'FUNCTIONAL',
         preconditions: 'Preconditions',
         status: 'ACTIVE',
-        steps: [],
-        tags: [],
+        testSteps: [],
+        testCaseTags: [],
       } as never);
       vi.mocked(writeQuery).mockResolvedValue([]);
 
-      const result = await syncSingleTestCase('tc-1');
+      const result = await syncSingleTestCase('1');
 
       expect(result.success).toBe(true);
       expect(result.syncedNodes).toBeGreaterThan(0);
@@ -373,7 +375,7 @@ describe('Test Data Sync Service', () => {
       vi.mocked(verifyConnection).mockResolvedValue(true);
       vi.mocked(prisma.testCase.findUnique).mockResolvedValue(null);
 
-      const result = await syncSingleTestCase('tc-nonexistent');
+      const result = await syncSingleTestCase('999');
 
       expect(result.success).toBe(false);
       expect(result.errors).toContain('Test case not found');
@@ -384,18 +386,18 @@ describe('Test Data Sync Service', () => {
     it('should sync a single bug', async () => {
       vi.mocked(verifyConnection).mockResolvedValue(true);
       vi.mocked(prisma.bug.findUnique).mockResolvedValue({
-        id: 'bug-1',
+        id: BigInt(1),
         title: 'Bug 1',
         description: 'Description',
         bugId: 'BUG-001',
         severity: 'MAJOR',
         priority: 'HIGH',
         status: 'OPEN',
-        testRunCase: null,
+        testResult: null,
       } as never);
       vi.mocked(writeQuery).mockResolvedValue([]);
 
-      const result = await syncSingleBug('bug-1');
+      const result = await syncSingleBug('1');
 
       expect(result.success).toBe(true);
       expect(result.syncedNodes).toBeGreaterThan(0);
@@ -405,7 +407,7 @@ describe('Test Data Sync Service', () => {
       vi.mocked(verifyConnection).mockResolvedValue(true);
       vi.mocked(prisma.bug.findUnique).mockResolvedValue(null);
 
-      const result = await syncSingleBug('bug-nonexistent');
+      const result = await syncSingleBug('999');
 
       expect(result.success).toBe(false);
       expect(result.errors).toContain('Bug not found');

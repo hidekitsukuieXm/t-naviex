@@ -886,15 +886,19 @@ export async function buildRAGContext(
     maxNodes?: number;
     includeTypes?: KnowledgeNodeType[];
     includeCategories?: KnowledgeCategory[];
+    includeRelationships?: boolean;
+    relatedDepth?: number;
+    nodeTypes?: KnowledgeNodeType[];
+    categories?: KnowledgeCategory[];
   } = {}
 ): Promise<RAGContext> {
   const searchParams: GraphSearchParams = {
     query,
     limit: options.maxNodes || 10,
-    nodeTypes: options.includeTypes,
-    categories: options.includeCategories,
-    includeRelated: true,
-    relatedDepth: 1,
+    nodeTypes: options.includeTypes || options.nodeTypes,
+    categories: options.includeCategories || options.categories,
+    includeRelated: options.includeRelationships !== false,
+    relatedDepth: options.relatedDepth || 1,
   };
 
   const searchResults = await searchNodes(searchParams);

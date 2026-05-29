@@ -38,40 +38,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         id: true,
         name: true,
         description: true,
-        phase: true,
+        status: true,
         version: true,
         createdAt: true,
         updatedAt: true,
-        author: {
-          select: { name: true },
-        },
         project: {
           select: { name: true },
         },
         sections: {
-          orderBy: { order: 'asc' },
+          orderBy: { sortOrder: 'asc' },
           select: {
             id: true,
             name: true,
-            description: true,
             testCases: {
               where: { deletedAt: null },
-              orderBy: { order: 'asc' },
+              orderBy: { sortOrder: 'asc' },
               select: {
                 id: true,
                 title: true,
                 description: true,
                 priority: true,
-                precondition: true,
-                steps: {
-                  orderBy: { stepNumber: 'asc' },
+                preconditions: true,
+                testSteps: {
+                  orderBy: { stepNo: 'asc' },
                   select: {
-                    stepNumber: true,
-                    action: true,
-                    expectedResult: true,
+                    stepNo: true,
+                    actionMd: true,
+                    expectedMd: true,
                   },
                 },
-                tags: {
+                testCaseTags: {
                   select: {
                     tag: {
                       select: { name: true },
@@ -93,28 +89,28 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const pdfData: TestSpecPDFData = {
       projectName: testSpec.project.name,
       specName: testSpec.name,
-      phase: testSpec.phase,
+      phase: testSpec.status,
       version: testSpec.version,
       createdAt: testSpec.createdAt.toISOString(),
       updatedAt: testSpec.updatedAt.toISOString(),
-      authorName: testSpec.author?.name || '不明',
+      authorName: '不明',
       description: testSpec.description,
       sections: testSpec.sections.map((section) => ({
         id: section.id.toString(),
         name: section.name,
-        description: section.description,
+        description: null,
         cases: section.testCases.map((tc) => ({
           id: tc.id.toString(),
           title: tc.title,
           description: tc.description,
-          priority: tc.priority,
-          precondition: tc.precondition,
-          steps: tc.steps.map((step) => ({
-            stepNumber: step.stepNumber,
-            action: step.action,
-            expectedResult: step.expectedResult,
+          priority: tc.priority as string,
+          precondition: tc.preconditions,
+          steps: tc.testSteps.map((step) => ({
+            stepNumber: step.stepNo,
+            action: step.actionMd,
+            expectedResult: step.expectedMd || '',
           })),
-          tags: tc.tags.map((t) => t.tag.name),
+          tags: tc.testCaseTags.map((t) => t.tag.name),
         })),
       })),
     };
@@ -125,7 +121,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Return PDF as response
     const filename = `test-spec-${testSpec.name.replace(/[^\w\s-]/g, '')}-${new Date().toISOString().split('T')[0]}.pdf`;
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

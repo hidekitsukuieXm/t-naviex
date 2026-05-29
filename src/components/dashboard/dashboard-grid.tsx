@@ -1,14 +1,17 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, type ComponentProps } from 'react';
 import GridLayout from 'react-grid-layout';
-import type { Layout } from 'react-grid-layout';
-import type { DashboardSafe, DashboardWidgetSafe } from '@/types/dashboard';
+import type { DashboardSafe, DashboardWidgetSafe, DashboardLayout } from '@/types/dashboard';
 import { WidgetContainer } from './widget-container';
 import { WidgetTypeLabels, DEFAULT_LAYOUT } from '@/types/dashboard';
 
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+
+// Extract the layout item type from GridLayout props
+type GridLayoutProps = ComponentProps<typeof GridLayout>;
+type LayoutItem = NonNullable<GridLayoutProps['layout']>[number];
 
 interface DashboardGridProps {
   dashboard: DashboardSafe;
@@ -30,11 +33,11 @@ export function DashboardGrid({
   onLayoutChange,
 }: DashboardGridProps) {
   const widgets = useMemo(() => dashboard.widgets || [], [dashboard.widgets]);
-  const layout = (dashboard.layout as typeof DEFAULT_LAYOUT) || DEFAULT_LAYOUT;
+  const layout = (dashboard.layout as DashboardLayout | null) || DEFAULT_LAYOUT;
   const { columns, rowHeight, gap } = layout;
 
   // ウィジェットからレイアウト設定を生成
-  const gridLayout: Layout[] = useMemo(
+  const gridLayout: LayoutItem[] = useMemo(
     () =>
       widgets.map((widget) => ({
         i: widget.id,
@@ -52,10 +55,10 @@ export function DashboardGrid({
 
   // レイアウト変更ハンドラ
   const handleLayoutChange = useCallback(
-    (newLayout: Layout[]) => {
+    (newLayout: LayoutItem[]) => {
       if (!isEditing || !onLayoutChange) return;
 
-      const updatedWidgets = newLayout.map((item) => ({
+      const updatedWidgets = newLayout.map((item: LayoutItem) => ({
         id: item.i,
         x: item.x,
         y: item.y,
@@ -92,6 +95,7 @@ export function DashboardGrid({
         containerPadding={[0, 0]}
         isDraggable={isEditing}
         isResizable={isEditing}
+        // @ts-expect-error - @types/react-grid-layout has incorrect type for onLayoutChange
         onLayoutChange={handleLayoutChange}
         draggableHandle=".widget-drag-handle"
         useCSSTransforms={true}

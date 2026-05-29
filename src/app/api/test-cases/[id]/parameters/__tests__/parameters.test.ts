@@ -110,7 +110,10 @@ describe('Test Parameters API', () => {
     });
 
     it('should return 400 when name is missing', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
+      mockAuth.mockReset();
+      mockFindTestCase.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindTestCase.mockResolvedValue(mockTestCase);
 
       const request = new Request('http://localhost/api/test-cases/100/parameters', {
         method: 'POST',
@@ -288,9 +291,12 @@ describe('Test Parameters API', () => {
     });
 
     it('should delete parameter when valid', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(mockTestParameter);
-      mockDelete.mockResolvedValueOnce(mockTestParameter);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockDelete.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(mockTestParameter);
+      mockDelete.mockResolvedValue(mockTestParameter);
 
       const request = new Request('http://localhost/api/test-cases/100/parameters/1', {
         method: 'DELETE',

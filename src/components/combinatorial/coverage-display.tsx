@@ -118,7 +118,7 @@ export function CoverageDisplay({ coverage, statistics }: CoverageDisplayProps) 
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Accordion type="single" collapsible>
+            <Accordion>
               <AccordionItem value="uncovered" className="border-none">
                 <AccordionTrigger className="text-sm py-2">詳細を表示</AccordionTrigger>
                 <AccordionContent>

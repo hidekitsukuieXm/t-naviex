@@ -77,7 +77,7 @@ export default function AiSettingsPage() {
 
       // Only include API key if it's been changed
       if (apiKey) {
-        updateData.apiKey = apiKey;
+        updateData['apiKey'] = apiKey;
       }
 
       const response = await fetch('/api/settings/ai', {
@@ -189,7 +189,9 @@ export default function AiSettingsPage() {
               <Switch
                 id="ai-enabled"
                 checked={isEnabled}
-                onCheckedChange={(value) => handleValueChange(setIsEnabled, value)}
+                onCheckedChange={(value) =>
+                  handleValueChange((v) => setIsEnabled(v as boolean), value)
+                }
               />
             </div>
           </CardContent>
@@ -214,7 +216,7 @@ export default function AiSettingsPage() {
                 type="password"
                 placeholder={settings?.hasApiKey ? '••••••••（設定済み）' : 'sk-ant-...'}
                 value={apiKey}
-                onChange={(e) => handleValueChange(setApiKey, e.target.value)}
+                onChange={(e) => handleValueChange((v) => setApiKey(v as string), e.target.value)}
               />
               {settings?.maskedApiKey && (
                 <p className="text-sm text-muted-foreground">現在のキー: {settings.maskedApiKey}</p>
@@ -254,7 +256,9 @@ export default function AiSettingsPage() {
               <Label htmlFor="model">モデル</Label>
               <Select
                 value={model}
-                onValueChange={(value) => handleValueChange(setModel, value as ClaudeModel)}
+                onValueChange={(value) =>
+                  value && handleValueChange((v) => setModel(v as ClaudeModel), value)
+                }
               >
                 <SelectTrigger id="model">
                   <SelectValue placeholder="モデルを選択" />
@@ -280,7 +284,10 @@ export default function AiSettingsPage() {
                 max={8192}
                 step={256}
                 value={[maxTokens]}
-                onValueChange={(value) => handleValueChange(setMaxTokens, value[0])}
+                onValueChange={(value) => {
+                  const v = Array.isArray(value) ? value[0] : value;
+                  if (v !== undefined) handleValueChange((val) => setMaxTokens(val as number), v);
+                }}
               />
               <p className="text-sm text-muted-foreground">AIが生成する応答の最大長を指定します</p>
             </div>
@@ -293,7 +300,10 @@ export default function AiSettingsPage() {
                 max={1}
                 step={0.1}
                 value={[temperature]}
-                onValueChange={(value) => handleValueChange(setTemperature, value[0])}
+                onValueChange={(value) => {
+                  const v = Array.isArray(value) ? value[0] : value;
+                  if (v !== undefined) handleValueChange((val) => setTemperature(val as number), v);
+                }}
               />
               <p className="text-sm text-muted-foreground">
                 値が高いほどランダムな応答、低いほど決定的な応答になります

@@ -4,7 +4,7 @@
  * テストケースバージョン管理のリポジトリ
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import {
   TestCaseVersion,
   TestCaseVersionContent,
@@ -30,10 +30,10 @@ export async function createTestCaseVersion(
   const testCase = await prisma.testCase.findUnique({
     where: { id: BigInt(testCaseId) },
     include: {
-      steps: {
-        orderBy: { stepNumber: 'asc' },
+      testSteps: {
+        orderBy: { stepNo: 'asc' },
       },
-      tags: {
+      testCaseTags: {
         include: {
           tag: true,
         },
@@ -55,7 +55,16 @@ export async function createTestCaseVersion(
   const newVersionNumber = (latestVersion?.version || 0) + 1;
 
   // スナップショットを作成
-  const snapshot = createTestCaseSnapshot(testCase);
+  const snapshot = createTestCaseSnapshot({
+    ...testCase,
+    steps: testCase.testSteps.map((s) => ({
+      id: s.id,
+      stepNumber: s.stepNo,
+      action: s.actionMd,
+      expectedResult: s.expectedMd || '',
+    })),
+    tags: testCase.testCaseTags,
+  });
 
   // バージョンを保存
   const version = await prisma.testCaseVersion.create({
@@ -66,12 +75,6 @@ export async function createTestCaseVersion(
       changeNote: changeNote || null,
       createdBy: userId ? BigInt(userId) : null,
     },
-  });
-
-  // テストケースのcurrentVersionを更新
-  await prisma.testCase.update({
-    where: { id: BigInt(testCaseId) },
-    data: { currentVersion: newVersionNumber },
   });
 
   return {
@@ -195,10 +198,10 @@ export async function compareWithCurrentTestCase(
   const testCase = await prisma.testCase.findUnique({
     where: { id: BigInt(testCaseId) },
     include: {
-      steps: {
-        orderBy: { stepNumber: 'asc' },
+      testSteps: {
+        orderBy: { stepNo: 'asc' },
       },
-      tags: {
+      testCaseTags: {
         include: {
           tag: true,
         },
@@ -212,8 +215,25 @@ export async function compareWithCurrentTestCase(
   const targetVersion = await getTestCaseVersion(versionId);
   if (!targetVersion) return null;
 
+  // 現在のバージョン番号を取得
+  const latestVersion = await prisma.testCaseVersion.findFirst({
+    where: { testCaseId: BigInt(testCaseId) },
+    orderBy: { version: 'desc' },
+    select: { version: true },
+  });
+  const currentVersionNumber = latestVersion?.version || 1;
+
   // 現在のスナップショットを作成
-  const currentSnapshot = createTestCaseSnapshot(testCase);
+  const currentSnapshot = createTestCaseSnapshot({
+    ...testCase,
+    steps: testCase.testSteps.map((s) => ({
+      id: s.id,
+      stepNumber: s.stepNo,
+      action: s.actionMd,
+      expectedResult: s.expectedMd || '',
+    })),
+    tags: testCase.testCaseTags,
+  });
 
   const { fieldChanges, stepChanges } = diffTestCaseVersions(
     targetVersion.content,
@@ -224,8 +244,8 @@ export async function compareWithCurrentTestCase(
 
   return {
     sourceVersionId: 'current',
-    sourceVersion: testCase.currentVersion,
-    targetVersionId,
+    sourceVersion: currentVersionNumber,
+    targetVersionId: versionId,
     targetVersion: targetVersion.version,
     fieldChanges,
     stepChanges,
@@ -284,9 +304,11 @@ export async function restoreTestCaseVersion(
         scenario: content.scenario || null,
         testEnvironment: content.testEnvironment || null,
         notes: content.notes || null,
-        priority: content.priority || 'MEDIUM',
-        testType: content.testType || 'MANUAL',
-        testTechnique: content.testTechnique || null,
+        priority: (content.priority || 'MEDIUM') as import('@/generated/prisma').TestCasePriority,
+        testType: (content.testType || 'FUNCTIONAL') as import('@/generated/prisma').TestType,
+        testTechnique: content.testTechnique as
+          | import('@/generated/prisma').TestTechnique
+          | undefined,
         estimatedTime: content.estimatedTime || null,
       },
     });
@@ -295,10 +317,10 @@ export async function restoreTestCaseVersion(
     for (const step of content.steps) {
       await tx.testStep.create({
         data: {
-          testCaseId,
-          stepNumber: step.stepNumber,
-          action: step.action,
-          expectedResult: step.expectedResult,
+          testCase: { connect: { id: testCaseId } },
+          stepNo: step.stepNumber,
+          actionMd: step.action,
+          expectedMd: step.expectedResult,
         },
       });
     }

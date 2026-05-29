@@ -9,12 +9,8 @@ import {
   type AuthContext,
   type ApiResponse,
 } from '@/lib/middleware/api-auth';
-import {
-  getBugs,
-  createBug,
-  type BugSearchParams,
-  type CreateBugInput,
-} from '@/lib/repositories/bug-repository';
+import { listBugs, createBug } from '@/lib/repositories/bug-repository';
+import type { BugListFilters, BugListOptions, CreateBugInput } from '@/types/bug';
 import { getProjectById } from '@/lib/repositories/project-repository';
 
 // GET /api/v1/bugs - バグ一覧取得
@@ -28,21 +24,41 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       const projectId = searchParams.get('projectId');
       const assigneeId = searchParams.get('assigneeId');
 
-      const params: BugSearchParams = {
-        projectId: projectId ? BigInt(projectId) : undefined,
+      if (!projectId) {
+        return createErrorResponse(
+          ErrorCodes.VALIDATION_ERROR,
+          'プロジェクトIDは必須です。',
+          400,
+          requestId
+        );
+      }
+
+      const filters: BugListFilters = {
+        projectId: BigInt(projectId),
         assigneeId: assigneeId ? BigInt(assigneeId) : undefined,
         query: searchParams.get('query') || undefined,
-        status: searchParams.get('status') || undefined,
-        priority: searchParams.get('priority') || undefined,
-        severity: searchParams.get('severity') || undefined,
-        page,
-        limit,
-        sortBy: (searchParams.get('sortBy') as BugSearchParams['sortBy']) || 'updatedAt',
-        sortOrder: (searchParams.get('sortOrder') as BugSearchParams['sortOrder']) || 'desc',
+        status: (searchParams.get('status') || undefined) as BugListFilters['status'],
+        priority: (searchParams.get('priority') || undefined) as BugListFilters['priority'],
+        severity: (searchParams.get('severity') || undefined) as BugListFilters['severity'],
       };
 
-      const result = await getBugs(params);
-      const pagination = createPaginationMeta(result.total, result.page, result.limit);
+      const sortBy = searchParams.get('sortBy') as BugListOptions['orderBy'] extends {
+        field: infer F;
+      }
+        ? F
+        : 'updatedAt';
+      const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'desc';
+      const options: BugListOptions = {
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: {
+          field: sortBy || 'updatedAt',
+          direction: sortOrder,
+        },
+      };
+
+      const result = await listBugs(filters, options);
+      const pagination = createPaginationMeta(result.total, page, limit);
 
       return createSuccessResponse(
         {
@@ -124,13 +140,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       const createData: CreateBugInput = {
         projectId,
         title: body.title.trim(),
+        type: 'BUG',
         description: body.description || null,
         stepsToReproduce: body.stepsToReproduce || null,
-        expectedBehavior: body.expectedBehavior || null,
-        actualBehavior: body.actualBehavior || null,
-        status: body.status || 'NEW',
-        priority: body.priority || 'MEDIUM',
-        severity: body.severity || 'NORMAL',
+        expectedResult: body.expectedBehavior || null,
+        actualResult: body.actualBehavior || null,
+        priority: (body.priority as CreateBugInput['priority']) || 'MEDIUM',
+        severity: (body.severity as CreateBugInput['severity']) || 'MAJOR',
         assigneeId: body.assigneeId ? BigInt(body.assigneeId) : null,
         reporterId: context.userId,
         testResultId: body.testResultId ? BigInt(body.testResultId) : null,
@@ -140,17 +156,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
       const bug = await createBug(createData);
 
-      return NextResponse.json(
-        {
-          success: true,
-          data: { bug },
-          meta: {
-            requestId,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        { status: 201, headers: { 'X-Request-Id': requestId } }
-      );
+      return createSuccessResponse({ bug }, requestId);
     },
     { requiredScopes: ['WRITE_BUGS'] }
   );

@@ -61,8 +61,8 @@ export async function PUT(request: Request, { params }: Params) {
 
     const body: UpdateTestParameterData = await request.json();
 
-    // バリデーション
-    const validation = validateTestParameter(body);
+    // バリデーション（更新時はisCreate: false）
+    const validation = validateTestParameter(body, false);
     if (!validation.valid) {
       return NextResponse.json({ error: validation.errors.join(' ') }, { status: 400 });
     }

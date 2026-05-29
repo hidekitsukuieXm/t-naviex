@@ -9,8 +9,23 @@ function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
-  return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
+// PopoverTrigger with compatibility for both render prop and children
+interface PopoverTriggerProps extends Omit<PopoverPrimitive.Trigger.Props, 'render'> {
+  render?: React.ReactNode;
+  children?: React.ReactNode;
+}
+
+function PopoverTrigger({ render, children, ...props }: PopoverTriggerProps) {
+  // If render is provided, use it; otherwise use children as the trigger
+  const triggerElement = render ?? children;
+
+  return (
+    <PopoverPrimitive.Trigger
+      data-slot="popover-trigger"
+      render={triggerElement as React.ReactElement}
+      {...props}
+    />
+  );
 }
 
 function PopoverContent({

@@ -304,12 +304,12 @@ function MTBFView({
                 borderRadius: '6px',
                 fontSize: '12px',
               }}
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 const labels: Record<string, string> = {
                   failures: '故障数',
                   cumulativeFailures: '累積故障',
                 };
-                return [value, labels[name] || name];
+                return [value, labels[String(name ?? '')] || name];
               }}
             />
             <Legend
@@ -319,7 +319,7 @@ function MTBFView({
                   failures: '日別故障',
                   cumulativeFailures: '累積',
                 };
-                return labels[value] || value;
+                return labels[String(value ?? '')] || value;
               }}
             />
             <Line
@@ -416,7 +416,7 @@ function ODCPieChart({
           cx="50%"
           cy="50%"
           outerRadius="70%"
-          label={({ label, percentage }) => `${label}: ${percentage}%`}
+          label={({ payload }) => `${payload?.label ?? ''}: ${payload?.percentage ?? 0}%`}
           labelLine={{ strokeWidth: 1 }}
         >
           {data.map((_, index) => (
@@ -430,7 +430,7 @@ function ODCPieChart({
             borderRadius: '6px',
             fontSize: '12px',
           }}
-          formatter={(value: number, name: string) => [`${value}件`, name]}
+          formatter={(value, name) => [`${value}件`, name]}
         />
       </PieChart>
     </ResponsiveContainer>
@@ -464,7 +464,7 @@ function ODCBarChart({
             borderRadius: '6px',
             fontSize: '12px',
           }}
-          formatter={(value: number) => [`${value}件`, '件数']}
+          formatter={(value) => [`${value}件`, '件数']}
         />
         <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
       </BarChart>
@@ -495,7 +495,7 @@ function ODCTrendChart({ data }: { data: Array<ODCTrendDataPoint & { displayDate
             borderRadius: '6px',
             fontSize: '12px',
           }}
-          formatter={(value: number, name: string) => {
+          formatter={(value, name) => {
             const labels: Record<string, string> = {
               bug: '不具合',
               feature: '機能要望',
@@ -503,7 +503,7 @@ function ODCTrendChart({ data }: { data: Array<ODCTrendDataPoint & { displayDate
               task: 'タスク',
               improvement: '改善',
             };
-            return [value, labels[name] || name];
+            return [value, labels[String(name ?? '')] || name];
           }}
         />
         <Legend
@@ -516,7 +516,7 @@ function ODCTrendChart({ data }: { data: Array<ODCTrendDataPoint & { displayDate
               task: 'タスク',
               improvement: '改善',
             };
-            return labels[value] || value;
+            return labels[String(value ?? '')] || value;
           }}
         />
         <Bar dataKey="bug" name="bug" stackId="a" fill="#ef4444" />

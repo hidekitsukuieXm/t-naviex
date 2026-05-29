@@ -4,7 +4,14 @@
  * Graph RAGのためのNeo4j接続クライアント
  */
 
-import neo4j, { Driver, Session, Transaction, Result, Integer } from 'neo4j-driver';
+import neo4j, {
+  Driver,
+  Session,
+  Transaction,
+  Result,
+  Integer,
+  ManagedTransaction,
+} from 'neo4j-driver';
 
 // Environment variables for Neo4j connection
 const NEO4J_URI = process.env.NEO4J_URI || 'bolt://localhost:7687';
@@ -61,8 +68,10 @@ export function getSession(database?: string): Session {
 export async function readQuery<T>(cypher: string, params?: Record<string, unknown>): Promise<T[]> {
   const session = getSession();
   try {
-    const result = await session.executeRead((tx: Transaction) => tx.run(cypher, params));
-    return result.records.map((record) => recordToObject<T>(record));
+    const result = await session.executeRead((tx: ManagedTransaction) => tx.run(cypher, params));
+    return result.records.map((record) =>
+      recordToObject<T>(record as unknown as { keys: string[]; get: (key: string) => unknown })
+    );
   } finally {
     await session.close();
   }
@@ -77,8 +86,10 @@ export async function writeQuery<T>(
 ): Promise<T[]> {
   const session = getSession();
   try {
-    const result = await session.executeWrite((tx: Transaction) => tx.run(cypher, params));
-    return result.records.map((record) => recordToObject<T>(record));
+    const result = await session.executeWrite((tx: ManagedTransaction) => tx.run(cypher, params));
+    return result.records.map((record) =>
+      recordToObject<T>(record as unknown as { keys: string[]; get: (key: string) => unknown })
+    );
   } finally {
     await session.close();
   }
@@ -92,11 +103,17 @@ export async function runInTransaction<T>(
 ): Promise<T[][]> {
   const session = getSession();
   try {
-    return await session.executeWrite(async (tx: Transaction) => {
+    return await session.executeWrite(async (tx: ManagedTransaction) => {
       const results: T[][] = [];
       for (const query of queries) {
         const result = await tx.run(query.cypher, query.params);
-        results.push(result.records.map((record) => recordToObject<T>(record)));
+        results.push(
+          result.records.map((record) =>
+            recordToObject<T>(
+              record as unknown as { keys: string[]; get: (key: string) => unknown }
+            )
+          )
+        );
       }
       return results;
     });

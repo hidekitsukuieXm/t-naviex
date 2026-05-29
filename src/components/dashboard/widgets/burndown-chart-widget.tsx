@@ -156,12 +156,12 @@ export function BurndownChartWidget({ widget, projectId }: BurndownChartWidgetPr
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '6px',
               }}
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 const labels: Record<string, string> = {
                   remaining: '残件数',
                   ideal: '理想線',
                 };
-                return [value, labels[name] || name];
+                return [value, labels[String(name ?? '')] || name];
               }}
             />
             <Legend
@@ -171,7 +171,7 @@ export function BurndownChartWidget({ widget, projectId }: BurndownChartWidgetPr
                   remaining: '実績',
                   ideal: '理想線',
                 };
-                return labels[value] || value;
+                return labels[String(value ?? '')] || value;
               }}
             />
             {/* 今日の位置に垂直線 */}

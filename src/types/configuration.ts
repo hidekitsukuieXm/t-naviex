@@ -16,7 +16,7 @@ export const configParamsSchema = z
     resolution: z.string().optional(),
     locale: z.string().optional(),
     timezone: z.string().optional(),
-    custom: z.record(z.string()).optional(),
+    custom: z.record(z.string(), z.string()).optional(),
   })
   .passthrough();
 

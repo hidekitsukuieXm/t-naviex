@@ -56,7 +56,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
     if (body.name) {
       const nameValidation = validateBranchName(body.name);
       if (!nameValidation.valid) {
-        return NextResponse.json({ error: nameValidation.message }, { status: 400 });
+        return NextResponse.json(
+          { error: nameValidation.errors[0] ?? 'ブランチ名が無効です。' },
+          { status: 400 }
+        );
       }
     }
 

@@ -232,7 +232,9 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
               <BugPriorityBadge priority={bug.priority as BugPriority} />
               <BugSeverityBadge severity={bug.severity as BugSeverity} />
               {isOverdue() && (
-                <AlertTriangle className="size-5 text-destructive" title="期限超過" />
+                <span title="期限超過">
+                  <AlertTriangle className="size-5 text-destructive" />
+                </span>
               )}
             </div>
             <h1 className="text-2xl font-bold tracking-tight">{bug.title}</h1>
@@ -418,8 +420,14 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
           <BugSubtaskSection
             projectId={projectId}
             bugId={bugId}
-            parentBug={bug.parentBug}
-            childBugs={bug.childBugs}
+            parentBug={
+              bug.parentBug ? { id: String(bug.parentBug.id), title: bug.parentBug.title } : null
+            }
+            childBugs={bug.childBugs?.map((cb) => ({
+              id: String(cb.id),
+              title: cb.title,
+              status: cb.status,
+            }))}
             onSubtaskCreated={fetchBug}
           />
 

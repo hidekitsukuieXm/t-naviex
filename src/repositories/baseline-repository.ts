@@ -2,7 +2,8 @@
  * ベースラインリポジトリ
  */
 
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 import type {
   Baseline,
   BaselineDetail,
@@ -330,14 +331,14 @@ export async function createBaseline(
       description: input.description,
       version: input.version,
       status: input.status || 'DRAFT',
-      metadata: input.metadata,
+      metadata: input.metadata as Prisma.InputJsonValue | undefined,
       totalCases: snapshotItems.length,
       totalSteps,
       items: {
         create: snapshotItems.map((item) => ({
           testCaseId: item.testCaseId,
           sortOrder: item.sortOrder,
-          snapshotData: item.snapshotData,
+          snapshotData: item.snapshotData as unknown as Prisma.InputJsonValue,
           checksum: item.checksum,
         })),
       },
@@ -387,13 +388,20 @@ export async function updateBaseline(
     throw new Error('ロックまたはアーカイブされたベースラインは更新できません');
   }
 
+  const updateData: Prisma.BaselineUpdateInput = {
+    ...(input.name !== undefined && { name: input.name }),
+    ...(input.description !== undefined && { description: input.description }),
+    ...(input.status !== undefined && { status: input.status }),
+    ...(input.metadata !== undefined && {
+      metadata: input.metadata as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput,
+    }),
+  };
+
   const baseline = await prisma.baseline.update({
     where: {
       id: BigInt(baselineId),
     },
-    data: {
-      ...input,
-    },
+    data: updateData,
   });
 
   return bigIntToString({

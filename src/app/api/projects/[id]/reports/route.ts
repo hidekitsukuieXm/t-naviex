@@ -15,7 +15,7 @@ interface RouteParams {
 interface CaseReportData {
   testSpecId: string;
   testSpecName: string;
-  phase: string;
+  status: string;
   cases: Array<{
     id: string;
     title: string;
@@ -138,7 +138,7 @@ async function getCaseReport(projectId: bigint): Promise<CaseReportData[]> {
     select: {
       id: true,
       name: true,
-      phase: true,
+      status: true,
       testCases: {
         where: { deletedAt: null },
         select: {
@@ -148,7 +148,7 @@ async function getCaseReport(projectId: bigint): Promise<CaseReportData[]> {
           testRunCases: {
             select: {
               status: true,
-              results: {
+              testResults: {
                 select: {
                   status: true,
                   executedAt: true,
@@ -158,7 +158,7 @@ async function getCaseReport(projectId: bigint): Promise<CaseReportData[]> {
               },
             },
           },
-          tags: {
+          testCaseTags: {
             select: {
               tag: {
                 select: { name: true },
@@ -174,13 +174,14 @@ async function getCaseReport(projectId: bigint): Promise<CaseReportData[]> {
   return testSpecs.map((spec) => ({
     testSpecId: spec.id.toString(),
     testSpecName: spec.name,
-    phase: spec.phase,
+    status: spec.status,
     cases: spec.testCases.map((tc) => {
-      const allResults = tc.testRunCases.flatMap((trc) => trc.results);
+      const allResults = tc.testRunCases.flatMap((trc) => trc.testResults);
       const passedCount = allResults.filter((r) => r.status === 'PASSED').length;
       const failedCount = allResults.filter((r) => r.status === 'FAILED').length;
       const latestResult = allResults[0];
-      const currentStatus = tc.testRunCases.length > 0 ? tc.testRunCases[0].status : 'NOT_RUN';
+      const firstTestRunCase = tc.testRunCases[0];
+      const currentStatus = firstTestRunCase ? firstTestRunCase.status : 'NOT_RUN';
 
       return {
         id: tc.id.toString(),
@@ -191,7 +192,7 @@ async function getCaseReport(projectId: bigint): Promise<CaseReportData[]> {
         passedCount,
         failedCount,
         lastExecutedAt: latestResult?.executedAt?.toISOString() || null,
-        tags: tc.tags.map((t) => t.tag.name),
+        tags: tc.testCaseTags.map((t) => t.tag.name),
       };
     }),
   }));
@@ -319,8 +320,8 @@ async function getTestRunList(projectId: bigint) {
       id: true,
       name: true,
       status: true,
-      startDate: true,
-      endDate: true,
+      actualStartDate: true,
+      actualEndDate: true,
       _count: {
         select: { testRunCases: true },
       },
@@ -332,8 +333,8 @@ async function getTestRunList(projectId: bigint) {
     id: tr.id.toString(),
     name: tr.name,
     status: tr.status,
-    startDate: tr.startDate?.toISOString() || null,
-    endDate: tr.endDate?.toISOString() || null,
+    startDate: tr.actualStartDate?.toISOString() || null,
+    endDate: tr.actualEndDate?.toISOString() || null,
     caseCount: tr._count.testRunCases,
   }));
 }
@@ -355,7 +356,7 @@ async function getResultReport(testRunId: bigint): Promise<ResultReportData> {
               title: true,
             },
           },
-          results: {
+          testResults: {
             select: {
               status: true,
               executedAt: true,
@@ -415,7 +416,7 @@ async function getResultReport(testRunId: bigint): Promise<ResultReportData> {
       passRate: executed > 0 ? Math.round((passed / executed) * 100) : 0,
     },
     results: testRun.testRunCases.map((trc) => {
-      const latestResult = trc.results[0];
+      const latestResult = trc.testResults[0];
       return {
         caseId: trc.testCase.id.toString(),
         caseTitle: trc.testCase.title,

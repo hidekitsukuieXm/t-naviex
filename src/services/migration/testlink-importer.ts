@@ -307,8 +307,7 @@ export async function importFromTestLink(
           name: options.testSpecName || 'TestLink Import',
           description: 'TestLinkからインポートされたテストケース',
           status: 'DRAFT',
-          version: 1,
-          createdById: userId,
+          version: '1',
         },
       });
       testSpecId = testSpec.id;
@@ -397,7 +396,6 @@ async function importTestSuites(
           testSpecId,
           parentId: parentSectionId,
           name: suite.name,
-          description: suite.details || null,
           sortOrder: sortOrder++,
         },
       });

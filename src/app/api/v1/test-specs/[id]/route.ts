@@ -13,6 +13,7 @@ import {
   deleteTestSpec,
   type UpdateTestSpecInput,
 } from '@/lib/repositories/test-spec-repository';
+import type { TestSpecStatus } from '@/types/test-spec';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -100,7 +101,7 @@ export async function PUT(
       const updateData: UpdateTestSpecInput = {
         ...(body.name !== undefined && { name: body.name.trim() }),
         ...(body.description !== undefined && { description: body.description }),
-        ...(body.status !== undefined && { status: body.status }),
+        ...(body.status !== undefined && { status: body.status as TestSpecStatus }),
       };
 
       const testSpec = await updateTestSpec(testSpecId, updateData);

@@ -59,6 +59,7 @@ interface BugAnalysisDialogProps {
 type AnalysisStep = 'input' | 'analyzing' | 'result';
 
 const severityColors: Record<BugSeverity, string> = {
+  BLOCKER: 'bg-purple-100 text-purple-800',
   CRITICAL: 'bg-red-100 text-red-800',
   MAJOR: 'bg-orange-100 text-orange-800',
   MINOR: 'bg-yellow-100 text-yellow-800',
@@ -66,14 +67,14 @@ const severityColors: Record<BugSeverity, string> = {
 };
 
 const priorityColors: Record<BugPriority, string> = {
-  URGENT: 'bg-red-100 text-red-800',
+  CRITICAL: 'bg-red-100 text-red-800',
   HIGH: 'bg-orange-100 text-orange-800',
   MEDIUM: 'bg-yellow-100 text-yellow-800',
   LOW: 'bg-green-100 text-green-800',
 };
 
 const priorityLabels: Record<BugPriority, string> = {
-  URGENT: '緊急',
+  CRITICAL: '緊急',
   HIGH: '高',
   MEDIUM: '中',
   LOW: '低',
@@ -259,11 +260,15 @@ export function BugAnalysisDialog({
 
                 <div className="space-y-2">
                   <Label htmlFor="bugSeverity">重大度</Label>
-                  <Select value={bugSeverity} onValueChange={setBugSeverity}>
+                  <Select
+                    value={bugSeverity}
+                    onValueChange={(value) => value && setBugSeverity(value)}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="重大度を選択" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="BLOCKER">ブロッカー</SelectItem>
                       <SelectItem value="CRITICAL">致命的</SelectItem>
                       <SelectItem value="MAJOR">重大</SelectItem>
                       <SelectItem value="MINOR">軽微</SelectItem>

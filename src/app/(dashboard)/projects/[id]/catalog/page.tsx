@@ -366,7 +366,7 @@ export default function CatalogPage({ params }: CatalogPageProps) {
               </SelectContent>
             </Select>
 
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <Select value={categoryFilter} onValueChange={(v) => v && setCategoryFilter(v)}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="カテゴリ" />
               </SelectTrigger>

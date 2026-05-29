@@ -5,7 +5,7 @@
  */
 
 import { Prisma, DiagramType, CoverageType } from '@/generated/prisma';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import type {
   TransitionNode,
   TransitionEdge,

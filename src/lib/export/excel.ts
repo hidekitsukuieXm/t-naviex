@@ -172,9 +172,9 @@ export function workbookToUint8Array(wb: XLSX.WorkBook): Uint8Array {
  * Excelダウンロード用のレスポンスを生成
  */
 export function createExcelResponse(wb: XLSX.WorkBook, filename: string): Response {
-  const buffer = workbookToUint8Array(wb);
+  const buffer = workbookToBuffer(wb);
 
-  return new Response(buffer, {
+  return new Response(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,

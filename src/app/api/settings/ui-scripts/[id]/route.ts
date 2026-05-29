@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 import { validateUiScript, type UpdateUiScriptData } from '@/types/ui-script';
 import { logAudit } from '@/lib/audit';
 
@@ -60,8 +61,8 @@ export async function PUT(request: Request, { params }: Params) {
 
     const body: UpdateUiScriptData = await request.json();
 
-    // バリデーション
-    const validation = validateUiScript(body);
+    // バリデーション（更新時はisCreate: false）
+    const validation = validateUiScript(body, false);
     if (!validation.valid) {
       return NextResponse.json({ error: validation.errors.join(' ') }, { status: 400 });
     }
@@ -85,7 +86,10 @@ export async function PUT(request: Request, { params }: Params) {
         ...(body.css !== undefined && { css: body.css }),
         ...(body.isActive !== undefined && { isActive: body.isActive }),
         ...(body.priority !== undefined && { priority: body.priority }),
-        ...(body.metadata !== undefined && { metadata: body.metadata }),
+        ...(body.metadata !== undefined && {
+          metadata:
+            body.metadata === null ? Prisma.JsonNull : (body.metadata as Prisma.InputJsonValue),
+        }),
       },
     });
 

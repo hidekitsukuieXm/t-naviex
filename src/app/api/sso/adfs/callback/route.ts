@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     if (!savedState || savedState !== receivedState) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=adfs_auth_failed&message=invalid_state`
+        `${process.env['NEXTAUTH_URL']}/login?error=adfs_auth_failed&message=invalid_state`
       );
     }
 
@@ -52,21 +52,22 @@ export async function POST(request: NextRequest) {
 
     if (!config || !config.entityId) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=adfs_auth_failed&message=config_not_found`
+        `${process.env['NEXTAUTH_URL']}/login?error=adfs_auth_failed&message=config_not_found`
       );
     }
 
-    const federationMetadataUrl = config.metadata?.federationMetadataUrl as string;
-    const relyingPartyIdentifier = config.metadata?.relyingPartyIdentifier as string;
+    const metadata = config.metadata as Record<string, unknown> | null;
+    const federationMetadataUrl = metadata?.['federationMetadataUrl'] as string;
+    const relyingPartyIdentifier = metadata?.['relyingPartyIdentifier'] as string;
 
     if (!federationMetadataUrl || !relyingPartyIdentifier) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=adfs_auth_failed&message=config_incomplete`
+        `${process.env['NEXTAUTH_URL']}/login?error=adfs_auth_failed&message=config_incomplete`
       );
     }
 
     // リダイレクトURIを構築
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env['NEXTAUTH_URL'] || 'http://localhost:3000';
     const redirectUri = `${baseUrl}/api/sso/adfs/callback`;
 
     // プロバイダーを初期化
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       console.error('ADFS トークン検証エラー:', error);
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=adfs_auth_failed&message=token_validation_failed`
+        `${process.env['NEXTAUTH_URL']}/login?error=adfs_auth_failed&message=token_validation_failed`
       );
     }
 
@@ -111,13 +112,13 @@ export async function POST(request: NextRequest) {
             success: false,
             errorCode: 'DOMAIN_NOT_ALLOWED',
             errorMessage: '許可されていないドメインです',
-            ipAddress: request.headers.get('x-forwarded-for') || request.ip || undefined,
+            ipAddress: request.headers.get('x-forwarded-for') || undefined,
             userAgent: request.headers.get('user-agent') || undefined,
           },
         });
 
         return NextResponse.redirect(
-          `${process.env.NEXTAUTH_URL}/login?error=adfs_auth_failed&message=domain_not_allowed`
+          `${process.env['NEXTAUTH_URL']}/login?error=adfs_auth_failed&message=domain_not_allowed`
         );
       }
     }
@@ -170,13 +171,13 @@ export async function POST(request: NextRequest) {
             success: false,
             errorCode: 'USER_NOT_FOUND',
             errorMessage: 'ユーザーが見つかりません',
-            ipAddress: request.headers.get('x-forwarded-for') || request.ip || undefined,
+            ipAddress: request.headers.get('x-forwarded-for') || undefined,
             userAgent: request.headers.get('user-agent') || undefined,
           },
         });
 
         return NextResponse.redirect(
-          `${process.env.NEXTAUTH_URL}/login?error=adfs_auth_failed&message=user_not_found`
+          `${process.env['NEXTAUTH_URL']}/login?error=adfs_auth_failed&message=user_not_found`
         );
       }
     }
@@ -189,7 +190,7 @@ export async function POST(request: NextRequest) {
         ssoUserId: ssoUserInfo.id,
         ssoEmail: ssoUserInfo.email,
         success: true,
-        ipAddress: request.headers.get('x-forwarded-for') || request.ip || undefined,
+        ipAddress: request.headers.get('x-forwarded-for') || undefined,
         userAgent: request.headers.get('user-agent') || undefined,
         metadata: {
           groups: ssoUserInfo.groups,
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
     });
 
     // セッション作成とリダイレクト
-    const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/dashboard`);
+    const response = NextResponse.redirect(`${process.env['NEXTAUTH_URL']}/dashboard`);
 
     // セッションCookieをクリア
     response.cookies.delete('adfs_sso_state');
@@ -208,7 +209,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('ADFSコールバックエラー:', error);
     return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL}/login?error=adfs_auth_failed&message=${encodeURIComponent(error instanceof Error ? error.message : 'unknown_error')}`
+      `${process.env['NEXTAUTH_URL']}/login?error=adfs_auth_failed&message=${encodeURIComponent(error instanceof Error ? error.message : 'unknown_error')}`
     );
   }
 }
@@ -243,6 +244,6 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(
-    `${process.env.NEXTAUTH_URL}/login?error=adfs_auth_failed&message=no_response`
+    `${process.env['NEXTAUTH_URL']}/login?error=adfs_auth_failed&message=no_response`
   );
 }

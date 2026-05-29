@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const urls = AdfsProvider.getDefaultUrls(adfsServer);
 
     // リダイレクトURIを構築（テスト用）
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env['NEXTAUTH_URL'] || 'http://localhost:3000';
     const redirectUri = `${baseUrl}/api/sso/adfs/callback`;
 
     // プロバイダーを初期化

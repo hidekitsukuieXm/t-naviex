@@ -6,8 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { NODE_LABELS, RELATIONSHIP_TYPES, initializeSchema } from '@/lib/knowledge-graph-schema';
 import { verifyConnection, getSession } from '@/lib/neo4j';
 
@@ -16,7 +15,7 @@ import { verifyConnection, getSession } from '@/lib/neo4j';
  * スキーマ情報を取得
  */
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -82,7 +81,7 @@ export async function GET() {
  * スキーマを初期化
  */
 export async function POST() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

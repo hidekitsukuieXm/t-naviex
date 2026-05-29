@@ -183,8 +183,9 @@ export async function POST(request: Request, { params }: RouteParams) {
         // ステップデータを抽出
         const objects = csvToObjects(parseResult);
         validationResults.forEach((result, index) => {
-          if (result.valid && result.data && stepColumns.stepMappings.length > 0) {
-            result.data.steps = extractSteps(objects[index], stepColumns.stepMappings);
+          const row = objects[index];
+          if (result.valid && result.data && stepColumns.stepMappings.length > 0 && row) {
+            result.data.steps = extractSteps(row, stepColumns.stepMappings);
           }
         });
 
@@ -239,8 +240,9 @@ export async function POST(request: Request, { params }: RouteParams) {
 
         // ステップデータを抽出
         validationResults.forEach((result, index) => {
-          if (result.valid && result.data && stepColumns.stepMappings.length > 0) {
-            result.data.steps = extractSteps(objects[index], stepColumns.stepMappings);
+          const row = objects[index];
+          if (result.valid && result.data && stepColumns.stepMappings.length > 0 && row) {
+            result.data.steps = extractSteps(row, stepColumns.stepMappings);
           }
         });
 
@@ -315,8 +317,9 @@ export async function POST(request: Request, { params }: RouteParams) {
 
       // ステップデータを抽出
       validationResults.forEach((result, index) => {
-        if (result.valid && result.data && stepColumns.stepMappings.length > 0) {
-          result.data.steps = extractSteps(objects[index], stepColumns.stepMappings);
+        const row = objects[index];
+        if (result.valid && result.data && stepColumns.stepMappings.length > 0 && row) {
+          result.data.steps = extractSteps(row, stepColumns.stepMappings);
         }
       });
 
@@ -386,8 +389,9 @@ async function executeImport(
           sectionId = cached;
         } else {
           const section = await findOrCreateSection(BigInt(testSpecId), data.sectionName);
-          sectionId = section.id;
-          sectionCache.set(data.sectionName, section.id);
+          const sectionIdBigInt = BigInt(section.id);
+          sectionId = sectionIdBigInt;
+          sectionCache.set(data.sectionName, sectionIdBigInt);
         }
       }
 

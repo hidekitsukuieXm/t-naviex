@@ -57,7 +57,7 @@ export function BranchForm({
 
     const validation = validateBranchName(name);
     if (!validation.valid) {
-      setError(validation.message || 'ブランチ名が無効です');
+      setError(validation.errors[0] || 'ブランチ名が無効です');
       return;
     }
 

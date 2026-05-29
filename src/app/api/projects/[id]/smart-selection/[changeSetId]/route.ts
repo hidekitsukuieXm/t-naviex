@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (includeAnalysis) {
       const analysis = await getImpactAnalysis(changeSetId);
-      response.analysis = analysis;
+      response['analysis'] = analysis;
     }
 
     return NextResponse.json(response);

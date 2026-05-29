@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { requireSystemAdmin } from '@/lib/rbac/middleware';
 import {
   getAccountLockout,
   unlockAccount,
@@ -47,6 +48,16 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 
     if (!session?.user) {
       return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
+    }
+
+    // システム管理者権限チェック
+    try {
+      await requireSystemAdmin(session.user.id);
+    } catch {
+      return NextResponse.json(
+        { error: 'この操作にはシステム管理者権限が必要です。' },
+        { status: 403 }
+      );
     }
 
     const { userId } = await params;

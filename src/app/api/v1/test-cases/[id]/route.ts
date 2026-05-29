@@ -11,8 +11,8 @@ import {
   getTestCaseById,
   updateTestCase,
   deleteTestCase,
-  type UpdateTestCaseInput,
 } from '@/lib/repositories/test-case-repository';
+import type { UpdateTestCaseInput } from '@/types/test-case';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -110,17 +110,18 @@ export async function PUT(
 
       const updateData: UpdateTestCaseInput = {
         ...(body.sectionId !== undefined && {
-          sectionId: body.sectionId ? BigInt(body.sectionId) : null,
+          sectionId: body.sectionId || null,
         }),
         ...(body.title !== undefined && { title: body.title.trim() }),
         ...(body.description !== undefined && { description: body.description }),
-        ...(body.precondition !== undefined && { precondition: body.precondition }),
-        ...(body.priority !== undefined && { priority: body.priority }),
-        ...(body.status !== undefined && { status: body.status }),
-        ...(body.testType !== undefined && { testType: body.testType }),
-        ...(body.automationStatus !== undefined && { automationStatus: body.automationStatus }),
+        ...(body.precondition !== undefined && { preconditions: body.precondition }),
+        ...(body.priority !== undefined && {
+          priority: body.priority as UpdateTestCaseInput['priority'],
+        }),
+        ...(body.testType !== undefined && {
+          testType: body.testType as UpdateTestCaseInput['testType'],
+        }),
         ...(body.estimatedTime !== undefined && { estimatedTime: body.estimatedTime }),
-        ...(body.steps !== undefined && { steps: body.steps }),
       };
 
       const testCase = await updateTestCase(testCaseId, updateData);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { bugAnalyzerService } from '@/services/ai/bug-analyzer';
+import { auth } from '@/lib/auth';
+import { bugAnalyzerService, type BugSeverity, type BugPriority } from '@/services/ai/bug-analyzer';
 
 /**
  * POST /api/ai/analyze-bug
@@ -7,6 +8,12 @@ import { bugAnalyzerService } from '@/services/ai/bug-analyzer';
  */
 export async function POST(request: NextRequest) {
   try {
+    // 認証チェック
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: '認証が必要です。' }, { status: 401 });
+    }
+
     const projectIdParam = request.nextUrl.searchParams.get('projectId');
     const projectId = projectIdParam ? BigInt(projectIdParam) : null;
 
@@ -30,8 +37,8 @@ export async function POST(request: NextRequest) {
       id: String(bugData.id || ''),
       title: String(bugData.title || ''),
       description: String(bugData.description || ''),
-      severity: bugData.severity ? String(bugData.severity) : undefined,
-      priority: bugData.priority ? String(bugData.priority) : undefined,
+      severity: bugData.severity as BugSeverity | undefined,
+      priority: bugData.priority as BugPriority | undefined,
       status: bugData.status ? String(bugData.status) : undefined,
       module: bugData.module ? String(bugData.module) : undefined,
       reproductionSteps: bugData.reproductionSteps ? String(bugData.reproductionSteps) : undefined,

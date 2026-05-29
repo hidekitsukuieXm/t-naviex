@@ -248,8 +248,7 @@ export async function importFromQTest(
           name: options.testSpecName || 'qTest Import',
           description: 'qTestからインポートされたテストケース',
           status: 'DRAFT',
-          version: 1,
-          createdById: userId,
+          version: '1',
         },
       });
       testSpecId = testSpec.id;
@@ -382,7 +381,6 @@ async function importModulesAsSection(
           testSpecId,
           parentId: parentSectionId,
           name: qTestModule.name,
-          description: qTestModule.description || null,
           sortOrder: sortOrder++,
         },
       });

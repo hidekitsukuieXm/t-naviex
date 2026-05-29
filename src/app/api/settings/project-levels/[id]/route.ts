@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 import {
   validateProjectLevel,
   type UpdateProjectLevelData,
@@ -109,7 +110,7 @@ export async function PUT(request: Request, { params }: Params) {
         ...(body.displayName !== undefined && { displayName: body.displayName }),
         ...(body.description !== undefined && { description: body.description }),
         ...(body.features !== undefined && { features: body.features }),
-        ...(body.limits !== undefined && { limits: body.limits }),
+        ...(body.limits !== undefined && { limits: body.limits as Prisma.InputJsonValue }),
         ...(body.isDefault !== undefined && { isDefault: body.isDefault }),
         ...(body.sortOrder !== undefined && { sortOrder: body.sortOrder }),
       },

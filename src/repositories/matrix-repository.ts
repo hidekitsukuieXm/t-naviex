@@ -5,7 +5,7 @@
  */
 
 import { Prisma, MatrixAxisType, MatrixCellValue } from '@/generated/prisma';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import type {
   MatrixAxisItem,
   MatrixCell,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
 
 // GET /api/users/search - ユーザー検索
 export async function GET(request: Request) {
@@ -17,14 +18,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '10', 10);
 
     // 検索条件を構築
-    const whereCondition: {
-      status: string;
-      OR?: Array<
-        | { name: { contains: string; mode: 'insensitive' } }
-        | { email: { contains: string; mode: 'insensitive' } }
-      >;
-      NOT?: { projectMembers: { some: { projectId: bigint } } };
-    } = {
+    const whereCondition: Prisma.UserWhereInput = {
       status: 'ACTIVE',
     };
 

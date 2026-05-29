@@ -4,6 +4,7 @@
  * 各種通知メールの送信を管理
  */
 
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { SmtpClient } from './smtp-client';
 import { getSmtpSettingsWithPassword } from '@/lib/repositories/smtp-settings-repository';
@@ -205,7 +206,11 @@ export class NotificationService {
             where: { id: BigInt(request.templateId) },
           })
         : await prisma.emailTemplate.findFirst({
-            where: { type: request.templateType, isActive: true, isDefault: true },
+            where: {
+              type: request.templateType as EmailTemplateType,
+              isActive: true,
+              isDefault: true,
+            },
           });
 
       if (template) {
@@ -293,7 +298,11 @@ export class NotificationService {
             where: { id: BigInt(request.templateId) },
           })
         : await prisma.emailTemplate.findFirst({
-            where: { type: request.templateType, isActive: true, isDefault: true },
+            where: {
+              type: request.templateType as EmailTemplateType,
+              isActive: true,
+              isDefault: true,
+            },
           });
 
       if (template) {
@@ -309,7 +318,7 @@ export class NotificationService {
         toName: request.toName,
         subject,
         body,
-        variables: request.variables ?? null,
+        variables: request.variables ? (request.variables as Prisma.InputJsonValue) : Prisma.DbNull,
         status: 'PENDING',
         priority: request.priority ?? 0,
         scheduledAt: request.scheduledAt ? new Date(request.scheduledAt) : null,
@@ -334,7 +343,7 @@ export class NotificationService {
       where: {
         status: 'PENDING',
         OR: [{ scheduledAt: null }, { scheduledAt: { lte: new Date() } }],
-        attempts: { lt: prisma.emailQueue.fields.maxAttempts },
+        attempts: { lt: 3 },
       },
       orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }],
       take: limit,

@@ -32,7 +32,7 @@ export async function GET() {
     }
 
     // リダイレクトURIを構築
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env['NEXTAUTH_URL'] || 'http://localhost:3000';
     const redirectUri = `${baseUrl}/api/sso/google-workspace/callback`;
 
     // state と nonce を生成
@@ -40,7 +40,8 @@ export async function GET() {
     const nonce = generateNonce();
 
     // プロバイダーを初期化
-    const hostedDomain = config.metadata?.hostedDomain as string | undefined;
+    const metadata = config.metadata as Record<string, unknown> | null;
+    const hostedDomain = metadata?.['hostedDomain'] as string | undefined;
     const provider = new GoogleWorkspaceProvider({
       clientId: config.clientId,
       clientSecret: config.clientSecret,

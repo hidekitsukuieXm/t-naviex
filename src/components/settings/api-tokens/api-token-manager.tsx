@@ -57,6 +57,7 @@ export function ApiTokenManager() {
   }, [filterStatus]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTokens();
   }, [fetchTokens]);
 
@@ -121,8 +122,7 @@ export function ApiTokenManager() {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
-      token.name.toLowerCase().includes(query) ||
-      token.tokenPrefix.toLowerCase().includes(query)
+      token.name.toLowerCase().includes(query) || token.tokenPrefix.toLowerCase().includes(query)
     );
   });
 
@@ -237,7 +237,10 @@ export function ApiTokenManager() {
         <h3 className="font-medium">セキュリティに関する注意</h3>
         <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
           <li>- APIトークンはパスワードと同様に機密情報として扱ってください。</li>
-          <li>- トークンは作成時に一度だけ表示されます。紛失した場合は新しいトークンを作成してください。</li>
+          <li>
+            -
+            トークンは作成時に一度だけ表示されます。紛失した場合は新しいトークンを作成してください。
+          </li>
           <li>- 不要になったトークンは速やかに失効または削除してください。</li>
           <li>- 最小限の権限（スコープ）のみを付与することを推奨します。</li>
           <li>- 定期的にトークンの使用状況を確認し、不審なアクセスがないか監視してください。</li>

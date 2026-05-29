@@ -2,6 +2,7 @@
  * 外部連携設定リポジトリ
  */
 
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { encrypt, decrypt } from '@/lib/encryption';
 import type {
@@ -112,7 +113,7 @@ export async function createExternalIntegration(
       username: input.username ?? null,
       passwordEncrypted: input.password ? encrypt(input.password) : null,
       projectKey: input.projectKey ?? null,
-      options: input.options ?? null,
+      options: input.options ? (input.options as Prisma.InputJsonValue) : Prisma.DbNull,
       isEnabled: input.isEnabled ?? true,
       createdById,
     },

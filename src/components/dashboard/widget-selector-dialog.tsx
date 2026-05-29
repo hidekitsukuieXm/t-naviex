@@ -145,12 +145,14 @@ export function WidgetSelectorDialog({ onSelect, disabled }: WidgetSelectorDialo
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button disabled={disabled}>
-          <Plus className="mr-2 h-4 w-4" />
-          ウィジェット追加
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button disabled={disabled}>
+            <Plus className="mr-2 h-4 w-4" />
+            ウィジェット追加
+          </Button>
+        }
+      />
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>ウィジェットを追加</DialogTitle>

@@ -64,19 +64,30 @@ export function SsoManager(): React.ReactElement {
 
   // フォーム送信
   const handleSubmit = useCallback(
-    async (data: Parameters<typeof createConfiguration>[0]) => {
+    (
+      data:
+        | import('@/types/sso').CreateSsoConfigRequest
+        | import('@/types/sso').UpdateSsoConfigRequest
+    ) => {
       if (editingConfig) {
-        const result = await updateConfiguration(editingConfig.id, data);
-        if (result) {
-          setViewMode('list');
-          setEditingConfig(null);
-        }
+        void updateConfiguration(
+          editingConfig.id,
+          data as Parameters<typeof createConfiguration>[0]
+        ).then((result) => {
+          if (result) {
+            setViewMode('list');
+            setEditingConfig(null);
+          }
+        });
       } else {
-        const result = await createConfiguration(data);
-        if (result) {
-          setViewMode('list');
-          setSelectedProvider(null);
-        }
+        void createConfiguration(data as Parameters<typeof createConfiguration>[0]).then(
+          (result) => {
+            if (result) {
+              setViewMode('list');
+              setSelectedProvider(null);
+            }
+          }
+        );
       }
     },
     [editingConfig, createConfiguration, updateConfiguration]

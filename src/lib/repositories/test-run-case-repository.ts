@@ -3,6 +3,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
 import type {
   TestRunCase,
   TestRunCaseWithRelations,
@@ -219,15 +220,7 @@ export async function getTestRunCases(
   testRunId: string,
   params: Partial<TestRunCaseSearchParams> = {}
 ): Promise<TestRunCaseWithRelations[]> {
-  type WhereClause = {
-    testRunId: bigint;
-    testCaseId?: bigint;
-    assignedToId?: bigint | null;
-    status?: string;
-    OR?: Array<{ testCase: { title: { contains: string; mode: 'insensitive' } } }>;
-  };
-
-  const where: WhereClause = {
+  const where: Prisma.TestRunCaseWhereInput = {
     testRunId: BigInt(testRunId),
   };
 
@@ -243,7 +236,7 @@ export async function getTestRunCases(
 
   // ステータスフィルター
   if (params.status) {
-    where.status = params.status;
+    where.status = params.status as Prisma.EnumTestRunCaseStatusFilter;
   }
 
   // 検索クエリ
@@ -340,7 +333,7 @@ export async function updateTestRunCase(
 
   const testRunCase = await prisma.testRunCase.update({
     where: { id },
-    data: updateData,
+    data: updateData as Prisma.TestRunCaseUpdateInput,
     select: testRunCaseSelect,
   });
 
@@ -398,7 +391,7 @@ export async function bulkUpdateTestRunCases(
     input.ids.map((id) =>
       prisma.testRunCase.update({
         where: { id: BigInt(id) },
-        data: updateData,
+        data: updateData as Prisma.TestRunCaseUpdateInput,
         select: testRunCaseSelect,
       })
     )
@@ -529,12 +522,12 @@ export async function getTestRunCaseCount(
   testRunId: bigint,
   status?: TestRunCaseStatus
 ): Promise<number> {
-  const where: { testRunId: bigint; status?: string } = {
+  const where: Prisma.TestRunCaseWhereInput = {
     testRunId,
   };
 
   if (status) {
-    where.status = status;
+    where.status = status as Prisma.EnumTestRunCaseStatusFilter;
   }
 
   return prisma.testRunCase.count({ where });

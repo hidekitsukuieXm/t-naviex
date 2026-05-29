@@ -128,7 +128,7 @@ export function SummaryPieChartWidget({ widget, projectId }: SummaryPieChartWidg
               outerRadius="80%"
               paddingAngle={2}
               dataKey="value"
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
               labelLine={false}
             >
               {chartData.map((entry, index) => (
@@ -136,7 +136,7 @@ export function SummaryPieChartWidget({ widget, projectId }: SummaryPieChartWidg
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => [`${value}件`, '']}
+              formatter={(value) => [`${value}件`, '']}
               contentStyle={{
                 backgroundColor: 'hsl(var(--background))',
                 border: '1px solid hsl(var(--border))',

@@ -3,6 +3,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma';
 import type {
   Task,
   TaskWithRelations,
@@ -184,16 +185,7 @@ export async function getTasks(
   projectId: string,
   options: TaskListOptions = {}
 ): Promise<TaskWithRelations[]> {
-  type WhereClause = {
-    projectId: bigint;
-    parentId?: bigint | null | { not: null };
-    status?: string;
-    priority?: string;
-    assigneeId?: bigint | null;
-    OR?: Array<{ title: { contains: string; mode: 'insensitive' } }>;
-  };
-
-  const where: WhereClause = {
+  const where: Prisma.TaskWhereInput = {
     projectId: BigInt(projectId),
   };
 
@@ -209,12 +201,12 @@ export async function getTasks(
 
   // ステータスフィルター
   if (options.status) {
-    where.status = options.status;
+    where.status = options.status as Prisma.EnumTaskStatusFilter;
   }
 
   // 優先度フィルター
   if (options.priority) {
-    where.priority = options.priority;
+    where.priority = options.priority as Prisma.EnumTaskPriorityFilter;
   }
 
   // 担当者フィルター
@@ -325,7 +317,7 @@ export async function updateTask(id: bigint, input: UpdateTaskInput): Promise<Ta
 
   const task = await prisma.task.update({
     where: { id },
-    data: updateData,
+    data: updateData as Prisma.TaskUpdateInput,
     select: taskSelect,
   });
 
@@ -500,20 +492,20 @@ export async function checkCircularReference(
   let currentParentId: bigint | null = newParentId;
 
   while (currentParentId) {
-    const parent = await prisma.task.findUnique({
+    const foundTask: { id: bigint; parentId: bigint | null } | null = await prisma.task.findUnique({
       where: { id: currentParentId },
       select: { id: true, parentId: true },
     });
 
-    if (!parent) {
+    if (!foundTask) {
       break;
     }
 
-    if (parent.id === taskId) {
+    if (foundTask.id === taskId) {
       return true;
     }
 
-    currentParentId = parent.parentId;
+    currentParentId = foundTask.parentId;
   }
 
   return false;
@@ -523,12 +515,12 @@ export async function checkCircularReference(
  * プロジェクトのタスク数を取得
  */
 export async function getTaskCount(projectId: bigint, status?: TaskStatus): Promise<number> {
-  const where: { projectId: bigint; status?: string } = {
+  const where: Prisma.TaskWhereInput = {
     projectId,
   };
 
   if (status) {
-    where.status = status;
+    where.status = status as Prisma.EnumTaskStatusFilter;
   }
 
   return prisma.task.count({ where });

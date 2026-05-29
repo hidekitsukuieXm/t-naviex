@@ -6,8 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import {
   syncSingleTestCase,
   syncSingleBug,
@@ -16,19 +15,19 @@ import {
 
 type EntityType = 'testCase' | 'bug' | 'requirement';
 
-interface RouteParams {
+type RouteParams = {
   params: Promise<{
-    entityType: EntityType;
+    entityType: string;
     entityId: string;
   }>;
-}
+};
 
 /**
  * POST /api/knowledge-graph/sync/[entityType]/[entityId]
  * 単一エンティティを同期
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -72,7 +71,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
  * 単一エンティティをグラフから削除
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

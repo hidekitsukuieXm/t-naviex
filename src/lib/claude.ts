@@ -75,7 +75,7 @@ export class ClaudeClient {
         id: response.id,
         model: response.model,
         content,
-        stopReason: response.stop_reason,
+        stopReason: response.stop_reason as 'end_turn' | 'max_tokens' | 'stop_sequence' | null,
         usage,
       };
     } catch (error) {
@@ -121,7 +121,7 @@ export class ClaudeClient {
         id: finalMessage.id,
         model: finalMessage.model,
         content: fullContent,
-        stopReason: finalMessage.stop_reason,
+        stopReason: finalMessage.stop_reason as 'end_turn' | 'max_tokens' | 'stop_sequence' | null,
         usage,
       };
 

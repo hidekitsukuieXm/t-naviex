@@ -26,16 +26,16 @@ export async function GET(request: NextRequest) {
     const where: Record<string, unknown> = {};
 
     if (query) {
-      where.OR = [
+      where['OR'] = [
         { name: { contains: query, mode: 'insensitive' } },
         { description: { contains: query, mode: 'insensitive' } },
       ];
     }
 
     if (parentId === 'null') {
-      where.parentId = null;
+      where['parentId'] = null;
     } else if (parentId) {
-      where.parentId = BigInt(parentId);
+      where['parentId'] = BigInt(parentId);
     }
 
     // グループ一覧を取得
@@ -90,16 +90,22 @@ export async function GET(request: NextRequest) {
       })),
       memberCount: group._count.userGroups,
       childrenCount: group._count.children,
-      members: group.userGroups?.map((ug) => ({
-        userId: ug.userId.toString(),
-        groupId: ug.groupId.toString(),
-        user: {
-          id: ug.user.id.toString(),
-          email: ug.user.email,
-          name: ug.user.name,
-        },
-        joinedAt: ug.createdAt,
-      })),
+      members: group.userGroups?.map((ug) => {
+        const user =
+          'user' in ug ? (ug as { user: { id: bigint; email: string; name: string } }).user : null;
+        return {
+          userId: ug.userId.toString(),
+          groupId: ug.groupId.toString(),
+          user: user
+            ? {
+                id: user.id.toString(),
+                email: user.email,
+                name: user.name,
+              }
+            : undefined,
+          joinedAt: ug.createdAt,
+        };
+      }),
       createdAt: group.createdAt,
       updatedAt: group.updatedAt,
     }));

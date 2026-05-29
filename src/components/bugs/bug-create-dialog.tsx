@@ -72,14 +72,16 @@ export function BugCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <Plus className="mr-2 size-4" />
-            新規バグ登録
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          trigger || (
+            <Button>
+              <Plus className="mr-2 size-4" />
+              新規バグ登録
+            </Button>
+          )
+        }
+      />
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>新規バグ登録</DialogTitle>

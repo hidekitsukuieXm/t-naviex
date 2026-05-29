@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET, PUT, DELETE } from '../route';
 import type { Session } from 'next-auth';
-import type { User, Organization, BrandingSettings } from '@prisma/client';
+import type { User, Organization, BrandingSettings } from '@/generated/prisma';
 
 // Mock dependencies
 vi.mock('@/lib/auth', () => ({

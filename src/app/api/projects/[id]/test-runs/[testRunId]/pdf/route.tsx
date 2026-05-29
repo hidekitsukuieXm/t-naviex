@@ -39,8 +39,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         name: true,
         description: true,
         status: true,
-        startDate: true,
-        endDate: true,
+        actualStartDate: true,
+        actualEndDate: true,
         createdAt: true,
         project: {
           select: { name: true },
@@ -59,13 +59,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 },
               },
             },
-            results: {
+            testResults: {
               select: {
                 status: true,
                 executedAt: true,
                 executionTime: true,
                 environment: true,
-                note: true,
+                comment: true,
                 executedBy: {
                   select: { name: true },
                 },
@@ -100,8 +100,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       testRunName: testRun.name,
       testRunDescription: testRun.description,
       status: testRun.status,
-      startDate: testRun.startDate?.toISOString() || null,
-      endDate: testRun.endDate?.toISOString() || null,
+      startDate: testRun.actualStartDate?.toISOString() || null,
+      endDate: testRun.actualEndDate?.toISOString() || null,
       createdAt: testRun.createdAt.toISOString(),
       summary: {
         totalCases,
@@ -115,7 +115,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         passRate: executed > 0 ? Math.round((passed / executed) * 100) : 0,
       },
       results: testRun.testRunCases.map((trc) => {
-        const latestResult = trc.results[0];
+        const latestResult = trc.testResults[0];
         return {
           caseId: trc.testCase.id.toString(),
           caseTitle: trc.testCase.title,
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           executedAt: latestResult?.executedAt?.toISOString() || null,
           executionTime: latestResult?.executionTime || null,
           environment: latestResult?.environment || null,
-          note: latestResult?.note || null,
+          note: latestResult?.comment || null,
           bugCount: latestResult?.bugs?.length || 0,
         };
       }),
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Return PDF as response
     const filename = `test-result-${testRun.name.replace(/[^\w\s-]/g, '')}-${new Date().toISOString().split('T')[0]}.pdf`;
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',

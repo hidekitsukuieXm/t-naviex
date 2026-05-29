@@ -279,7 +279,7 @@ function applyHighlighting(text: string, language: GherkinLanguage): React.React
     }
 
     // キーワードのハイライト
-    let highlighted = line;
+    let highlighted: React.ReactNode = line;
     let hasKeyword = false;
 
     // Feature

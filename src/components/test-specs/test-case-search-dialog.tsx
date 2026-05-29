@@ -280,14 +280,16 @@ export function TestCaseSearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm">
-            <Search className="mr-2 size-4" />
-            全文検索
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          trigger || (
+            <Button variant="outline" size="sm">
+              <Search className="mr-2 size-4" />
+              全文検索
+            </Button>
+          )
+        }
+      />
       <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>テストケース全文検索</DialogTitle>

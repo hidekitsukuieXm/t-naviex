@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // リダイレクトURIを構築（テスト用）
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env['NEXTAUTH_URL'] || 'http://localhost:3000';
     const redirectUri = `${baseUrl}/api/sso/azure-ad/callback`;
 
     // プロバイダーを初期化

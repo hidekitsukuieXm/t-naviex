@@ -135,7 +135,7 @@ function hashBackupCode(code: string): string {
  * MFA設定を取得
  */
 export async function getMfaSetting(userId: string): Promise<MfaSetting | null> {
-  const setting = await prisma.mfaSetting.findUnique({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
   });
 
@@ -150,7 +150,7 @@ export async function getMfaSetting(userId: string): Promise<MfaSetting | null> 
  * MFA設定のステータスを取得
  */
 export async function getMfaStatus(userId: string): Promise<MfaStatusResponse> {
-  const setting = await prisma.mfaSetting.findUnique({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
     include: {
       backupCodes: {
@@ -216,7 +216,7 @@ export async function initializeMfaSetup(
  * MFAを有効化（検証済みに設定）
  */
 export async function enableMfa(userId: string): Promise<MfaSetting | null> {
-  const setting = await prisma.mfaSetting.findUnique({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
   });
 
@@ -239,7 +239,7 @@ export async function enableMfa(userId: string): Promise<MfaSetting | null> {
  * MFAを無効化
  */
 export async function disableMfa(userId: string): Promise<boolean> {
-  const setting = await prisma.mfaSetting.findUnique({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
   });
 
@@ -263,10 +263,15 @@ export async function disableMfa(userId: string): Promise<boolean> {
  * MFA最終使用日時を更新
  */
 export async function updateMfaLastUsed(userId: string): Promise<void> {
-  await prisma.mfaSetting.update({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
-    data: { lastUsedAt: new Date() },
   });
+  if (setting) {
+    await prisma.mfaSetting.update({
+      where: { id: setting.id },
+      data: { lastUsedAt: new Date() },
+    });
+  }
 }
 
 // ====================================
@@ -277,7 +282,7 @@ export async function updateMfaLastUsed(userId: string): Promise<void> {
  * バックアップコードを取得
  */
 export async function getBackupCodes(userId: string): Promise<MfaBackupCode[]> {
-  const setting = await prisma.mfaSetting.findUnique({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
   });
 
@@ -297,7 +302,7 @@ export async function getBackupCodes(userId: string): Promise<MfaBackupCode[]> {
  * バックアップコードを検証
  */
 export async function verifyBackupCode(userId: string, code: string): Promise<boolean> {
-  const setting = await prisma.mfaSetting.findUnique({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
   });
 
@@ -338,7 +343,7 @@ export async function verifyBackupCode(userId: string, code: string): Promise<bo
  * バックアップコードを再生成
  */
 export async function regenerateBackupCodes(userId: string): Promise<string[] | null> {
-  const setting = await prisma.mfaSetting.findUnique({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
   });
 
@@ -448,7 +453,7 @@ export async function isMfaLockedOut(
  * 実際のTOTP検証を行う必要があります。
  */
 export async function verifyTotpCode(userId: string, code: string): Promise<boolean> {
-  const setting = await prisma.mfaSetting.findUnique({
+  const setting = await prisma.mfaSetting.findFirst({
     where: { userId: BigInt(userId) },
   });
 

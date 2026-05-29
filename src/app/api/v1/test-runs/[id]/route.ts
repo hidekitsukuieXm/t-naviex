@@ -11,8 +11,8 @@ import {
   getTestRunById,
   updateTestRun,
   deleteTestRun,
-  type UpdateTestRunInput,
 } from '@/lib/repositories/test-run-repository';
+import type { UpdateTestRunInput } from '@/types/test-run';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -107,27 +107,24 @@ export async function PUT(
       const updateData: UpdateTestRunInput = {
         ...(body.name !== undefined && { name: body.name.trim() }),
         ...(body.description !== undefined && { description: body.description }),
-        ...(body.status !== undefined && { status: body.status }),
+        ...(body.status !== undefined && { status: body.status as UpdateTestRunInput['status'] }),
         ...(body.milestoneId !== undefined && {
-          milestoneId: body.milestoneId ? BigInt(body.milestoneId) : null,
+          milestoneId: body.milestoneId || null,
         }),
         ...(body.configurationId !== undefined && {
-          configurationId: body.configurationId ? BigInt(body.configurationId) : null,
-        }),
-        ...(body.assigneeId !== undefined && {
-          assigneeId: body.assigneeId ? BigInt(body.assigneeId) : null,
+          configurationId: body.configurationId || null,
         }),
         ...(body.plannedStartDate !== undefined && {
-          plannedStartDate: body.plannedStartDate ? new Date(body.plannedStartDate) : null,
+          plannedStartDate: body.plannedStartDate || null,
         }),
         ...(body.plannedEndDate !== undefined && {
-          plannedEndDate: body.plannedEndDate ? new Date(body.plannedEndDate) : null,
+          plannedEndDate: body.plannedEndDate || null,
         }),
         ...(body.actualStartDate !== undefined && {
-          actualStartDate: body.actualStartDate ? new Date(body.actualStartDate) : null,
+          actualStartDate: body.actualStartDate || null,
         }),
         ...(body.actualEndDate !== undefined && {
-          actualEndDate: body.actualEndDate ? new Date(body.actualEndDate) : null,
+          actualEndDate: body.actualEndDate || null,
         }),
       };
 

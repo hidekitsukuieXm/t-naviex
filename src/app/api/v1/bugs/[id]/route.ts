@@ -7,12 +7,8 @@ import {
   type AuthContext,
   type ApiResponse,
 } from '@/lib/middleware/api-auth';
-import {
-  getBugById,
-  updateBug,
-  deleteBug,
-  type UpdateBugInput,
-} from '@/lib/repositories/bug-repository';
+import { getBugById, updateBug, deleteBug } from '@/lib/repositories/bug-repository';
+import type { UpdateBugInput } from '@/types/bug';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -97,7 +93,7 @@ export async function PUT(
         );
       }
 
-      const updateData: UpdateBugInput = {
+      const updateData = {
         ...(body.title !== undefined && { title: body.title.trim() }),
         ...(body.description !== undefined && { description: body.description }),
         ...(body.stepsToReproduce !== undefined && { stepsToReproduce: body.stepsToReproduce }),
@@ -115,7 +111,7 @@ export async function PUT(
         }),
         ...(body.environment !== undefined && { environment: body.environment }),
         ...(body.version !== undefined && { version: body.version }),
-      };
+      } as UpdateBugInput;
 
       const bug = await updateBug(bugId, updateData);
 

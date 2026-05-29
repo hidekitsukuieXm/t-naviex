@@ -272,13 +272,14 @@ export function BugAnalysisWidget({ widget, projectId }: BugAnalysisWidgetProps)
                   borderRadius: '6px',
                   fontSize: '12px',
                 }}
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   const labels: Record<string, string> = {
                     open: 'オープン',
                     resolved: '解決済',
                     closed: 'クローズ',
                   };
-                  return [value, labels[name] || name];
+                  const nameStr = String(name ?? '');
+                  return [value, labels[nameStr] || nameStr];
                 }}
                 labelFormatter={(label, payload) => {
                   if (payload && payload.length > 0) {
@@ -316,7 +317,7 @@ export function BugAnalysisWidget({ widget, projectId }: BugAnalysisWidgetProps)
                 cx="50%"
                 cy="50%"
                 outerRadius="70%"
-                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                label={({ name, percent }) => `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`}
                 labelLine={false}
                 fontSize={10}
               >
@@ -331,7 +332,7 @@ export function BugAnalysisWidget({ widget, projectId }: BugAnalysisWidgetProps)
                   borderRadius: '6px',
                   fontSize: '12px',
                 }}
-                formatter={(value: number) => [`${value} 件`, '報告数']}
+                formatter={(value) => [`${value} 件`, '報告数']}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -350,13 +351,14 @@ export function BugAnalysisWidget({ widget, projectId }: BugAnalysisWidgetProps)
                   borderRadius: '6px',
                   fontSize: '12px',
                 }}
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   const labels: Record<string, string> = {
                     open: 'オープン',
                     resolved: '解決済',
                     closed: 'クローズ',
                   };
-                  return [value, labels[name] || name];
+                  const nameStr = String(name ?? '');
+                  return [value, labels[nameStr] || nameStr];
                 }}
               />
               <Legend

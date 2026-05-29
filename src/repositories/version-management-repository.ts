@@ -4,7 +4,7 @@
  * テスト仕様書バージョン管理のリポジトリ
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import {
   TestSpecVersion,
   VersionContent,
@@ -52,19 +52,18 @@ export async function createVersionSnapshot(testSpecId: string): Promise<Version
       description: true,
       preconditions: true,
       priority: true,
-      status: true,
       testType: true,
       estimatedTime: true,
-      steps: {
+      testSteps: {
         select: {
           id: true,
-          stepNumber: true,
-          action: true,
-          expectedResult: true,
+          stepNo: true,
+          actionMd: true,
+          expectedMd: true,
         },
-        orderBy: { stepNumber: 'asc' },
+        orderBy: { stepNo: 'asc' },
       },
-      tags: {
+      testCaseTags: {
         select: {
           tag: {
             select: { name: true },
@@ -87,17 +86,19 @@ export async function createVersionSnapshot(testSpecId: string): Promise<Version
     title: tc.title,
     description: tc.description || undefined,
     preconditions: tc.preconditions || undefined,
-    steps: tc.steps.map((step) => ({
-      id: step.id.toString(),
-      stepNumber: step.stepNumber,
-      action: step.action,
-      expectedResult: step.expectedResult,
-    })),
+    steps: tc.testSteps.map(
+      (step: { id: bigint; stepNo: number; actionMd: string; expectedMd: string | null }) => ({
+        id: step.id.toString(),
+        stepNumber: step.stepNo,
+        action: step.actionMd,
+        expectedResult: step.expectedMd || '',
+      })
+    ),
     priority: tc.priority || undefined,
-    status: tc.status || undefined,
+    status: undefined,
     testType: tc.testType || undefined,
     estimatedTime: tc.estimatedTime || undefined,
-    tags: tc.tags.map((t) => t.tag.name),
+    tags: tc.testCaseTags.map((t: { tag: { name: string } }) => t.tag.name),
   }));
 
   return {
@@ -488,9 +489,8 @@ export async function restoreVersion(
           title: tc.title,
           description: tc.description || null,
           preconditions: tc.preconditions || null,
-          priority: tc.priority || 'MEDIUM',
-          status: tc.status || 'ACTIVE',
-          testType: tc.testType || 'MANUAL',
+          priority: (tc.priority || 'MEDIUM') as 'HIGH' | 'MEDIUM' | 'LOW',
+          testType: (tc.testType || 'FUNCTIONAL') as import('@/generated/prisma').TestType,
           estimatedTime: tc.estimatedTime || null,
         },
       });
@@ -499,10 +499,10 @@ export async function restoreVersion(
       for (const step of tc.steps) {
         await tx.testStep.create({
           data: {
-            testCaseId: createdTestCase.id,
-            stepNumber: step.stepNumber,
-            action: step.action,
-            expectedResult: step.expectedResult,
+            testCase: { connect: { id: createdTestCase.id } },
+            stepNo: step.stepNumber,
+            actionMd: step.action,
+            expectedMd: step.expectedResult,
           },
         });
       }

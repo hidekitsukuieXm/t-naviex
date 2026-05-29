@@ -379,17 +379,18 @@ export function MatrixEditor({
                   </DropdownMenuItem>
                 )}
                 {onImportExcel && !readOnly && (
-                  <DropdownMenuItem asChild>
-                    <label className="flex items-center cursor-pointer">
-                      <Upload className="h-4 w-4 mr-2" />
-                      Excelインポート
-                      <input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        className="hidden"
-                        onChange={handleFileImport}
-                      />
-                    </label>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = '.xlsx,.xls';
+                      input.onchange = (e) =>
+                        handleFileImport(e as unknown as React.ChangeEvent<HTMLInputElement>);
+                      input.click();
+                    }}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Excelインポート
                   </DropdownMenuItem>
                 )}
                 {onExpand && (

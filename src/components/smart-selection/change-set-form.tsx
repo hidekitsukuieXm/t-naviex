@@ -69,7 +69,7 @@ export function ChangeSetForm({ changeSet, onSave, onDelete, isLoading }: Change
       const validation = validateChangeSet({
         name,
         description,
-        changes,
+        changes: changes as ChangeItem[],
         scope,
       });
 
@@ -148,7 +148,7 @@ export function ChangeSetForm({ changeSet, onSave, onDelete, isLoading }: Change
           <CardTitle className="text-lg">変更項目</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChangeItemEditor items={changes} onChange={setChanges} />
+          <ChangeItemEditor items={changes} onChange={(items) => setChanges(items)} />
         </CardContent>
       </Card>
 

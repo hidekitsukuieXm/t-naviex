@@ -41,12 +41,9 @@ export async function POST(request: Request) {
     });
 
     // TODO: Send email with reset link
-    // For now, just log the reset URL (remove in production)
-    const authUrl = process.env['AUTH_URL'] ?? 'http://localhost:3000';
-    const resetUrl = `${authUrl}/reset-password?token=${token}`;
-    console.log('Password reset URL:', resetUrl);
-
-    // In production, you would send an email here:
+    // In production, implement email sending:
+    // const authUrl = process.env['AUTH_URL'] ?? 'http://localhost:3000';
+    // const resetUrl = `${authUrl}/reset-password?token=${token}`;
     // await sendPasswordResetEmail(email, resetUrl);
 
     return NextResponse.json({ message: 'リセットリンクを送信しました。' });

@@ -9,13 +9,9 @@ import {
   type AuthContext,
   type ApiResponse,
 } from '@/lib/middleware/api-auth';
-import {
-  getTestCases,
-  createTestCase,
-  type TestCaseSearchParams,
-  type CreateTestCaseInput,
-} from '@/lib/repositories/test-case-repository';
+import { getTestCases, createTestCase } from '@/lib/repositories/test-case-repository';
 import { getTestSpecById } from '@/lib/repositories/test-spec-repository';
+import type { TestCaseSearchParams, CreateTestCaseInput } from '@/types/test-case';
 
 // GET /api/v1/test-cases - テストケース一覧取得
 export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse>> {
@@ -28,13 +24,21 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       const testSpecId = searchParams.get('testSpecId');
       const sectionId = searchParams.get('sectionId');
 
+      if (!testSpecId) {
+        return createErrorResponse(
+          ErrorCodes.VALIDATION_ERROR,
+          'テスト仕様IDは必須です。',
+          400,
+          requestId
+        );
+      }
+
       const params: TestCaseSearchParams = {
-        testSpecId: testSpecId ? BigInt(testSpecId) : undefined,
-        sectionId: sectionId ? BigInt(sectionId) : undefined,
+        testSpecId,
+        sectionId: sectionId || undefined,
         query: searchParams.get('query') || undefined,
-        priority: searchParams.get('priority') || undefined,
-        status: searchParams.get('status') || undefined,
-        testType: searchParams.get('testType') || undefined,
+        priority: searchParams.get('priority') as TestCaseSearchParams['priority'],
+        testType: searchParams.get('testType') as TestCaseSearchParams['testType'],
         page,
         limit,
         sortBy: (searchParams.get('sortBy') as TestCaseSearchParams['sortBy']) || 'updatedAt',
@@ -112,8 +116,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
 
       // テスト仕様書の存在確認
-      const testSpecId = BigInt(body.testSpecId);
-      const testSpec = await getTestSpecById(testSpecId);
+      const testSpecIdBigInt = BigInt(body.testSpecId);
+      const testSpec = await getTestSpecById(testSpecIdBigInt);
       if (!testSpec) {
         return createErrorResponse(
           ErrorCodes.NOT_FOUND,
@@ -124,33 +128,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
 
       const createData: CreateTestCaseInput = {
-        testSpecId,
-        sectionId: body.sectionId ? BigInt(body.sectionId) : null,
+        testSpecId: body.testSpecId,
+        sectionId: body.sectionId || null,
         title: body.title.trim(),
         description: body.description || null,
-        precondition: body.precondition || null,
-        priority: body.priority || 'MEDIUM',
-        status: body.status || 'DRAFT',
-        testType: body.testType || null,
-        automationStatus: body.automationStatus || 'NOT_AUTOMATED',
+        preconditions: body.precondition || null,
+        priority: body.priority as CreateTestCaseInput['priority'],
+        testType: body.testType as CreateTestCaseInput['testType'],
         estimatedTime: body.estimatedTime || null,
-        createdById: context.userId,
-        steps: body.steps,
       };
 
       const testCase = await createTestCase(createData);
 
-      return NextResponse.json(
-        {
-          success: true,
-          data: { testCase },
-          meta: {
-            requestId,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        { status: 201, headers: { 'X-Request-Id': requestId } }
-      );
+      return createSuccessResponse({ testCase }, requestId);
     },
     { requiredScopes: ['WRITE_TEST_CASES'] }
   );

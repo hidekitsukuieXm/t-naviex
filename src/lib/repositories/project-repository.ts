@@ -307,3 +307,12 @@ function serializeProjectDetail(project: {
     _count: project._count,
   };
 }
+
+// プロジェクト存在確認
+export async function projectExists(projectId: bigint): Promise<boolean> {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true },
+  });
+  return project !== null;
+}

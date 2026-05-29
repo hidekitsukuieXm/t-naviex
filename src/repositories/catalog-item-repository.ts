@@ -2,6 +2,7 @@
  * カタログアイテムリポジトリ
  */
 
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import type {
   CatalogItem,
@@ -280,7 +281,7 @@ export async function createCatalogItem(
       status: data.status || 'DRAFT',
       category: data.category,
       content: data.content,
-      metadata: data.metadata || undefined,
+      metadata: (data.metadata || undefined) as Prisma.InputJsonValue | undefined,
       version: data.version || '1.0.0',
       sortOrder: data.sortOrder ?? 0,
       createdById: userId,
@@ -322,7 +323,7 @@ export async function updateCatalogItem(
     where: { id },
     data: {
       ...data,
-      metadata: data.metadata || undefined,
+      metadata: (data.metadata || undefined) as Prisma.InputJsonValue | undefined,
       updatedById: userId,
       tags: tagIds
         ? {

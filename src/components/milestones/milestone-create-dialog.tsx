@@ -67,12 +67,14 @@ export function MilestoneCreateDialog({ projectId, onSuccess }: MilestoneCreateD
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 size-4" />
-          新規マイルストーン
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button>
+            <Plus className="mr-2 size-4" />
+            新規マイルストーン
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>マイルストーン作成</DialogTitle>

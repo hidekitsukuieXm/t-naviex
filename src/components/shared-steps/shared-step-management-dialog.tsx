@@ -266,14 +266,16 @@ export function SharedStepManagementDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger asChild>
-          {trigger || (
-            <Button variant="outline" size="sm">
-              <Share2 className="mr-2 size-4" />
-              共有手順管理
-            </Button>
-          )}
-        </DialogTrigger>
+        <DialogTrigger
+          render={
+            trigger || (
+              <Button variant="outline" size="sm">
+                <Share2 className="mr-2 size-4" />
+                共有手順管理
+              </Button>
+            )
+          }
+        />
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>共有テスト手順管理</DialogTitle>

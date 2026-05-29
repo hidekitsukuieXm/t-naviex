@@ -99,7 +99,7 @@ export function EffortEstimationDialog({
         .filter(Boolean)
         .map((line, index) => {
           const match = line.match(/^([^:]+):\s*(.+)$/);
-          if (match) {
+          if (match && match[1] && match[2]) {
             return { id: match[1].trim(), title: match[2].trim() };
           }
           return { id: `TC-${index + 1}`, title: line };
@@ -118,10 +118,10 @@ export function EffortEstimationDialog({
             .map((line) => {
               const parts = line.split(',').map((p) => p.trim());
               return {
-                projectName: parts[0] || 'Unknown',
-                testCaseCount: parseInt(parts[1]) || 0,
-                actualEffort: parseInt(parts[2]) || 0,
-                teamSize: parseInt(parts[3]) || 1,
+                projectName: parts[0] ?? 'Unknown',
+                testCaseCount: parseInt(parts[1] ?? '0') || 0,
+                actualEffort: parseInt(parts[2] ?? '0') || 0,
+                teamSize: parseInt(parts[3] ?? '1') || 1,
               };
             })
         : undefined;
@@ -290,7 +290,10 @@ export function EffortEstimationDialog({
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="experienceLevel">経験レベル</Label>
-                    <Select value={experienceLevel} onValueChange={setExperienceLevel}>
+                    <Select
+                      value={experienceLevel}
+                      onValueChange={(value) => value && setExperienceLevel(value)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>

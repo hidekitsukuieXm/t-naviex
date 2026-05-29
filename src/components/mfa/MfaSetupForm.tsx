@@ -28,7 +28,7 @@ export function MfaSetupForm({
 }: MfaSetupFormProps): React.ReactElement {
   const [step, setStep] = useState<SetupStep>('select');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, setSelectedType] = useState<typeof MfaType.TOTP>(MfaType.TOTP);
+  const [_, setSelectedType] = useState<MfaType>(MfaType.TOTP);
   const [verifyCode, setVerifyCode] = useState('');
   const [showBackupCodes, setShowBackupCodes] = useState(false);
 
@@ -40,7 +40,7 @@ export function MfaSetupForm({
     },
   });
 
-  const handleTypeSelect = async (type: typeof MfaType.TOTP) => {
+  const handleTypeSelect = async (type: MfaType) => {
     setSelectedType(type);
     await startSetup(type, accountName);
     setStep('qrcode');

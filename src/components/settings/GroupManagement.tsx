@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type {
   Group,
   GroupTreeNode,
@@ -14,6 +14,11 @@ import type {
   GroupMember,
   GroupStatistics,
 } from '@/types/group';
+
+// Extended type for group detail response which includes path
+interface GroupDetailResponse extends GroupWithMembers {
+  path?: Array<{ id: string; name: string }>;
+}
 
 interface GroupFormData {
   name: string;
@@ -31,7 +36,7 @@ export default function GroupManagement() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [tree, setTree] = useState<GroupTreeNode[]>([]);
   const [statistics, setStatistics] = useState<GroupStatistics | null>(null);
-  const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<GroupDetailResponse | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -333,7 +338,7 @@ export default function GroupManagement() {
   /**
    * ツリーノードをレンダリング
    */
-  const renderTreeNode = (node: GroupTreeNode, level: number = 0): JSX.Element => {
+  const renderTreeNode = (node: GroupTreeNode, level: number = 0): React.JSX.Element => {
     const isExpanded = expandedNodes.has(node.id);
     const hasChildren = node.children && node.children.length > 0;
 

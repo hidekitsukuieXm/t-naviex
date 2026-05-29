@@ -270,7 +270,7 @@ export default function CrossProjectReportPage() {
             <TabsTrigger value="comparison">比較分析</TabsTrigger>
           </TabsList>
           {activeTab === 'workload' && (
-            <Select value={days.toString()} onValueChange={(v) => setDays(parseInt(v, 10))}>
+            <Select value={days.toString()} onValueChange={(v) => v && setDays(parseInt(v, 10))}>
               <SelectTrigger className="w-[100px]">
                 <SelectValue />
               </SelectTrigger>
@@ -305,12 +305,12 @@ export default function CrossProjectReportPage() {
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '6px',
                       }}
-                      formatter={(value: number, name: string) => {
+                      formatter={(value, name) => {
                         const labels: Record<string, string> = {
                           executionRate: '実行率',
                           passRate: '合格率',
                         };
-                        return [`${value}%`, labels[name] || name];
+                        return [`${value ?? 0}%`, labels[String(name)] || String(name)];
                       }}
                     />
                     <Legend
@@ -512,12 +512,15 @@ export default function CrossProjectReportPage() {
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '6px',
                       }}
-                      formatter={(value: number, name: string) => {
+                      formatter={(value, name) => {
                         const labels: Record<string, string> = {
                           testCaseCount: 'テストケース',
                           bugCount: 'バグ',
                         };
-                        return [value.toLocaleString(), labels[name] || name];
+                        return [
+                          typeof value === 'number' ? value.toLocaleString() : String(value ?? 0),
+                          labels[String(name)] || String(name),
+                        ];
                       }}
                     />
                     <Legend

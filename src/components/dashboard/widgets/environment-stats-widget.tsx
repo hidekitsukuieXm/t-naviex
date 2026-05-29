@@ -184,14 +184,14 @@ export function EnvironmentStatsWidget({ widget, projectId }: EnvironmentStatsWi
                   borderRadius: '6px',
                   fontSize: '12px',
                 }}
-                formatter={(value: number, name: string) => {
+                formatter={(value, name) => {
                   const labels: Record<string, string> = {
                     passed: '合格',
                     failed: '失敗',
                     blocked: 'ブロック',
                     skipped: 'スキップ',
                   };
-                  return [value, labels[name] || name];
+                  return [value, labels[String(name ?? '')] || name];
                 }}
                 labelFormatter={(label, payload) => {
                   if (payload && payload.length > 0) {
@@ -210,7 +210,7 @@ export function EnvironmentStatsWidget({ widget, projectId }: EnvironmentStatsWi
                     blocked: 'ブロック',
                     skipped: 'スキップ',
                   };
-                  return labels[value] || value;
+                  return labels[String(value ?? '')] || value;
                 }}
               />
               <Bar dataKey="passed" name="passed" stackId="a" fill={STATUS_COLORS.passed} />

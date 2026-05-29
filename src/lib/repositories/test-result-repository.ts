@@ -2,6 +2,7 @@
  * テスト結果リポジトリ
  */
 
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import type { TestRunCaseStatus } from '@/types/test-run-case';
 import type {
@@ -246,7 +247,7 @@ export async function searchTestResults(
 ): Promise<{ data: TestResultWithRelations[]; total: number }> {
   const { testRunCaseId, executedById, status, fromDate, toDate, limit = 50, offset = 0 } = params;
 
-  const where: Parameters<typeof prisma.testResult.findMany>[0]['where'] = {};
+  const where: Prisma.TestResultWhereInput = {};
 
   if (testRunCaseId) {
     where.testRunCaseId = BigInt(testRunCaseId);

@@ -314,6 +314,7 @@ export default function TestSpecsPage({ params }: TestSpecsPageProps) {
               <Select
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value) => {
+                  if (!value) return;
                   const [field, order] = value.split('-') as [SortField, SortOrder];
                   setSortBy(field);
                   setSortOrder(order);

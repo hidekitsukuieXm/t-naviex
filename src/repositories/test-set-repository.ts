@@ -2,7 +2,8 @@
  * テストセットリポジトリ
  */
 
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 import type {
   TestSet,
   TestSetWithTags,
@@ -244,7 +245,7 @@ export async function createTestSet(
       status: data.status || 'DRAFT',
       version: data.version || '1.0.0',
       sortOrder: data.sortOrder ?? (maxSortOrder._max.sortOrder ?? -1) + 1,
-      metadata: data.metadata,
+      metadata: data.metadata as Prisma.InputJsonValue | undefined,
       ...(tagIds && tagIds.length > 0
         ? {
             tags: {
@@ -303,24 +304,33 @@ export async function updateTestSet(
     });
   }
 
+  const updateData: Prisma.TestSetUpdateInput = {
+    ...(data.name !== undefined && { name: data.name }),
+    ...(data.description !== undefined && { description: data.description }),
+    ...(data.status !== undefined && { status: data.status }),
+    ...(data.version !== undefined && { version: data.version }),
+    ...(data.sortOrder !== undefined && { sortOrder: data.sortOrder }),
+    ...(data.metadata !== undefined && {
+      metadata: data.metadata as Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput,
+    }),
+    updatedBy: { connect: { id: BigInt(userId) } },
+    ...(tagIds && tagIds.length > 0
+      ? {
+          tags: {
+            create: tagIds.map((tagId) => ({
+              tagId: BigInt(tagId),
+            })),
+          },
+        }
+      : {}),
+  };
+
   const testSet = await prisma.testSet.update({
     where: {
       id: BigInt(testSetId),
       projectId: BigInt(projectId),
     },
-    data: {
-      ...data,
-      updatedById: BigInt(userId),
-      ...(tagIds && tagIds.length > 0
-        ? {
-            tags: {
-              create: tagIds.map((tagId) => ({
-                tagId: BigInt(tagId),
-              })),
-            },
-          }
-        : {}),
-    },
+    data: updateData,
   });
 
   return bigIntToString({
@@ -392,7 +402,7 @@ export async function duplicateTestSet(
       status: 'DRAFT',
       version: '1.0.0',
       sortOrder: (maxSortOrder._max.sortOrder ?? -1) + 1,
-      metadata: original.metadata,
+      metadata: original.metadata as Prisma.InputJsonValue | undefined,
       tags: {
         create: original.tags.map((t) => ({
           tagId: t.tagId,

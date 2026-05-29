@@ -346,9 +346,11 @@ export class TestPlanReviewerService {
               category: this.normalizeCategory(String(item.category || 'SCOPE')),
               title: String(item.title || ''),
               status: this.normalizeStatus(String(item.status || '')),
-              findings: Array.isArray(item.findings) ? item.findings.map((f) => String(f)) : [],
+              findings: Array.isArray(item.findings)
+                ? item.findings.map((f: unknown) => String(f))
+                : [],
               suggestions: Array.isArray(item.suggestions)
-                ? item.suggestions.map((s) => String(s))
+                ? item.suggestions.map((s: unknown) => String(s))
                 : [],
               score: Math.min(100, Math.max(0, Number(item.score) || 50)),
             }))
@@ -374,9 +376,11 @@ export class TestPlanReviewerService {
         overallScore: Math.min(100, Math.max(0, Number(parsed.overallScore) || 50)),
         overallStatus: this.normalizeStatus(String(parsed.overallStatus || '')),
         summary: String(parsed.summary || ''),
-        strengths: Array.isArray(parsed.strengths) ? parsed.strengths.map((s) => String(s)) : [],
+        strengths: Array.isArray(parsed.strengths)
+          ? parsed.strengths.map((s: unknown) => String(s))
+          : [],
         improvements: Array.isArray(parsed.improvements)
-          ? parsed.improvements.map((i) => String(i))
+          ? parsed.improvements.map((i: unknown) => String(i))
           : [],
       };
     } catch (error) {

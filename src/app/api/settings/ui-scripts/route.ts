@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 import { validateUiScript, type UiScript, type CreateUiScriptData } from '@/types/ui-script';
 import { logAudit } from '@/lib/audit';
 
@@ -65,6 +66,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validation.errors.join(' ') }, { status: 400 });
     }
 
+    // 重複名チェック
+    const existingScript = await prisma.uiScript.findFirst({
+      where: { name: body.name },
+    });
+    if (existingScript) {
+      return NextResponse.json(
+        { error: 'このスクリプト名は既に使用されています。' },
+        { status: 400 }
+      );
+    }
+
     const script = await prisma.uiScript.create({
       data: {
         name: body.name,
@@ -75,7 +87,7 @@ export async function POST(request: Request) {
         css: body.css ?? null,
         isActive: body.isActive ?? true,
         priority: body.priority ?? 0,
-        metadata: body.metadata ?? null,
+        metadata: body.metadata ? (body.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
       },
     });
 

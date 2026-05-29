@@ -201,13 +201,13 @@ export function ReliabilityChartWidget({ widget, projectId }: ReliabilityChartWi
                 borderRadius: '6px',
                 fontSize: '12px',
               }}
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 const labels: Record<string, string> = {
                   actual: '実績',
                   gompertz: 'Gompertz予測',
                   logistic: 'Logistic予測',
                 };
-                return [value, labels[name] || name];
+                return [value, labels[String(name ?? '')] || name];
               }}
             />
             <Legend
@@ -218,7 +218,7 @@ export function ReliabilityChartWidget({ widget, projectId }: ReliabilityChartWi
                   gompertz: 'Gompertz',
                   logistic: 'Logistic',
                 };
-                return labels[value] || value;
+                return labels[String(value ?? '')] || value;
               }}
             />
             {/* 実績線 */}

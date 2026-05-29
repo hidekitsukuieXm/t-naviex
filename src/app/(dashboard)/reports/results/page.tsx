@@ -167,14 +167,14 @@ export default function ResultReportPage() {
 
   const pieData = resultReport
     ? [
-        { name: '合格', value: resultReport.summary.passed, color: statusColors.PASSED },
-        { name: '不合格', value: resultReport.summary.failed, color: statusColors.FAILED },
-        { name: 'ブロック', value: resultReport.summary.blocked, color: statusColors.BLOCKED },
-        { name: 'スキップ', value: resultReport.summary.skipped, color: statusColors.SKIPPED },
+        { name: '合格', value: resultReport.summary.passed, color: statusColors['PASSED'] },
+        { name: '不合格', value: resultReport.summary.failed, color: statusColors['FAILED'] },
+        { name: 'ブロック', value: resultReport.summary.blocked, color: statusColors['BLOCKED'] },
+        { name: 'スキップ', value: resultReport.summary.skipped, color: statusColors['SKIPPED'] },
         {
           name: '未実行',
           value: resultReport.summary.totalCases - resultReport.summary.executed,
-          color: statusColors.NOT_RUN,
+          color: statusColors['NOT_RUN'],
         },
       ].filter((item) => item.value > 0)
     : [];

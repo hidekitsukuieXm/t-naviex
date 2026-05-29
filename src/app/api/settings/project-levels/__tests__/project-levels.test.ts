@@ -243,10 +243,14 @@ describe('Project Levels API', () => {
     });
 
     it('should update default flag and clear others', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(mockProjectLevel);
-      mockUpdateMany.mockResolvedValueOnce({ count: 1 });
-      mockUpdate.mockResolvedValueOnce({ ...mockProjectLevel, isDefault: true });
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockUpdateMany.mockReset();
+      mockUpdate.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(mockProjectLevel);
+      mockUpdateMany.mockResolvedValue({ count: 1 });
+      mockUpdate.mockResolvedValue({ ...mockProjectLevel, isDefault: true });
 
       const request = new Request('http://localhost/api/settings/project-levels/1', {
         method: 'PUT',
@@ -278,8 +282,10 @@ describe('Project Levels API', () => {
     });
 
     it('should return 400 when deleting default level', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(mockDefaultLevel);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(mockDefaultLevel);
 
       const request = new Request('http://localhost/api/settings/project-levels/2', {
         method: 'DELETE',
@@ -293,9 +299,12 @@ describe('Project Levels API', () => {
     });
 
     it('should delete level when valid', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(mockProjectLevel);
-      mockDelete.mockResolvedValueOnce(mockProjectLevel);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockDelete.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(mockProjectLevel);
+      mockDelete.mockResolvedValue(mockProjectLevel);
 
       const request = new Request('http://localhost/api/settings/project-levels/1', {
         method: 'DELETE',

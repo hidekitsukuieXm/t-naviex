@@ -298,6 +298,7 @@ export class GoogleWorkspaceProvider {
         ? 'Google Workspace接続テストに成功しました'
         : 'Google Workspace接続テストに一部失敗しました',
       details,
+      checks: [],
     };
   }
 

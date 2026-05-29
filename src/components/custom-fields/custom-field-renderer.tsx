@@ -225,20 +225,22 @@ function DateFieldRenderer({ definition, value, onChange, disabled }: FieldProps
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id={`field-${definition.id}`}
-          variant="outline"
-          className={cn(
-            'w-full justify-start text-left font-normal',
-            !dateValue && 'text-muted-foreground'
-          )}
-          disabled={disabled}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {dateValue ? format(dateValue, 'PPP', { locale: ja }) : '日付を選択'}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button
+            id={`field-${definition.id}`}
+            variant="outline"
+            className={cn(
+              'w-full justify-start text-left font-normal',
+              !dateValue && 'text-muted-foreground'
+            )}
+            disabled={disabled}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {dateValue ? format(dateValue, 'PPP', { locale: ja }) : '日付を選択'}
+          </Button>
+        }
+      />
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
@@ -247,7 +249,7 @@ function DateFieldRenderer({ definition, value, onChange, disabled }: FieldProps
             onChange(date ?? null);
             setOpen(false);
           }}
-          initialFocus
+          autoFocus
         />
       </PopoverContent>
     </Popover>
@@ -347,11 +349,11 @@ function UrlFieldRenderer({ definition, value, onChange, disabled }: FieldProps<
         className="flex-1"
       />
       {value && (
-        <Button type="button" variant="outline" size="icon" asChild>
-          <a href={value} target="_blank" rel="noopener noreferrer">
+        <a href={value} target="_blank" rel="noopener noreferrer">
+          <Button type="button" variant="outline" size="icon">
             <ExternalLink className="h-4 w-4" />
-          </a>
-        </Button>
+          </Button>
+        </a>
       )}
     </div>
   );

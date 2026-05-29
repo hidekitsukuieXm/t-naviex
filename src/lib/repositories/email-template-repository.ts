@@ -2,6 +2,7 @@
  * メールテンプレートリポジトリ
  */
 
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import type {
   EmailTemplate,
@@ -20,7 +21,7 @@ export async function getEmailTemplates(
 ): Promise<EmailTemplateListResponse> {
   const { type, isActive, query, page = 1, limit = 20 } = params;
 
-  const where: Parameters<typeof prisma.emailTemplate.findMany>[0]['where'] = {};
+  const where: Prisma.EmailTemplateWhereInput = {};
 
   if (type) {
     where.type = type;

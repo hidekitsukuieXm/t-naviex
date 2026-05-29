@@ -363,7 +363,7 @@ export function TestTechniqueDialog({
                             )}
 
                             {suggestion.guidelines.length > 0 && (
-                              <Accordion type="single" collapsible>
+                              <Accordion>
                                 <AccordionItem value="guidelines" className="border-none">
                                   <AccordionTrigger className="text-sm py-2">
                                     適用ガイドライン ({suggestion.guidelines.length})

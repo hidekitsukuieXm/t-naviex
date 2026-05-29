@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import { Prisma } from '@/generated/prisma';
 import { getDashboardsByUser, createDashboard } from '@/repositories/dashboard-repository';
 import { toDashboardSafe } from '@/types/dashboard';
 
@@ -17,7 +18,7 @@ const createDashboardSchema = z.object({
   description: z.string().optional(),
   isDefault: z.boolean().optional(),
   isPublic: z.boolean().optional(),
-  layout: z.record(z.unknown()).optional(),
+  layout: z.record(z.string(), z.unknown()).optional(),
 });
 
 // GET /api/dashboards - ユーザーのダッシュボード一覧
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'バリデーションエラー', details: validation.error.errors },
+        { error: 'バリデーションエラー', details: validation.error.issues },
         { status: 400 }
       );
     }
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
       description,
       isDefault,
       isPublic,
-      layout,
+      layout: layout as Prisma.InputJsonValue | undefined,
     });
 
     return NextResponse.json({ dashboard: toDashboardSafe(dashboard) }, { status: 201 });

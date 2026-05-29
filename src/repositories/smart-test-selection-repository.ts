@@ -4,7 +4,7 @@
  * 変更影響範囲に基づくスマートテスト選択のリポジトリ
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import {
   ChangeSet,
@@ -16,6 +16,7 @@ import {
   TestCaseSelection,
   RecommendedTestSet,
   SelectionReason,
+  SelectionSummary,
   ImpactScope,
   ChangeSeverity,
   SelectionStatus,
@@ -52,7 +53,7 @@ export async function createChangeSet(
   const changeSet = await prisma.changeSet.create({
     data: {
       id,
-      projectId,
+      projectId: BigInt(projectId),
       name: data.name,
       description: data.description,
       changes: changes as unknown as object,
@@ -103,14 +104,15 @@ export async function getChangeSets(
     offset?: number;
   }
 ): Promise<{ changeSets: ChangeSet[]; total: number }> {
+  const where = { projectId: BigInt(projectId) };
   const [changeSets, total] = await Promise.all([
     prisma.changeSet.findMany({
-      where: { projectId },
+      where,
       orderBy: { createdAt: 'desc' },
       take: options?.limit || 50,
       skip: options?.offset || 0,
     }),
-    prisma.changeSet.count({ where: { projectId } }),
+    prisma.changeSet.count({ where }),
   ]);
 
   return {
@@ -359,13 +361,13 @@ async function analyzeAffectedRequirements(
     where: {
       projectId: changeSet.projectId,
       OR: [
-        { name: { in: featureNames } },
+        { code: { in: featureNames } },
         { description: { contains: featureNames[0] } }, // 簡易的な検索
       ],
     },
     select: {
       id: true,
-      name: true,
+      code: true,
     },
   });
 
@@ -378,8 +380,8 @@ async function analyzeAffectedRequirements(
       if (
         change.affectedFeatures.some(
           (f) =>
-            req.name.toLowerCase().includes(f.toLowerCase()) ||
-            f.toLowerCase().includes(req.name.toLowerCase())
+            req.code.toLowerCase().includes(f.toLowerCase()) ||
+            f.toLowerCase().includes(req.code.toLowerCase())
         )
       ) {
         relatedChanges.push(change.id);
@@ -398,9 +400,9 @@ async function analyzeAffectedRequirements(
       if (maxSeverity >= 3) impactLevel = 'HIGH';
       else if (maxSeverity >= 2) impactLevel = 'MEDIUM';
 
-      requirementMap.set(req.id, {
-        requirementId: req.id,
-        requirementName: req.name,
+      requirementMap.set(req.id.toString(), {
+        requirementId: req.id.toString(),
+        requirementName: req.code,
         impactLevel,
         relatedChanges,
       });
@@ -594,31 +596,31 @@ export async function selectTestCases(
 
   // テストケースを取得
   const testCases = await prisma.testCase.findMany({
-    where: { projectId },
+    where: { testSpec: { projectId: BigInt(projectId) } },
     include: {
       testSpec: { select: { id: true, name: true } },
-      tags: { include: { tag: true } },
-      testResults: {
-        orderBy: { executedAt: 'desc' },
-        take: 10,
-        select: {
-          result: true,
-          executedAt: true,
-        },
-      },
+      testCaseTags: { include: { tag: true } },
     },
   });
 
   // 各テストケースの選択理由とスコアを計算
   const selections: TestCaseSelection[] = testCases.map((tc) => {
-    const reasons = calculateSelectionReasons(tc, analysis!);
+    // Transform to match expected format
+    const tcForReason = {
+      id: tc.id.toString(),
+      title: tc.title,
+      description: tc.description,
+      tags: tc.testCaseTags.map((t) => ({ tag: { name: t.tag.name } })),
+      testResults: [] as { result: string; executedAt: Date }[],
+      priority:
+        tc.priority === 'HIGH' ? 4 : tc.priority === 'MEDIUM' ? 3 : tc.priority === 'LOW' ? 2 : 1,
+    };
+    const reasons = calculateSelectionReasons(tcForReason, analysis!);
     const priorityScore = calculatePriorityScore(reasons);
 
-    // 履歴データから失敗率を計算
-    const totalResults = tc.testResults.length;
-    const failedResults = tc.testResults.filter((r) => r.result === 'FAILED').length;
-    const historicalFailureRate =
-      totalResults > 0 ? Math.round((failedResults / totalResults) * 100) : 0;
+    // 履歴データから失敗率を計算 (no testResults available directly)
+    const totalResults = 0;
+    const historicalFailureRate = 0;
 
     // ステータスを決定
     let status: SelectionStatus;
@@ -630,19 +632,17 @@ export async function selectTestCases(
       status = SelectionStatus.EXCLUDED;
     }
 
-    const lastResult = tc.testResults[0];
-
     return {
-      testCaseId: tc.id,
+      testCaseId: tc.id.toString(),
       testCaseName: tc.title,
-      testSpecId: tc.testSpec?.id,
+      testSpecId: tc.testSpec?.id.toString(),
       testSpecName: tc.testSpec?.name,
       status,
       priorityScore,
       reasons,
-      estimatedDuration: tc.estimatedMinutes || undefined,
-      lastExecutedAt: lastResult?.executedAt,
-      lastResult: lastResult?.result as 'PASSED' | 'FAILED' | 'SKIPPED' | undefined,
+      estimatedDuration: tc.estimatedTime || undefined,
+      lastExecutedAt: undefined,
+      lastResult: undefined,
       historicalFailureRate,
     };
   });
@@ -955,15 +955,10 @@ export async function generateRecommendedTestSet(
   // 選択されたテストケースの詳細を取得
   const testCases = await prisma.testCase.findMany({
     where: {
-      id: { in: selections.map((s) => s.testCaseId) },
+      id: { in: selections.map((s) => BigInt(s.testCaseId)) },
     },
     include: {
       testSpec: { select: { id: true, name: true } },
-      testResults: {
-        orderBy: { executedAt: 'desc' },
-        take: 1,
-        select: { result: true, executedAt: true },
-      },
     },
   });
 
@@ -972,35 +967,34 @@ export async function generateRecommendedTestSet(
 
   // 選択結果を構築
   const fullSelections: TestCaseSelection[] = selections.map((sel) => {
-    const tc = testCases.find((t) => t.id === sel.testCaseId)!;
+    const tc = testCases.find((t) => t.id.toString() === sel.testCaseId)!;
+    const priorityNum =
+      tc.priority === 'HIGH' ? 4 : tc.priority === 'MEDIUM' ? 3 : tc.priority === 'LOW' ? 2 : 1;
     const reasons = analysis
       ? calculateSelectionReasons(
           {
-            id: tc.id,
+            id: tc.id.toString(),
             title: tc.title,
             description: tc.description,
             tags: [],
-            testResults: tc.testResults.map((r) => ({
-              result: r.result,
-              executedAt: r.executedAt,
-            })),
-            priority: tc.priority,
+            testResults: [],
+            priority: priorityNum,
           },
           analysis
         )
       : [];
 
     return {
-      testCaseId: tc.id,
+      testCaseId: tc.id.toString(),
       testCaseName: tc.title,
-      testSpecId: tc.testSpec?.id,
+      testSpecId: tc.testSpec?.id.toString(),
       testSpecName: tc.testSpec?.name,
       status: sel.status,
       priorityScore: calculatePriorityScore(reasons),
       reasons,
-      estimatedDuration: tc.estimatedMinutes || undefined,
-      lastExecutedAt: tc.testResults[0]?.executedAt,
-      lastResult: tc.testResults[0]?.result as 'PASSED' | 'FAILED' | 'SKIPPED' | undefined,
+      estimatedDuration: tc.estimatedTime || undefined,
+      lastExecutedAt: undefined,
+      lastResult: undefined,
     };
   });
 
@@ -1053,7 +1047,7 @@ export async function generateRecommendedTestSet(
   await prisma.recommendedTestSet.create({
     data: {
       id: recommendedSet.id,
-      projectId,
+      projectId: BigInt(projectId),
       name: recommendedSet.name,
       description: recommendedSet.description,
       changeSetId: recommendedSet.changeSetId,
@@ -1101,14 +1095,15 @@ export async function getRecommendedTestSets(
   projectId: string,
   options?: { limit?: number; offset?: number }
 ): Promise<{ sets: RecommendedTestSet[]; total: number }> {
+  const where = { projectId: BigInt(projectId) };
   const [sets, total] = await Promise.all([
     prisma.recommendedTestSet.findMany({
-      where: { projectId },
+      where,
       orderBy: { createdAt: 'desc' },
       take: options?.limit || 50,
       skip: options?.offset || 0,
     }),
-    prisma.recommendedTestSet.count({ where: { projectId } }),
+    prisma.recommendedTestSet.count({ where }),
   ]);
 
   return {

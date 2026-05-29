@@ -29,6 +29,7 @@ import {
   type BugWithRelations,
   type BugStatus,
   type BugPriority,
+  type BugSeverity,
   type BugType,
   BugStatusLabels,
   BugPriorityLabels,
@@ -406,7 +407,7 @@ export default function BugsPage({ params }: BugsPageProps) {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+              <Select value={assigneeFilter} onValueChange={(v) => v && setAssigneeFilter(v)}>
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder="担当者" />
                 </SelectTrigger>
@@ -423,6 +424,7 @@ export default function BugsPage({ params }: BugsPageProps) {
               <Select
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value) => {
+                  if (!value) return;
                   const [field, order] = value.split('-') as [SortField, SortOrder];
                   setSortBy(field);
                   setSortOrder(order);
@@ -547,7 +549,9 @@ export default function BugsPage({ params }: BugsPageProps) {
                         <div className="flex items-center gap-2">
                           <span className="max-w-md truncate">{bug.title}</span>
                           {overdue && (
-                            <AlertTriangle className="size-4 text-destructive" title="期限超過" />
+                            <span title="期限超過">
+                              <AlertTriangle className="size-4 text-destructive" />
+                            </span>
                           )}
                         </div>
                       </TableCell>

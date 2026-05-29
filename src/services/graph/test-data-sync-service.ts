@@ -76,8 +76,8 @@ export async function syncTestCasesToGraph(options: SyncOptions = {}): Promise<S
         where: whereClause,
         include: {
           testSpec: true,
-          steps: true,
-          tags: { include: { tag: true } },
+          testSteps: true,
+          testCaseTags: { include: { tag: true } },
         },
         skip: offset,
         take: batchSize,
@@ -111,14 +111,14 @@ export async function syncTestCasesToGraph(options: SyncOptions = {}): Promise<S
               priority: testCase.priority,
               testType: testCase.testType,
               preconditions: testCase.preconditions || '',
-              status: testCase.status || 'ACTIVE',
-              tags: testCase.tags.map((t) => t.tag.name),
+              status: 'ACTIVE',
+              tags: testCase.testCaseTags.map((t) => t.tag.name),
             }
           );
           syncedNodes++;
 
           // Create TestStep nodes and relationships
-          for (const step of testCase.steps) {
+          for (const step of testCase.testSteps) {
             await writeQuery(
               `
               MERGE (ts:Knowledge:TestStep {sourceId: $sourceId})
@@ -167,7 +167,7 @@ export async function syncTestCasesToGraph(options: SyncOptions = {}): Promise<S
 
           // Create Tag nodes and relationships
           if (options.includeRelationships !== false) {
-            for (const tagRelation of testCase.tags) {
+            for (const tagRelation of testCase.testCaseTags) {
               const tag = tagRelation.tag;
               await writeQuery(
                 `
@@ -299,7 +299,7 @@ export async function syncRequirementsToGraph(options: SyncOptions = {}): Promis
               sourceId: req.id,
               title: req.title,
               description: req.description || '',
-              reqId: req.requirementId || req.id,
+              reqId: req.id,
               priority: req.priority,
               status: req.status,
               reqType: req.type,
@@ -410,9 +410,13 @@ export async function syncBugsToGraph(options: SyncOptions = {}): Promise<SyncRe
       const bugs = await prisma.bug.findMany({
         where: whereClause,
         include: {
-          testRunCase: {
+          testResult: {
             include: {
-              testCase: true,
+              testRunCase: {
+                include: {
+                  testCase: true,
+                },
+              },
             },
           },
         },
@@ -444,19 +448,19 @@ export async function syncBugsToGraph(options: SyncOptions = {}): Promise<SyncRe
               sourceId: bug.id,
               title: bug.title,
               description: bug.description || '',
-              bugId: bug.bugId || bug.id,
+              bugId: bug.id,
               severity: bug.severity,
               priority: bug.priority,
               status: bug.status,
               bugType: bug.type || 'BUG',
-              rootCause: bug.rootCause || '',
+              rootCause: '',
               stepsToReproduce: bug.stepsToReproduce || '',
             }
           );
           syncedNodes++;
 
           // Create bug-testcase relationship (FOUND_BY)
-          if (options.includeRelationships !== false && bug.testRunCase?.testCase) {
+          if (options.includeRelationships !== false && bug.testResult?.testRunCase?.testCase) {
             await writeQuery(
               `
               MATCH (b:Bug {sourceId: $bugId})
@@ -467,7 +471,7 @@ export async function syncBugsToGraph(options: SyncOptions = {}): Promise<SyncRe
               `,
               {
                 bugId: bug.id,
-                tcId: bug.testRunCase.testCase.id,
+                tcId: bug.testResult.testRunCase.testCase.id,
               }
             );
             syncedRelationships++;
@@ -651,10 +655,10 @@ export async function syncSingleTestCase(testCaseId: string): Promise<SyncResult
     }
 
     const testCase = await prisma.testCase.findUnique({
-      where: { id: testCaseId },
+      where: { id: BigInt(testCaseId) },
       include: {
-        steps: true,
-        tags: { include: { tag: true } },
+        testSteps: true,
+        testCaseTags: { include: { tag: true } },
       },
     });
 
@@ -694,8 +698,8 @@ export async function syncSingleTestCase(testCaseId: string): Promise<SyncResult
         priority: testCase.priority,
         testType: testCase.testType,
         preconditions: testCase.preconditions || '',
-        status: testCase.status || 'ACTIVE',
-        tags: testCase.tags.map((t) => t.tag.name),
+        status: 'ACTIVE',
+        tags: testCase.testCaseTags.map((t) => t.tag.name),
       }
     );
     syncedNodes++;
@@ -710,7 +714,7 @@ export async function syncSingleTestCase(testCaseId: string): Promise<SyncResult
     );
 
     // Create TestStep nodes
-    for (const step of testCase.steps) {
+    for (const step of testCase.testSteps) {
       await writeQuery(
         `
         MERGE (ts:Knowledge:TestStep {sourceId: $sourceId})
@@ -793,10 +797,14 @@ export async function syncSingleBug(bugId: string): Promise<SyncResult> {
     }
 
     const bug = await prisma.bug.findUnique({
-      where: { id: bugId },
+      where: { id: BigInt(bugId) },
       include: {
-        testRunCase: {
-          include: { testCase: true },
+        testResult: {
+          include: {
+            testRunCase: {
+              include: { testCase: true },
+            },
+          },
         },
       },
     });
@@ -833,19 +841,19 @@ export async function syncSingleBug(bugId: string): Promise<SyncResult> {
         sourceId: bug.id,
         title: bug.title,
         description: bug.description || '',
-        bugId: bug.bugId || bug.id,
+        bugId: bug.id,
         severity: bug.severity,
         priority: bug.priority,
         status: bug.status,
         bugType: bug.type || 'BUG',
-        rootCause: bug.rootCause || '',
+        rootCause: '',
         stepsToReproduce: bug.stepsToReproduce || '',
       }
     );
     syncedNodes++;
 
     // Update FOUND_BY relationship
-    if (bug.testRunCase?.testCase) {
+    if (bug.testResult?.testRunCase?.testCase) {
       await writeQuery(
         `
         MATCH (b:Bug {sourceId: $bugId})
@@ -856,7 +864,7 @@ export async function syncSingleBug(bugId: string): Promise<SyncResult> {
         `,
         {
           bugId: bug.id,
-          tcId: bug.testRunCase.testCase.id,
+          tcId: bug.testResult.testRunCase.testCase.id,
         }
       );
       syncedRelationships++;

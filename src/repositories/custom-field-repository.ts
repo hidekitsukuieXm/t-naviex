@@ -16,6 +16,7 @@ import {
   CustomFieldValueData,
   customFieldDefinitionInclude,
   customFieldValueInclude,
+  CustomFieldValueWithInclude,
 } from '@/types/custom-field';
 
 // ========================================
@@ -161,7 +162,7 @@ export async function updateCustomFieldDefinitionOrders(
  */
 export async function setCustomFieldValue(
   data: SetCustomFieldValueRequest
-): Promise<CustomFieldValue> {
+): Promise<CustomFieldValueWithInclude> {
   // 定義を取得してフィールドタイプを確認
   const definition = await prisma.customFieldDefinition.findUnique({
     where: { id: BigInt(data.definitionId) },
@@ -187,10 +188,10 @@ export async function setCustomFieldValue(
       entityId: BigInt(data.entityId),
       entityType: data.entityType,
       ...valueData,
-    },
-    update: valueData,
+    } as Prisma.CustomFieldValueUncheckedCreateInput,
+    update: valueData as Prisma.CustomFieldValueUncheckedUpdateInput,
     include: customFieldValueInclude,
-  });
+  }) as Promise<CustomFieldValueWithInclude>;
 }
 
 /**
@@ -227,8 +228,8 @@ export async function setCustomFieldValues(data: SetCustomFieldValuesRequest): P
           entityId: BigInt(data.entityId),
           entityType: data.entityType,
           ...valueData,
-        },
-        update: valueData,
+        } as Prisma.CustomFieldValueUncheckedCreateInput,
+        update: valueData as Prisma.CustomFieldValueUncheckedUpdateInput,
       });
     })
   );
@@ -240,7 +241,7 @@ export async function setCustomFieldValues(data: SetCustomFieldValuesRequest): P
 export async function getCustomFieldValues(
   entityId: number,
   entityType: CustomFieldTargetEntity
-): Promise<CustomFieldValue[]> {
+): Promise<CustomFieldValueWithInclude[]> {
   return prisma.customFieldValue.findMany({
     where: {
       entityId: BigInt(entityId),
@@ -262,7 +263,7 @@ export async function getCustomFieldValueByDefinition(
   definitionId: number,
   entityId: number,
   entityType: CustomFieldTargetEntity
-): Promise<CustomFieldValue | null> {
+): Promise<CustomFieldValueWithInclude | null> {
   return prisma.customFieldValue.findUnique({
     where: {
       definitionId_entityId_entityType: {
@@ -423,7 +424,7 @@ function mapValueToColumns(
         numberValue: null,
         dateValue: null,
         booleanValue: null,
-        jsonValue: Array.isArray(value) ? value : [value],
+        jsonValue: (Array.isArray(value) ? value : [value]) as Prisma.JsonValue,
       };
     default:
       return {

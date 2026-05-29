@@ -8,8 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import {
   getTestDesignKnowledgeById,
   updateTestDesignKnowledge,
@@ -32,7 +31,7 @@ interface RouteParams {
  * テスト設計ナレッジ詳細を取得
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -65,7 +64,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  * テスト設計ナレッジを更新
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -133,7 +132,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
  * テスト設計ナレッジを削除
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -154,7 +153,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
  * テスト設計ナレッジ操作（複製、使用記録）
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

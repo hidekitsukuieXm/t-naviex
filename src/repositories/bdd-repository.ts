@@ -5,7 +5,7 @@
  */
 
 import { Prisma, GherkinStepType, GherkinLanguage } from '@/generated/prisma';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { parseGherkin, validateGherkin } from '@/lib/gherkin-parser';
 import type { GherkinFeature } from '@/types/gherkin';
 
@@ -288,7 +288,8 @@ export async function upsertBddTestCase(params: CreateBddTestCaseParams) {
       parsedFeature: document.feature as unknown as Prisma.InputJsonValue,
       language,
       isValid,
-      parseErrors: errors.length > 0 ? (errors as unknown as Prisma.InputJsonValue) : null,
+      parseErrors:
+        errors.length > 0 ? (errors as unknown as Prisma.InputJsonValue) : Prisma.JsonNull,
     },
   });
 }

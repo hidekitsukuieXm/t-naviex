@@ -243,7 +243,7 @@ export function BaselineCompareDialog({
                         追加されたケースはありません
                       </p>
                     ) : (
-                      <Accordion type="multiple" className="w-full">
+                      <Accordion className="w-full">
                         {comparison.added.map((item) => (
                           <AccordionItem key={item.id} value={item.id}>
                             <AccordionTrigger className="hover:no-underline">
@@ -277,7 +277,7 @@ export function BaselineCompareDialog({
                         削除されたケースはありません
                       </p>
                     ) : (
-                      <Accordion type="multiple" className="w-full">
+                      <Accordion className="w-full">
                         {comparison.removed.map((item) => (
                           <AccordionItem key={item.id} value={item.id}>
                             <AccordionTrigger className="hover:no-underline">
@@ -311,7 +311,7 @@ export function BaselineCompareDialog({
                         変更されたケースはありません
                       </p>
                     ) : (
-                      <Accordion type="multiple" className="w-full">
+                      <Accordion className="w-full">
                         {comparison.modified.map((item) => (
                           <AccordionItem key={item.target.id} value={item.target.id}>
                             <AccordionTrigger className="hover:no-underline">

@@ -166,10 +166,8 @@ export function VersionRestore({
         </div>
 
         <div className="flex justify-end gap-2 mt-6">
-          <DialogClose asChild>
-            <Button variant="outline" disabled={loading}>
-              キャンセル
-            </Button>
+          <DialogClose render={<Button variant="outline" disabled={loading} />}>
+            キャンセル
           </DialogClose>
           <Button
             onClick={handleRestore}

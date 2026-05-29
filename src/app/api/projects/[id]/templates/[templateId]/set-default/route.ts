@@ -26,7 +26,7 @@ export async function POST(_request: Request, { params }: RouteParams) {
     const { id: projectId, templateId } = await params;
 
     // プロジェクト存在確認
-    const exists = await projectExists(projectId);
+    const exists = await projectExists(BigInt(projectId));
     if (!exists) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }

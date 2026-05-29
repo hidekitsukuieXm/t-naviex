@@ -149,18 +149,20 @@ export function WatchButton({
   // ウォッチ中で設定可能な場合はポップオーバー付き
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="default" size={size} disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <SpinnerIcon className="h-4 w-4 mr-1 animate-spin" />
-              処理中...
-            </>
-          ) : (
-            buttonContent
-          )}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button variant="default" size={size} disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <SpinnerIcon className="h-4 w-4 mr-1 animate-spin" />
+                処理中...
+              </>
+            ) : (
+              buttonContent
+            )}
+          </Button>
+        }
+      />
       <PopoverContent className="w-64" align="end">
         <div className="space-y-4">
           <div>

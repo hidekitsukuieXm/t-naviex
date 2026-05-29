@@ -388,8 +388,7 @@ export async function importFromXray(
           name: options.testSpecName || 'Xray Import',
           description: 'Xrayからインポートされたテストケース',
           status: 'DRAFT',
-          version: 1,
-          createdById: userId,
+          version: '1',
         },
       });
       testSpecId = testSpec.id;

@@ -13,7 +13,7 @@ import {
   updateWidgetPositions,
 } from '@/repositories/dashboard-repository';
 import { toDashboardSafe } from '@/types/dashboard';
-import { WidgetType } from '@/generated/prisma';
+import { WidgetType, Prisma } from '@/generated/prisma';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -42,7 +42,7 @@ const addWidgetSchema = z.object({
   y: z.number().int().min(0).optional(),
   width: z.number().int().min(1).max(12).optional(),
   height: z.number().int().min(1).max(12).optional(),
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
 });
 
 // PATCH用バリデーションスキーマ
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'バリデーションエラー', details: validation.error.errors },
+        { error: 'バリデーションエラー', details: validation.error.issues },
         { status: 400 }
       );
     }
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       y,
       width,
       height,
-      config,
+      config: config as Prisma.InputJsonValue | undefined,
     });
 
     return NextResponse.json({ dashboard: toDashboardSafe(updatedDashboard) }, { status: 201 });
@@ -148,7 +148,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'バリデーションエラー', details: validation.error.errors },
+        { error: 'バリデーションエラー', details: validation.error.issues },
         { status: 400 }
       );
     }

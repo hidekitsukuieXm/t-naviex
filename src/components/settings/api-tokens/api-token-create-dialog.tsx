@@ -157,12 +157,14 @@ export function ApiTokenCreateDialog({ onSuccess }: ApiTokenCreateDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          新規トークン作成
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            新規トークン作成
+          </Button>
+        }
+      />
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
         {step === 'form' ? (
           <>
@@ -201,9 +203,7 @@ export function ApiTokenCreateDialog({ onSuccess }: ApiTokenCreateDialogProps) {
                 <Label htmlFor="expiration">有効期限</Label>
                 <Select
                   value={expirationOption ?? 'null'}
-                  onValueChange={(value) =>
-                    setExpirationOption(value === 'null' ? null : value)
-                  }
+                  onValueChange={(value) => setExpirationOption(value === 'null' ? null : value)}
                   disabled={isLoading}
                 >
                   <SelectTrigger id="expiration">
@@ -211,10 +211,7 @@ export function ApiTokenCreateDialog({ onSuccess }: ApiTokenCreateDialogProps) {
                   </SelectTrigger>
                   <SelectContent>
                     {TOKEN_EXPIRATION_OPTIONS.map((option) => (
-                      <SelectItem
-                        key={option.value ?? 'null'}
-                        value={option.value ?? 'null'}
-                      >
+                      <SelectItem key={option.value ?? 'null'} value={option.value ?? 'null'}>
                         {option.label}
                       </SelectItem>
                     ))}
@@ -240,7 +237,8 @@ export function ApiTokenCreateDialog({ onSuccess }: ApiTokenCreateDialogProps) {
                           {group.name}
                         </Button>
                         <span className="text-xs text-muted-foreground">
-                          ({group.scopes.filter((s) => selectedScopes.includes(s)).length}/{group.scopes.length})
+                          ({group.scopes.filter((s) => selectedScopes.includes(s)).length}/
+                          {group.scopes.length})
                         </span>
                       </div>
                       <div className="ml-4 grid gap-2 sm:grid-cols-2">
@@ -277,12 +275,7 @@ export function ApiTokenCreateDialog({ onSuccess }: ApiTokenCreateDialogProps) {
               </div>
 
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClose}
-                  disabled={isLoading}
-                >
+                <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
                   キャンセル
                 </Button>
                 <Button type="submit" disabled={isLoading}>
@@ -325,11 +318,7 @@ export function ApiTokenCreateDialog({ onSuccess }: ApiTokenCreateDialogProps) {
                       className="absolute right-0 top-0 h-full"
                       onClick={() => setShowToken(!showToken)}
                     >
-                      {showToken ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
                   </div>
                   <Button

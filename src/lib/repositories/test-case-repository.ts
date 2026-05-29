@@ -850,7 +850,7 @@ import type {
   SearchHighlight,
 } from '@/types/test-case';
 import { ALL_SEARCHABLE_FIELDS } from '@/types/test-case';
-import { Prisma } from '@/generated/prisma/client';
+import { Prisma } from '@/generated/prisma';
 
 /**
  * テストケース全文検索

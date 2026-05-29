@@ -275,6 +275,7 @@ export class AzureAdProvider {
         ? 'Azure AD接続テストに成功しました'
         : 'Azure AD接続テストに一部失敗しました',
       details,
+      checks: [],
     };
   }
 

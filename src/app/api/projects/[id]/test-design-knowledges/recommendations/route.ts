@@ -5,8 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { getRecommendations } from '@/repositories/test-design-knowledge-repository';
 
 interface RouteParams {
@@ -20,7 +19,7 @@ interface RouteParams {
  * コンテキストに基づいてテスト設計ナレッジを推奨
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

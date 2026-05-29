@@ -150,7 +150,7 @@ export function ImpactAnalysisDisplay({ analysis }: ImpactAnalysisDisplayProps) 
       )}
 
       {/* 詳細アコーディオン */}
-      <Accordion type="multiple" className="space-y-2">
+      <Accordion className="space-y-2">
         {/* 影響モジュール */}
         {analysis.affectedModules.length > 0 && (
           <AccordionItem value="modules" className="border rounded-lg px-4">

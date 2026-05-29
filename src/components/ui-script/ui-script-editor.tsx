@@ -264,8 +264,8 @@ export function UiScriptEditor({ scripts, onRefresh }: UiScriptEditorProps) {
                   <Label htmlFor="trigger">トリガー</Label>
                   <Select
                     value={formData.trigger}
-                    onValueChange={(value: UiScriptTrigger) =>
-                      setFormData({ ...formData, trigger: value })
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, trigger: value as UiScriptTrigger })
                     }
                   >
                     <SelectTrigger id="trigger">

@@ -11,8 +11,24 @@ function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
-function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
-  return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
+// DialogTrigger with compatibility for both render prop and children
+interface DialogTriggerProps extends Omit<DialogPrimitive.Trigger.Props, 'render'> {
+  render?: React.ReactNode;
+  children?: React.ReactNode;
+}
+
+function DialogTrigger({ render, children, ...props }: DialogTriggerProps) {
+  // If render is provided, use it; otherwise use children as the trigger
+  const triggerElement = render ?? children;
+
+  // Cast to ReactElement since we know it will be rendered as a button trigger
+  return (
+    <DialogPrimitive.Trigger
+      data-slot="dialog-trigger"
+      render={triggerElement as React.ReactElement}
+      {...props}
+    />
+  );
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {

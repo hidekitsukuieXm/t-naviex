@@ -94,21 +94,23 @@ export function ShareDialog({ dashboard, onShare, onRevoke }: ShareDialogProps) 
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          {dashboard.isPublic ? (
-            <>
-              <Globe className="mr-2 h-4 w-4" />
-              共有中
-            </>
-          ) : (
-            <>
-              <GlobeLock className="mr-2 h-4 w-4" />
-              共有
-            </>
-          )}
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm">
+            {dashboard.isPublic ? (
+              <>
+                <Globe className="mr-2 h-4 w-4" />
+                共有中
+              </>
+            ) : (
+              <>
+                <GlobeLock className="mr-2 h-4 w-4" />
+                共有
+              </>
+            )}
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>ダッシュボードを共有</DialogTitle>

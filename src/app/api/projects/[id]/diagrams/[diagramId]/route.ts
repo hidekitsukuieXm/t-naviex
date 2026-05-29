@@ -256,11 +256,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         const startNodes = nodes.filter((n) => n.type === 'START');
         const endNodes = nodes.filter((n) => n.type === 'END');
 
-        if (startNodes.length === 0) {
+        const firstStartNode = startNodes[0];
+        if (!firstStartNode) {
           return NextResponse.json({ error: '開始ノードが見つかりません' }, { status: 400 });
         }
 
-        const startNodeId = startNodes[0].id;
+        const startNodeId = firstStartNode.id;
         const endNodeIds = endNodes.length > 0 ? endNodes.map((n) => n.id) : nodes.map((n) => n.id);
 
         // 既存のパスを削除

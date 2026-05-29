@@ -190,7 +190,7 @@ export function KnowledgeGraphView({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
   const [dimensions, setDimensions] = useState({ width: 600, height });
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const subgraphRef = useRef(subgraph);
 
   // Keep subgraph ref updated

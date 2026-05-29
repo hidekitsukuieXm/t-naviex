@@ -3,8 +3,8 @@ import { aiSettingsRepository } from '@/repositories/ai-settings-repository';
 import { promptTemplateRepository } from '@/repositories/prompt-template-repository';
 import { substituteVariables } from '@/types/prompt-template';
 
-export type BugSeverity = 'CRITICAL' | 'MAJOR' | 'MINOR' | 'TRIVIAL';
-export type BugPriority = 'URGENT' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type BugSeverity = 'BLOCKER' | 'CRITICAL' | 'MAJOR' | 'MINOR' | 'TRIVIAL';
+export type BugPriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export type RootCauseCategory =
   | 'CODING_ERROR'
   | 'DESIGN_FLAW'
@@ -107,6 +107,7 @@ export interface BugAnalysisResponse {
 }
 
 export const SEVERITY_INFO: Record<BugSeverity, { label: string; color: string }> = {
+  BLOCKER: { label: 'ブロッカー', color: 'purple' },
   CRITICAL: { label: '致命的', color: 'red' },
   MAJOR: { label: '重大', color: 'orange' },
   MINOR: { label: '軽微', color: 'yellow' },
@@ -231,8 +232,8 @@ ${codeContext || 'なし'}
 以下のJSON形式で出力してください:
 
 {
-  "overallSeverity": "CRITICAL|MAJOR|MINOR|TRIVIAL",
-  "estimatedPriority": "URGENT|HIGH|MEDIUM|LOW",
+  "overallSeverity": "BLOCKER|CRITICAL|MAJOR|MINOR|TRIVIAL",
+  "estimatedPriority": "CRITICAL|HIGH|MEDIUM|LOW",
   "rootCauseAnalysis": {
     "category": "CODING_ERROR|DESIGN_FLAW|REQUIREMENTS_GAP|INTEGRATION_ISSUE|ENVIRONMENT|DATA_ISSUE|UNKNOWN",
     "description": "根本原因の説明",
@@ -413,6 +414,7 @@ ${codeContext || 'なし'}
 
   private normalizeSeverity(severity: string): BugSeverity {
     const upper = severity.toUpperCase();
+    if (upper === 'BLOCKER' || upper === 'ブロッカー' || upper === '最重大') return 'BLOCKER';
     if (upper === 'CRITICAL' || upper === '致命的' || upper === '致命') return 'CRITICAL';
     if (upper === 'MAJOR' || upper === '重大' || upper === '高') return 'MAJOR';
     if (upper === 'MINOR' || upper === '軽微' || upper === '中') return 'MINOR';
@@ -422,7 +424,8 @@ ${codeContext || 'なし'}
 
   private normalizePriority(priority: string): BugPriority {
     const upper = priority.toUpperCase();
-    if (upper === 'URGENT' || upper === '緊急' || upper === '最高') return 'URGENT';
+    if (upper === 'CRITICAL' || upper === 'URGENT' || upper === '緊急' || upper === '最高')
+      return 'CRITICAL';
     if (upper === 'HIGH' || upper === '高') return 'HIGH';
     if (upper === 'MEDIUM' || upper === '中') return 'MEDIUM';
     if (upper === 'LOW' || upper === '低') return 'LOW';

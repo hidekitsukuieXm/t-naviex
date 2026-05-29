@@ -4,6 +4,7 @@
  * シングルサインオンのリポジトリ
  */
 
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import type {
   SsoConfiguration,
@@ -467,7 +468,7 @@ export async function logSsoLogin(
       errorMessage: options.errorMessage,
       ipAddress: options.ipAddress,
       userAgent: options.userAgent,
-      metadata: options.metadata,
+      metadata: options.metadata as Prisma.InputJsonValue | undefined,
     },
   });
 

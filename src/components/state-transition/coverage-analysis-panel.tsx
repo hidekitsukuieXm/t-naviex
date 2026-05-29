@@ -184,7 +184,7 @@ export function CoverageAnalysisPanel({ analysis, className }: CoverageAnalysisP
 
         {/* 分析日時 */}
         <div className="text-xs text-muted-foreground text-right">
-          分析日時: {new Date(analysis.createdAt).toLocaleString('ja-JP')}
+          分析日時: {new Date(analysis.timestamp).toLocaleString('ja-JP')}
         </div>
       </CardContent>
     </Card>

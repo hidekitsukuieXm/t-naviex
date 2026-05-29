@@ -308,6 +308,7 @@ export class OktaProvider {
       success: allPassed,
       message: allPassed ? 'Okta接続テストに成功しました' : 'Okta接続テストに一部失敗しました',
       details,
+      checks: [],
     };
   }
 

@@ -828,9 +828,7 @@ export async function getTestRunBurndownData(testRunId: bigint): Promise<Burndow
   // テストラン情報を取得
   const testRun = await prisma.testRun.findUnique({
     where: { id: testRunId },
-    select: {
-      startDate: true,
-      endDate: true,
+    include: {
       testRunCases: {
         select: {
           status: true,
@@ -855,13 +853,13 @@ export async function getTestRunBurndownData(testRunId: bigint): Promise<Burndow
 
   const totalCases = testRun.testRunCases.length;
   const completedStatuses = ['PASSED', 'FAILED', 'BLOCKED', 'SKIPPED'];
-  const completedCases = testRun.testRunCases.filter((trc) =>
+  const completedCases = testRun.testRunCases.filter((trc: { status: string }) =>
     completedStatuses.includes(trc.status)
   ).length;
   const remainingCases = totalCases - completedCases;
 
-  const startDate = testRun.startDate || new Date();
-  const endDate = testRun.endDate;
+  const startDate = testRun.actualStartDate || testRun.plannedStartDate || new Date();
+  const endDate = testRun.actualEndDate || testRun.plannedEndDate;
 
   // テスト結果から日別の完了数を取得
   const testResults = await prisma.testResult.findMany({
@@ -1143,13 +1141,10 @@ export async function getProjectBurndownData(projectId: bigint): Promise<Burndow
     },
     select: {
       id: true,
-      startDate: true,
-      endDate: true,
-      testRunCases: {
-        select: {
-          status: true,
-        },
-      },
+      plannedStartDate: true,
+      plannedEndDate: true,
+      actualStartDate: true,
+      actualEndDate: true,
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -1827,23 +1822,6 @@ export async function getProjectODCAnalysis(
       priority: true,
       createdAt: true,
       testResultId: true,
-      testResult: {
-        select: {
-          testRunCase: {
-            select: {
-              testCase: {
-                select: {
-                  testSpec: {
-                    select: {
-                      phase: true,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
     },
     orderBy: { createdAt: 'asc' },
   });
@@ -1930,7 +1908,8 @@ export async function getProjectODCAnalysis(
   // フェーズ別集計（テスト結果にリンクされているバグのみ）
   const phaseCounts: Record<string, number> = {};
   for (const bug of bugs) {
-    const phase = bug.testResult?.testRunCase?.testCase?.testSpec?.phase || 'UNKNOWN';
+    // phase情報はTestSpecには存在しないため、UNKNOWNを使用
+    const phase = 'UNKNOWN';
     phaseCounts[phase] = (phaseCounts[phase] || 0) + 1;
   }
   const phaseLabels: Record<string, string> = {

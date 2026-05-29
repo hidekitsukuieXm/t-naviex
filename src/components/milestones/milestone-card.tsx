@@ -34,7 +34,11 @@ export function MilestoneCard({ milestone, onEdit, onDelete, isDeleting }: Miles
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <CardTitle className="line-clamp-1 text-lg">{milestone.name}</CardTitle>
-              {isOverdue && <AlertTriangle className="size-4 text-destructive" title="期限超過" />}
+              {isOverdue && (
+                <span title="期限超過">
+                  <AlertTriangle className="size-4 text-destructive" />
+                </span>
+              )}
             </div>
             <CardDescription className="mt-1 line-clamp-2 min-h-[2.5rem]">
               {milestone.description || 'マイルストーンの説明がありません'}

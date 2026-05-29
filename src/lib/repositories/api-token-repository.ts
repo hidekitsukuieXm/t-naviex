@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import type { ApiTokenScope } from '@/types/api-token';
 
@@ -355,7 +356,7 @@ export async function logTokenUsage(data: {
       statusCode: data.statusCode,
       ipAddress: data.ipAddress ?? null,
       userAgent: data.userAgent ?? null,
-      requestBody: data.requestBody ?? null,
+      requestBody: data.requestBody ? (data.requestBody as Prisma.InputJsonValue) : Prisma.DbNull,
       responseTime: data.responseTime ?? null,
       errorMessage: data.errorMessage ?? null,
     },

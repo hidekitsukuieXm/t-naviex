@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import { Prisma } from '@/generated/prisma';
 import { getDashboardById, updateWidget, deleteWidget } from '@/repositories/dashboard-repository';
 import { toDashboardSafe } from '@/types/dashboard';
 
@@ -21,7 +22,7 @@ const updateWidgetSchema = z.object({
   y: z.number().int().min(0).optional(),
   width: z.number().int().min(1).max(12).optional(),
   height: z.number().int().min(1).max(12).optional(),
-  config: z.record(z.unknown()).optional(),
+  config: z.record(z.string(), z.unknown()).optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -64,12 +65,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'バリデーションエラー', details: validation.error.errors },
+        { error: 'バリデーションエラー', details: validation.error.issues },
         { status: 400 }
       );
     }
 
-    await updateWidget(widgetIdBigInt, validation.data);
+    const { title, config, ...restData } = validation.data;
+    await updateWidget(widgetIdBigInt, {
+      ...restData,
+      title: title ?? undefined,
+      config: config as Prisma.InputJsonValue | undefined,
+    });
 
     const updatedDashboard = await getDashboardById(dashboardId);
 

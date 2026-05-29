@@ -24,13 +24,13 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Okta認証エラー:', error);
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=okta_auth_failed&message=${encodeURIComponent(error)}`
+        `${process.env['NEXTAUTH_URL']}/login?error=okta_auth_failed&message=${encodeURIComponent(error)}`
       );
     }
 
     if (!code) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=okta_auth_failed&message=no_code`
+        `${process.env['NEXTAUTH_URL']}/login?error=okta_auth_failed&message=no_code`
       );
     }
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const savedState = request.cookies.get('okta_sso_state')?.value;
     if (!state || state !== savedState) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=okta_auth_failed&message=invalid_state`
+        `${process.env['NEXTAUTH_URL']}/login?error=okta_auth_failed&message=invalid_state`
       );
     }
 
@@ -58,21 +58,22 @@ export async function GET(request: NextRequest) {
 
     if (!config || !config.clientId || !config.clientSecret) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=okta_auth_failed&message=config_not_found`
+        `${process.env['NEXTAUTH_URL']}/login?error=okta_auth_failed&message=config_not_found`
       );
     }
 
-    const domain = config.metadata?.domain as string;
-    const apiToken = config.metadata?.apiToken as string | undefined;
+    const configMetadata = config.metadata as Record<string, unknown> | null;
+    const domain = configMetadata?.['domain'] as string;
+    const apiToken = configMetadata?.['apiToken'] as string | undefined;
 
     if (!domain) {
       return NextResponse.redirect(
-        `${process.env.NEXTAUTH_URL}/login?error=okta_auth_failed&message=domain_not_found`
+        `${process.env['NEXTAUTH_URL']}/login?error=okta_auth_failed&message=domain_not_found`
       );
     }
 
     // リダイレクトURIを構築
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env['NEXTAUTH_URL'] || 'http://localhost:3000';
     const redirectUri = `${baseUrl}/api/sso/okta/callback`;
 
     // プロバイダーを初期化
@@ -98,13 +99,13 @@ export async function GET(request: NextRequest) {
             success: false,
             errorCode: 'DOMAIN_NOT_ALLOWED',
             errorMessage: '許可されていないドメインです',
-            ipAddress: request.headers.get('x-forwarded-for') || request.ip || undefined,
+            ipAddress: request.headers.get('x-forwarded-for') || undefined,
             userAgent: request.headers.get('user-agent') || undefined,
           },
         });
 
         return NextResponse.redirect(
-          `${process.env.NEXTAUTH_URL}/login?error=okta_auth_failed&message=domain_not_allowed`
+          `${process.env['NEXTAUTH_URL']}/login?error=okta_auth_failed&message=domain_not_allowed`
         );
       }
     }
@@ -157,13 +158,13 @@ export async function GET(request: NextRequest) {
             success: false,
             errorCode: 'USER_NOT_FOUND',
             errorMessage: 'ユーザーが見つかりません',
-            ipAddress: request.headers.get('x-forwarded-for') || request.ip || undefined,
+            ipAddress: request.headers.get('x-forwarded-for') || undefined,
             userAgent: request.headers.get('user-agent') || undefined,
           },
         });
 
         return NextResponse.redirect(
-          `${process.env.NEXTAUTH_URL}/login?error=okta_auth_failed&message=user_not_found`
+          `${process.env['NEXTAUTH_URL']}/login?error=okta_auth_failed&message=user_not_found`
         );
       }
     }
@@ -176,7 +177,7 @@ export async function GET(request: NextRequest) {
         ssoUserId: ssoUserInfo.id,
         ssoEmail: ssoUserInfo.email,
         success: true,
-        ipAddress: request.headers.get('x-forwarded-for') || request.ip || undefined,
+        ipAddress: request.headers.get('x-forwarded-for') || undefined,
         userAgent: request.headers.get('user-agent') || undefined,
         metadata: {
           groups: ssoUserInfo.groups,
@@ -186,7 +187,7 @@ export async function GET(request: NextRequest) {
     });
 
     // セッション作成とリダイレクト
-    const response = NextResponse.redirect(`${process.env.NEXTAUTH_URL}/dashboard`);
+    const response = NextResponse.redirect(`${process.env['NEXTAUTH_URL']}/dashboard`);
 
     // セッションCookieをクリア
     response.cookies.delete('okta_sso_state');
@@ -196,7 +197,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Oktaコールバックエラー:', error);
     return NextResponse.redirect(
-      `${process.env.NEXTAUTH_URL}/login?error=okta_auth_failed&message=${encodeURIComponent(error instanceof Error ? error.message : 'unknown_error')}`
+      `${process.env['NEXTAUTH_URL']}/login?error=okta_auth_failed&message=${encodeURIComponent(error instanceof Error ? error.message : 'unknown_error')}`
     );
   }
 }

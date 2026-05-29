@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth';
 import {
   getTagsForTestCase,
   setTagsForTestCase,
@@ -22,16 +22,18 @@ export async function GET(
     }
 
     const { id: testSpecId, caseId } = await params;
+    const testSpecIdBigInt = BigInt(testSpecId);
+    const caseIdBigInt = BigInt(caseId);
 
     // Check test spec exists
-    const testSpec = await getTestSpecById(testSpecId);
+    const testSpec = await getTestSpecById(testSpecIdBigInt);
     if (!testSpec) {
       return NextResponse.json({ error: 'テスト仕様書が見つかりません。' }, { status: 404 });
     }
 
     // Check test case exists
-    const testCase = await getTestCaseById(caseId);
-    if (!testCase || testCase.testSpecId !== testSpecId) {
+    const testCase = await getTestCaseById(caseIdBigInt);
+    if (!testCase || testCase.testSpecId.toString() !== testSpecId) {
       return NextResponse.json({ error: 'テストケースが見つかりません。' }, { status: 404 });
     }
 
@@ -57,9 +59,11 @@ export async function PUT(
     }
 
     const { id: testSpecId, caseId } = await params;
+    const testSpecIdBigInt = BigInt(testSpecId);
+    const caseIdBigInt = BigInt(caseId);
 
     // Check test spec exists
-    const testSpec = await getTestSpecById(testSpecId);
+    const testSpec = await getTestSpecById(testSpecIdBigInt);
     if (!testSpec) {
       return NextResponse.json({ error: 'テスト仕様書が見つかりません。' }, { status: 404 });
     }
@@ -70,8 +74,8 @@ export async function PUT(
     }
 
     // Check test case exists
-    const testCase = await getTestCaseById(caseId);
-    if (!testCase || testCase.testSpecId !== testSpecId) {
+    const testCase = await getTestCaseById(caseIdBigInt);
+    if (!testCase || testCase.testSpecId.toString() !== testSpecId) {
       return NextResponse.json({ error: 'テストケースが見つかりません。' }, { status: 404 });
     }
 
@@ -86,7 +90,7 @@ export async function PUT(
     const tags = await setTagsForTestCase(caseId, tagIds);
 
     // Audit log
-    await logTestCaseUpdate(session.user.id, caseId, {
+    await logTestCaseUpdate(session.user.id, caseIdBigInt, {
       action: 'tags_updated',
       tagIds,
     });
@@ -110,9 +114,11 @@ export async function POST(
     }
 
     const { id: testSpecId, caseId } = await params;
+    const testSpecIdBigInt = BigInt(testSpecId);
+    const caseIdBigInt = BigInt(caseId);
 
     // Check test spec exists
-    const testSpec = await getTestSpecById(testSpecId);
+    const testSpec = await getTestSpecById(testSpecIdBigInt);
     if (!testSpec) {
       return NextResponse.json({ error: 'テスト仕様書が見つかりません。' }, { status: 404 });
     }
@@ -123,8 +129,8 @@ export async function POST(
     }
 
     // Check test case exists
-    const testCase = await getTestCaseById(caseId);
-    if (!testCase || testCase.testSpecId !== testSpecId) {
+    const testCase = await getTestCaseById(caseIdBigInt);
+    if (!testCase || testCase.testSpecId.toString() !== testSpecId) {
       return NextResponse.json({ error: 'テストケースが見つかりません。' }, { status: 404 });
     }
 
@@ -142,7 +148,7 @@ export async function POST(
     }
 
     // Audit log
-    await logTestCaseUpdate(session.user.id, caseId, {
+    await logTestCaseUpdate(session.user.id, caseIdBigInt, {
       action: 'tag_added',
       tagId,
     });
@@ -166,9 +172,11 @@ export async function DELETE(
     }
 
     const { id: testSpecId, caseId } = await params;
+    const testSpecIdBigInt = BigInt(testSpecId);
+    const caseIdBigInt = BigInt(caseId);
 
     // Check test spec exists
-    const testSpec = await getTestSpecById(testSpecId);
+    const testSpec = await getTestSpecById(testSpecIdBigInt);
     if (!testSpec) {
       return NextResponse.json({ error: 'テスト仕様書が見つかりません。' }, { status: 404 });
     }
@@ -179,8 +187,8 @@ export async function DELETE(
     }
 
     // Check test case exists
-    const testCase = await getTestCaseById(caseId);
-    if (!testCase || testCase.testSpecId !== testSpecId) {
+    const testCase = await getTestCaseById(caseIdBigInt);
+    if (!testCase || testCase.testSpecId.toString() !== testSpecId) {
       return NextResponse.json({ error: 'テストケースが見つかりません。' }, { status: 404 });
     }
 
@@ -198,7 +206,7 @@ export async function DELETE(
     }
 
     // Audit log
-    await logTestCaseUpdate(session.user.id, caseId, {
+    await logTestCaseUpdate(session.user.id, caseIdBigInt, {
       action: 'tag_removed',
       tagId,
     });

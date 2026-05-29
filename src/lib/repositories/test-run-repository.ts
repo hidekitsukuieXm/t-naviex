@@ -11,7 +11,11 @@ import type {
   UpdateTestRunInput,
   TestRunSearchParams,
 } from '@/types/test-run';
+import type { Prisma } from '@/generated/prisma';
 import { TEST_RUN_STATUS } from '@/types/test-run';
+
+// Re-export types for external use
+export type { TestRunSearchParams, CreateTestRunInput, TestRunStatus };
 
 // ============================================
 // セレクト定義
@@ -199,15 +203,7 @@ export async function getTestRuns(
   projectId: string,
   params: Partial<TestRunSearchParams> = {}
 ): Promise<TestRunWithRelations[]> {
-  type WhereClause = {
-    projectId: bigint;
-    milestoneId?: bigint | null;
-    configurationId?: bigint | null;
-    status?: string;
-    OR?: Array<{ name: { contains: string; mode: 'insensitive' } }>;
-  };
-
-  const where: WhereClause = {
+  const where: Prisma.TestRunWhereInput = {
     projectId: BigInt(projectId),
   };
 
@@ -223,7 +219,7 @@ export async function getTestRuns(
 
   // ステータスフィルター
   if (params.status) {
-    where.status = params.status;
+    where.status = params.status as Prisma.EnumTestRunStatusFilter;
   }
 
   // 検索クエリ
@@ -350,7 +346,7 @@ export async function updateTestRun(
 
   const testRun = await prisma.testRun.update({
     where: { id },
-    data: updateData,
+    data: updateData as Prisma.TestRunUpdateInput,
     select: testRunSelect,
   });
 
@@ -451,12 +447,12 @@ export async function configurationExistsInProject(
  * プロジェクトのテストラン数を取得
  */
 export async function getTestRunCount(projectId: bigint, status?: TestRunStatus): Promise<number> {
-  const where: { projectId: bigint; status?: string } = {
+  const where: Prisma.TestRunWhereInput = {
     projectId,
   };
 
   if (status) {
-    where.status = status;
+    where.status = status as Prisma.EnumTestRunStatusFilter;
   }
 
   return prisma.testRun.count({ where });
@@ -511,28 +507,29 @@ export async function createReRun(
   input: CreateReRunInput
 ): Promise<TestRunWithRelations> {
   // 元のテストランを取得
-  const sourceTestRun = await prisma.testRun.findUnique({
+  const sourceTestRunBase = await prisma.testRun.findUnique({
     where: { id: sourceTestRunId },
-    include: {
-      testRunCases: {
-        where: {
-          status: {
-            in: input.includeStatuses,
-          },
-        },
-        select: {
-          testCaseId: true,
-          assignedToId: true,
-        },
-      },
-    },
   });
 
-  if (!sourceTestRun || sourceTestRun.projectId !== projectId) {
+  if (!sourceTestRunBase || sourceTestRunBase.projectId !== projectId) {
     throw new Error('テストランが見つかりません');
   }
 
-  if (sourceTestRun.testRunCases.length === 0) {
+  // テストランケースを取得
+  const testRunCases = await prisma.testRunCase.findMany({
+    where: {
+      testRunId: sourceTestRunId,
+      status: {
+        in: input.includeStatuses as import('@/generated/prisma').TestRunCaseStatus[],
+      },
+    },
+    select: {
+      testCaseId: true,
+      assignedToId: true,
+    },
+  });
+
+  if (testRunCases.length === 0) {
     throw new Error('対象のテストケースがありません');
   }
 
@@ -542,12 +539,12 @@ export async function createReRun(
     const testRun = await tx.testRun.create({
       data: {
         projectId,
-        milestoneId: sourceTestRun.milestoneId,
-        configurationId: sourceTestRun.configurationId,
-        name: input.name || `${sourceTestRun.name} - Re-Run`,
-        description: input.description || `Re-Run of ${sourceTestRun.name}`,
+        milestoneId: sourceTestRunBase.milestoneId,
+        configurationId: sourceTestRunBase.configurationId,
+        name: input.name || `${sourceTestRunBase.name} - Re-Run`,
+        description: input.description || `Re-Run of ${sourceTestRunBase.name}`,
         status: TEST_RUN_STATUS.PLANNED,
-        totalCases: sourceTestRun.testRunCases.length,
+        totalCases: testRunCases.length,
         passedCases: 0,
         failedCases: 0,
         blockedCases: 0,
@@ -559,11 +556,11 @@ export async function createReRun(
 
     // テストランケースを作成
     await tx.testRunCase.createMany({
-      data: sourceTestRun.testRunCases.map((tc, index) => ({
+      data: testRunCases.map((tc, index) => ({
         testRunId: testRun.id,
         testCaseId: tc.testCaseId,
         assignedToId: input.assigneeId ? BigInt(input.assigneeId) : tc.assignedToId,
-        status: 'NOT_RUN',
+        status: 'NOT_RUN' as const,
         sortOrder: index + 1,
       })),
     });

@@ -6,7 +6,23 @@ import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { cn } from '@/lib/utils';
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from 'lucide-react';
 
-const Select = SelectPrimitive.Root;
+// Compatibility wrapper for Select to support simpler onValueChange signature
+interface SelectProps extends Omit<SelectPrimitive.Root.Props<string, false>, 'onValueChange'> {
+  onValueChange?: (value: string) => void;
+}
+
+function Select({ onValueChange, ...props }: SelectProps) {
+  const handleValueChange = React.useCallback(
+    (value: string | null) => {
+      if (value !== null && onValueChange) {
+        onValueChange(value);
+      }
+    },
+    [onValueChange]
+  );
+
+  return <SelectPrimitive.Root onValueChange={handleValueChange} {...props} />;
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

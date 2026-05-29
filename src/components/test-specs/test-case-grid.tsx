@@ -391,7 +391,7 @@ export function TestCaseGrid({
         params.set('sortOrder', sorting[0].desc ? 'desc' : 'asc');
       }
 
-      if (selectedSectionId !== null) {
+      if (selectedSectionId !== null && selectedSectionId !== undefined) {
         params.set('sectionId', selectedSectionId);
       }
 
@@ -438,7 +438,7 @@ export function TestCaseGrid({
 
   // Update cell value
   const updateCell = useCallback(
-    async (rowId: string, columnId: string, value: string | TestCasePriority | TestType) => {
+    async (rowId: string, columnId: string, value: string | TestCasePriority | TestType | null) => {
       try {
         const response = await fetch(`/api/test-specs/${testSpecId}/cases/${rowId}`, {
           method: 'PATCH',
@@ -711,7 +711,7 @@ export function TestCaseGrid({
                 onStartEdit={() =>
                   setEditingCell({
                     rowId: row.original.id,
-                    columnId: column.id,
+                    columnId: column.id ?? '',
                     value: row.original.description ?? '',
                   })
                 }

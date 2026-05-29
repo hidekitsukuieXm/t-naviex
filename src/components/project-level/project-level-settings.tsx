@@ -320,7 +320,7 @@ export function ProjectLevelSettings({ levels, onRefresh }: ProjectLevelSettings
                 </div>
               </div>
 
-              <Accordion type="multiple" className="w-full">
+              <Accordion className="w-full">
                 <AccordionItem value="features">
                   <AccordionTrigger>機能フラグ</AccordionTrigger>
                   <AccordionContent>

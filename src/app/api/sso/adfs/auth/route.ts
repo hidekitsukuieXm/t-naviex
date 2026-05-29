@@ -31,8 +31,9 @@ export async function GET() {
       return NextResponse.json({ error: 'ADFS設定が不完全です' }, { status: 400 });
     }
 
-    const federationMetadataUrl = config.metadata?.federationMetadataUrl as string;
-    const relyingPartyIdentifier = config.metadata?.relyingPartyIdentifier as string;
+    const metadata = config.metadata as Record<string, unknown> | null;
+    const federationMetadataUrl = metadata?.['federationMetadataUrl'] as string;
+    const relyingPartyIdentifier = metadata?.['relyingPartyIdentifier'] as string;
 
     if (!federationMetadataUrl || !relyingPartyIdentifier) {
       return NextResponse.json(
@@ -42,7 +43,7 @@ export async function GET() {
     }
 
     // リダイレクトURIを構築
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env['NEXTAUTH_URL'] || 'http://localhost:3000';
     const redirectUri = `${baseUrl}/api/sso/adfs/callback`;
 
     // state を生成（WS-Federation では wctx として使用）

@@ -12,9 +12,9 @@ import {
 import {
   getTestRuns,
   createTestRun,
-  type TestRunSearchParams,
   type CreateTestRunInput,
 } from '@/lib/repositories/test-run-repository';
+import type { TestRunSearchParams, TestRunStatus } from '@/types/test-run';
 import { getProjectById } from '@/lib/repositories/project-repository';
 
 // GET /api/v1/test-runs - テストラン一覧取得
@@ -26,25 +26,36 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       const { page, limit } = parsePaginationParams(searchParams);
 
       const projectId = searchParams.get('projectId');
-      const milestoneId = searchParams.get('milestoneId');
+      if (!projectId) {
+        return createErrorResponse(
+          ErrorCodes.VALIDATION_ERROR,
+          'プロジェクトIDは必須です。',
+          400,
+          requestId,
+          { field: 'projectId' }
+        );
+      }
 
-      const params: TestRunSearchParams = {
-        projectId: projectId ? BigInt(projectId) : undefined,
-        milestoneId: milestoneId ? BigInt(milestoneId) : undefined,
+      const milestoneId = searchParams.get('milestoneId');
+      const status = searchParams.get('status') as TestRunStatus | null;
+
+      const params: Partial<TestRunSearchParams> = {
+        milestoneId: milestoneId || undefined,
         query: searchParams.get('query') || undefined,
-        status: searchParams.get('status') || undefined,
-        page,
-        limit,
-        sortBy: (searchParams.get('sortBy') as TestRunSearchParams['sortBy']) || 'updatedAt',
-        sortOrder: (searchParams.get('sortOrder') as TestRunSearchParams['sortOrder']) || 'desc',
+        status: status || undefined,
       };
 
-      const result = await getTestRuns(params);
-      const pagination = createPaginationMeta(result.total, result.page, result.limit);
+      const testRuns = await getTestRuns(projectId, params);
+
+      // Manual pagination
+      const total = testRuns.length;
+      const startIndex = (page - 1) * limit;
+      const paginatedTestRuns = testRuns.slice(startIndex, startIndex + limit);
+      const pagination = createPaginationMeta(total, page, limit);
 
       return createSuccessResponse(
         {
-          testRuns: result.testRuns,
+          testRuns: paginatedTestRuns,
           pagination,
         },
         requestId
@@ -104,8 +115,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
 
       // プロジェクトの存在確認
-      const projectId = BigInt(body.projectId);
-      const project = await getProjectById(projectId);
+      const project = await getProjectById(BigInt(body.projectId));
       if (!project) {
         return createErrorResponse(
           ErrorCodes.NOT_FOUND,
@@ -116,31 +126,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
 
       const createData: CreateTestRunInput = {
-        projectId,
+        projectId: body.projectId,
         name: body.name.trim(),
         description: body.description || null,
-        milestoneId: body.milestoneId ? BigInt(body.milestoneId) : null,
-        configurationId: body.configurationId ? BigInt(body.configurationId) : null,
-        testCaseIds: body.testCaseIds?.map((id) => BigInt(id)) || [],
-        assigneeId: body.assigneeId ? BigInt(body.assigneeId) : null,
-        createdById: context.userId,
-        plannedStartDate: body.plannedStartDate ? new Date(body.plannedStartDate) : null,
-        plannedEndDate: body.plannedEndDate ? new Date(body.plannedEndDate) : null,
+        milestoneId: body.milestoneId || null,
+        configurationId: body.configurationId || null,
+        plannedStartDate: body.plannedStartDate || null,
+        plannedEndDate: body.plannedEndDate || null,
       };
 
       const testRun = await createTestRun(createData);
 
-      return NextResponse.json(
-        {
-          success: true,
-          data: { testRun },
-          meta: {
-            requestId,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        { status: 201, headers: { 'X-Request-Id': requestId } }
-      );
+      return createSuccessResponse({ testRun }, requestId);
     },
     { requiredScopes: ['WRITE_TEST_RUNS'] }
   );

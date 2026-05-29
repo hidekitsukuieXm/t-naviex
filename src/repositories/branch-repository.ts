@@ -4,7 +4,7 @@
  * テスト仕様書ブランチ管理のリポジトリ
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import {
   Branch,

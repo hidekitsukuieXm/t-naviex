@@ -62,7 +62,10 @@ export async function POST(request: Request, { params }: RouteParams) {
     // バリデーション
     const nameValidation = validateBranchName(body.name);
     if (!nameValidation.valid) {
-      return NextResponse.json({ error: nameValidation.message }, { status: 400 });
+      return NextResponse.json(
+        { error: nameValidation.errors[0] ?? 'ブランチ名が無効です。' },
+        { status: 400 }
+      );
     }
 
     if (!body.type || !Object.values(BranchType).includes(body.type)) {

@@ -193,9 +193,9 @@ async function getRelatedSuggestions(
   const resultIds = new Set(results.map((r) => r.node.id));
 
   const [bestPractices, testDesignKnowledge, bugCountermeasures] = await Promise.all([
-    getNodesByType('BestPractice', { limit: 5 }),
-    getNodesByType('TestDesignKnowledge', { limit: 5 }),
-    getNodesByType('BugCountermeasure', { limit: 5 }),
+    getNodesByType('BestPractice', 5),
+    getNodesByType('TestDesignKnowledge', 5),
+    getNodesByType('BugCountermeasure', 5),
   ]);
 
   // 関連クエリを生成

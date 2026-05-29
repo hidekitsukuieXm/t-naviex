@@ -5,7 +5,13 @@
  */
 
 import { useMemo, useState, useCallback } from 'react';
-import { Gantt, Task as GanttTask, ViewMode } from '@wamra/gantt-task-react';
+import {
+  Gantt,
+  Task as GanttTask,
+  ViewMode,
+  TaskOrEmpty,
+  Dependency,
+} from '@wamra/gantt-task-react';
 import '@wamra/gantt-task-react/dist/style.css';
 import type { Task } from '@/types/task';
 import type { Milestone } from '@/types/milestone';
@@ -88,6 +94,10 @@ function convertTaskToGanttTask(task: Task): GanttTask | null {
 
   const colors = getTaskStatusColor(task.status);
 
+  const dependencies: Dependency[] = task.parentId
+    ? [{ sourceId: `task-${task.parentId}`, sourceTarget: 'endOfTask', ownTarget: 'startOfTask' }]
+    : [];
+
   return {
     id: `task-${task.id}`,
     name: task.title,
@@ -98,11 +108,11 @@ function convertTaskToGanttTask(task: Task): GanttTask | null {
     assignees: [],
     isDisabled: task.status === 'COMPLETED' || task.status === 'CANCELLED',
     styles: {
-      backgroundColor: colors.bg,
-      progressColor: colors.progress,
-      progressSelectedColor: colors.progress,
+      barBackgroundColor: colors.bg,
+      barProgressColor: colors.progress,
+      barProgressSelectedColor: colors.progress,
     },
-    dependencies: task.parentId ? [`task-${task.parentId}`] : [],
+    dependencies,
   };
 }
 
@@ -125,8 +135,7 @@ function convertMilestoneToGanttTask(milestone: Milestone): GanttTask | null {
     assignees: [],
     isDisabled: milestone.status === 'COMPLETED' || milestone.status === 'CANCELLED',
     styles: {
-      backgroundColor: color,
-      progressColor: color,
+      milestoneBackgroundColor: color,
     },
   };
 }
@@ -142,7 +151,7 @@ export function GanttChart({
   onMilestoneClick,
   onTaskDateChange,
   onTaskProgressChange,
-  onTaskMove,
+  onTaskMove: _onTaskMove,
   showDependencies: initialShowDependencies = true,
   showTaskList: initialShowTaskList = true,
   enableDragAndDrop = true,
@@ -168,7 +177,7 @@ export function GanttChart({
 
   // クリックハンドラ
   const handleClick = useCallback(
-    (task: GanttTask) => {
+    (task: TaskOrEmpty) => {
       const [type, id] = task.id.split('-');
       if (type === 'task' && onTaskClick) {
         onTaskClick(id);
@@ -194,8 +203,9 @@ export function GanttChart({
 
   // 日付変更ハンドラ（ドラッグ&ドロップ移動・リサイズ）
   const handleDateChange = useCallback(
-    (task: GanttTask) => {
+    (task: TaskOrEmpty, _dependentTasks: readonly GanttTask[], _index: number) => {
       setIsDragging(false);
+      if (task.type === 'empty') return;
       const [type, id] = task.id.split('-');
       if (type === 'task' && onTaskDateChange) {
         onTaskDateChange(id, task.start, task.end);
@@ -206,7 +216,7 @@ export function GanttChart({
 
   // 進捗変更ハンドラ（進捗バードラッグ）
   const handleProgressChange = useCallback(
-    (task: GanttTask) => {
+    (task: GanttTask, _children: readonly GanttTask[], _index: number) => {
       setIsDragging(false);
       const [type, id] = task.id.split('-');
       if (type === 'task' && onTaskProgressChange) {
@@ -214,29 +224,6 @@ export function GanttChart({
       }
     },
     [onTaskProgressChange]
-  );
-
-  // タスク削除ハンドラ（依存関係削除時に使用）
-  const handleTaskDelete = useCallback(
-    (task: GanttTask) => {
-      const [type, id] = task.id.split('-');
-      if (type === 'task' && onTaskMove) {
-        // 親タスクからの依存関係を削除（ルートに移動）
-        onTaskMove(id, null);
-      }
-      return true; // 削除を許可
-    },
-    [onTaskMove]
-  );
-
-  // ドラッグ開始ハンドラ
-  const handleSelect = useCallback(
-    (_task: GanttTask, isSelected: boolean) => {
-      if (isSelected && enableDragAndDrop) {
-        setIsDragging(true);
-      }
-    },
-    [enableDragAndDrop]
   );
 
   // データがない場合
@@ -371,16 +358,16 @@ export function GanttChart({
           onDoubleClick={handleDoubleClick}
           onDateChange={enableDragAndDrop ? handleDateChange : undefined}
           onProgressChange={enableDragAndDrop ? handleProgressChange : undefined}
-          onTaskDelete={onTaskMove ? handleTaskDelete : undefined}
-          onSelect={handleSelect}
-          locale="ja-JP"
-          listCellWidth={showTaskList ? '200px' : ''}
-          columnWidth={zoom === 'day' ? 65 : zoom === 'week' ? 150 : 200}
-          ganttHeight={400}
-          barCornerRadius={4}
-          todayColor="rgba(59, 130, 246, 0.2)"
-          arrowColor={showDependencies ? '#6b7280' : 'transparent'}
-          arrowIndent={20}
+          distances={{
+            columnWidth: zoom === 'day' ? 65 : zoom === 'week' ? 150 : 200,
+            barCornerRadius: 4,
+            rowHeight: 50,
+            arrowIndent: showDependencies ? 20 : 0,
+          }}
+          colors={{
+            todayColor: 'rgba(59, 130, 246, 0.2)',
+            arrowColor: showDependencies ? '#6b7280' : 'transparent',
+          }}
         />
       </div>
     </div>

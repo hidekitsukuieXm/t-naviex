@@ -710,7 +710,10 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
       newIndex = currentIndex < filteredCases.length - 1 ? currentIndex + 1 : 0;
     }
 
-    setSelectedCaseId(filteredCases[newIndex].id);
+    const targetCase = filteredCases[newIndex];
+    if (targetCase) {
+      setSelectedCaseId(targetCase.id);
+    }
   };
 
   // Handle case update from form
@@ -838,7 +841,7 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                <Select value={assigneeFilter} onValueChange={(v) => v && setAssigneeFilter(v)}>
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="担当者" />
                   </SelectTrigger>
@@ -877,7 +880,7 @@ export default function ExecuteTestRunPage({ params }: ExecuteTestRunPageProps) 
                 <div className="space-y-2">
                   {/* Bulk assignee */}
                   <div className="flex items-center gap-2">
-                    <Select value={bulkAssignee} onValueChange={setBulkAssignee}>
+                    <Select value={bulkAssignee} onValueChange={(v) => v && setBulkAssignee(v)}>
                       <SelectTrigger className="flex-1">
                         <SelectValue placeholder="担当者を選択" />
                       </SelectTrigger>

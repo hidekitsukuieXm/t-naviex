@@ -53,9 +53,30 @@ export type AuditAction =
   | 'TEST_STEP_UPDATE'
   | 'TEST_STEP_DELETE'
   | 'TEST_STEP_REORDER'
+  // テストパラメータ関連
+  | 'TEST_PARAMETER_CREATE'
+  | 'TEST_PARAMETER_UPDATE'
+  | 'TEST_PARAMETER_DELETE'
+  // 監査レビュー関連
+  | 'AUDIT_REVIEW_SUBMIT'
+  | 'AUDIT_REVIEW_APPROVE'
+  | 'AUDIT_REVIEW_REJECT'
   // 設定関連
   | 'PASSWORD_POLICY_UPDATE'
   | 'SESSION_SETTINGS_UPDATE'
+  | 'LANGUAGE_CHANGE'
+  // プロジェクトレベル関連
+  | 'PROJECT_LEVEL_CREATE'
+  | 'PROJECT_LEVEL_UPDATE'
+  | 'PROJECT_LEVEL_DELETE'
+  // UIスクリプト関連
+  | 'UI_SCRIPT_CREATE'
+  | 'UI_SCRIPT_UPDATE'
+  | 'UI_SCRIPT_DELETE'
+  // ウォッチリスト関連
+  | 'WATCHLIST_ADD'
+  | 'WATCHLIST_UPDATE'
+  | 'WATCHLIST_REMOVE'
   // その他
   | 'AUDIT_LOG_EXPORT';
 
@@ -65,14 +86,19 @@ export type AuditTargetType =
   | 'ROLE'
   | 'PROJECT'
   | 'PROJECT_MEMBER'
+  | 'PROJECT_LEVEL'
+  | 'UI_SCRIPT'
   | 'TEST_SPEC'
   | 'TEST_SECTION'
   | 'TEST_CASE'
   | 'TEST_STEP'
+  | 'TEST_PARAMETER'
+  | 'AUDIT_REVIEW'
   | 'TAG'
   | 'PASSWORD_POLICY'
   | 'SESSION_SETTINGS'
   | 'AUDIT_LOG'
+  | 'WATCHLIST'
   | 'SYSTEM';
 
 // 監査ログエントリ
@@ -180,9 +206,30 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   TEST_STEP_UPDATE: 'テスト手順更新',
   TEST_STEP_DELETE: 'テスト手順削除',
   TEST_STEP_REORDER: 'テスト手順並び替え',
+  // テストパラメータ関連
+  TEST_PARAMETER_CREATE: 'テストパラメータ作成',
+  TEST_PARAMETER_UPDATE: 'テストパラメータ更新',
+  TEST_PARAMETER_DELETE: 'テストパラメータ削除',
+  // 監査レビュー関連
+  AUDIT_REVIEW_SUBMIT: '監査レビュー提出',
+  AUDIT_REVIEW_APPROVE: '監査レビュー承認',
+  AUDIT_REVIEW_REJECT: '監査レビュー却下',
   // 設定関連
   PASSWORD_POLICY_UPDATE: 'パスワードポリシー更新',
   SESSION_SETTINGS_UPDATE: 'セッション設定更新',
+  LANGUAGE_CHANGE: '言語設定変更',
+  // プロジェクトレベル関連
+  PROJECT_LEVEL_CREATE: 'プロジェクトレベル作成',
+  PROJECT_LEVEL_UPDATE: 'プロジェクトレベル更新',
+  PROJECT_LEVEL_DELETE: 'プロジェクトレベル削除',
+  // UIスクリプト関連
+  UI_SCRIPT_CREATE: 'UIスクリプト作成',
+  UI_SCRIPT_UPDATE: 'UIスクリプト更新',
+  UI_SCRIPT_DELETE: 'UIスクリプト削除',
+  // ウォッチリスト関連
+  WATCHLIST_ADD: 'ウォッチリスト追加',
+  WATCHLIST_UPDATE: 'ウォッチリスト更新',
+  WATCHLIST_REMOVE: 'ウォッチリスト削除',
   // その他
   AUDIT_LOG_EXPORT: '監査ログエクスポート',
 };
@@ -193,14 +240,19 @@ export const AUDIT_TARGET_TYPE_LABELS: Record<AuditTargetType, string> = {
   ROLE: 'ロール',
   PROJECT: 'プロジェクト',
   PROJECT_MEMBER: 'プロジェクトメンバー',
+  PROJECT_LEVEL: 'プロジェクトレベル',
+  UI_SCRIPT: 'UIスクリプト',
   TEST_SPEC: 'テスト仕様書',
   TEST_SECTION: 'テストセクション',
   TEST_CASE: 'テストケース',
   TEST_STEP: 'テスト手順',
+  TEST_PARAMETER: 'テストパラメータ',
+  AUDIT_REVIEW: '監査レビュー',
   TAG: 'タグ',
   PASSWORD_POLICY: 'パスワードポリシー',
   SESSION_SETTINGS: 'セッション設定',
   AUDIT_LOG: '監査ログ',
+  WATCHLIST: 'ウォッチリスト',
   SYSTEM: 'システム',
 };
 
@@ -214,6 +266,8 @@ export type AuditActionCategory =
   | 'test_section'
   | 'test_case'
   | 'test_step'
+  | 'test_parameter'
+  | 'audit_review'
   | 'tag'
   | 'settings'
   | 'other';
@@ -289,10 +343,34 @@ export function getActionCategory(action: AuditAction): AuditActionCategory {
   ) {
     return 'test_step';
   }
+  if (
+    action === 'TEST_PARAMETER_CREATE' ||
+    action === 'TEST_PARAMETER_UPDATE' ||
+    action === 'TEST_PARAMETER_DELETE'
+  ) {
+    return 'test_parameter';
+  }
+  if (
+    action === 'AUDIT_REVIEW_SUBMIT' ||
+    action === 'AUDIT_REVIEW_APPROVE' ||
+    action === 'AUDIT_REVIEW_REJECT'
+  ) {
+    return 'audit_review';
+  }
   if (action === 'TAG_CREATE' || action === 'TAG_UPDATE' || action === 'TAG_DELETE') {
     return 'tag';
   }
-  if (action === 'PASSWORD_POLICY_UPDATE' || action === 'SESSION_SETTINGS_UPDATE') {
+  if (
+    action === 'PASSWORD_POLICY_UPDATE' ||
+    action === 'SESSION_SETTINGS_UPDATE' ||
+    action === 'LANGUAGE_CHANGE' ||
+    action === 'PROJECT_LEVEL_CREATE' ||
+    action === 'PROJECT_LEVEL_UPDATE' ||
+    action === 'PROJECT_LEVEL_DELETE' ||
+    action === 'UI_SCRIPT_CREATE' ||
+    action === 'UI_SCRIPT_UPDATE' ||
+    action === 'UI_SCRIPT_DELETE'
+  ) {
     return 'settings';
   }
   return 'other';
@@ -308,6 +386,8 @@ export const AUDIT_ACTION_CATEGORY_LABELS: Record<AuditActionCategory, string> =
   test_section: 'テストセクション',
   test_case: 'テストケース',
   test_step: 'テスト手順',
+  test_parameter: 'テストパラメータ',
+  audit_review: '監査レビュー',
   tag: 'タグ',
   settings: '設定',
   other: 'その他',

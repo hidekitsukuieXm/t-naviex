@@ -64,7 +64,8 @@ describe('UI Scripts API', () => {
     it('should return 401 when not authenticated', async () => {
       mockAuth.mockResolvedValueOnce(null);
 
-      const response = await GET();
+      const request = new Request('http://localhost/api/settings/ui-scripts');
+      const response = await GET(request);
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -75,7 +76,8 @@ describe('UI Scripts API', () => {
       mockAuth.mockResolvedValueOnce(mockSession);
       mockFindMany.mockResolvedValueOnce([mockUiScript]);
 
-      const response = await GET();
+      const request = new Request('http://localhost/api/settings/ui-scripts');
+      const response = await GET(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -117,8 +119,10 @@ describe('UI Scripts API', () => {
     });
 
     it('should return 400 when duplicate name exists', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(mockUiScript);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(mockUiScript);
 
       const request = new Request('http://localhost/api/settings/ui-scripts', {
         method: 'POST',
@@ -133,9 +137,12 @@ describe('UI Scripts API', () => {
     });
 
     it('should create script when valid', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(null);
-      mockCreate.mockResolvedValueOnce(mockUiScript);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockCreate.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(null);
+      mockCreate.mockResolvedValue(mockUiScript);
 
       const request = new Request('http://localhost/api/settings/ui-scripts', {
         method: 'POST',
@@ -158,7 +165,9 @@ describe('UI Scripts API', () => {
 
   describe('GET /api/settings/ui-scripts/[id]', () => {
     it('should return 401 when not authenticated', async () => {
-      mockAuth.mockResolvedValueOnce(null);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockAuth.mockResolvedValue(null);
 
       const request = new Request('http://localhost/api/settings/ui-scripts/1');
       const response = await GET_SCRIPT(request, { params: Promise.resolve({ id: '1' }) });
@@ -169,8 +178,10 @@ describe('UI Scripts API', () => {
     });
 
     it('should return 404 when script not found', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(null);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(null);
 
       const request = new Request('http://localhost/api/settings/ui-scripts/999');
       const response = await GET_SCRIPT(request, { params: Promise.resolve({ id: '999' }) });
@@ -181,8 +192,10 @@ describe('UI Scripts API', () => {
     });
 
     it('should return script when found', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(mockUiScript);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(mockUiScript);
 
       const request = new Request('http://localhost/api/settings/ui-scripts/1');
       const response = await GET_SCRIPT(request, { params: Promise.resolve({ id: '1' }) });
@@ -277,9 +290,12 @@ describe('UI Scripts API', () => {
     });
 
     it('should delete script when valid', async () => {
-      mockAuth.mockResolvedValueOnce(mockSession);
-      mockFindUnique.mockResolvedValueOnce(mockUiScript);
-      mockDelete.mockResolvedValueOnce(mockUiScript);
+      mockAuth.mockReset();
+      mockFindUnique.mockReset();
+      mockDelete.mockReset();
+      mockAuth.mockResolvedValue(mockSession);
+      mockFindUnique.mockResolvedValue(mockUiScript);
+      mockDelete.mockResolvedValue(mockUiScript);
 
       const request = new Request('http://localhost/api/settings/ui-scripts/1', {
         method: 'DELETE',

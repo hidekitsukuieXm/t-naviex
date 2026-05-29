@@ -5,8 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { verifyConnection, getSession } from '@/lib/neo4j';
 
 /**
@@ -14,7 +13,7 @@ import { verifyConnection, getSession } from '@/lib/neo4j';
  * グラフ統計情報を取得
  */
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -61,19 +60,22 @@ export async function GET() {
       const totalNodesResult = await neo4jSession.run('MATCH (n) RETURN count(n) as total');
       const totalRelsResult = await neo4jSession.run('MATCH ()-[r]->() RETURN count(r) as total');
 
-      const totalNodes = totalNodesResult.records[0].get('total').toNumber();
-      const totalRelationships = totalRelsResult.records[0].get('total').toNumber();
+      const totalNodesRecord = totalNodesResult.records[0];
+      const totalRelsRecord = totalRelsResult.records[0];
+      const totalNodes = totalNodesRecord ? totalNodesRecord.get('total').toNumber() : 0;
+      const totalRelationships = totalRelsRecord ? totalRelsRecord.get('total').toNumber() : 0;
 
       // Get database size info (if available)
       let databaseInfo = null;
       try {
         const dbInfoResult = await neo4jSession.run('CALL dbms.components()');
-        if (dbInfoResult.records.length > 0) {
-          const record = dbInfoResult.records[0];
+        const dbRecord = dbInfoResult.records[0];
+        if (dbRecord) {
+          const versions = dbRecord.get('versions') as string[] | undefined;
           databaseInfo = {
-            name: record.get('name'),
-            version: record.get('versions')[0],
-            edition: record.get('edition'),
+            name: dbRecord.get('name'),
+            version: versions?.[0] ?? 'unknown',
+            edition: dbRecord.get('edition'),
           };
         }
       } catch {

@@ -298,7 +298,7 @@ export function TestabilityCheckDialog({
                   <div className="space-y-4 pr-4">
                     {/* Issues by category */}
                     {checkResult.issues.length > 0 ? (
-                      <Accordion type="multiple" defaultValue={['issues']}>
+                      <Accordion defaultValue={['issues']}>
                         <AccordionItem value="issues">
                           <AccordionTrigger>
                             <div className="flex items-center gap-2">

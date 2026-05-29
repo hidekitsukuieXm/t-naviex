@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth';
 import { getTagById, updateTag, deleteTag, getTagByName } from '@/lib/repositories/tag-repository';
 import { getProjectById } from '@/lib/repositories/project-repository';
 import { logTagUpdate, logTagDelete } from '@/lib/audit';
@@ -19,7 +19,7 @@ export async function GET(
     const { id: projectId, tagId } = await params;
 
     // Check project exists
-    const project = await getProjectById(projectId);
+    const project = await getProjectById(BigInt(projectId));
     if (!project) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }
@@ -56,7 +56,7 @@ export async function PUT(
     const { id: projectId, tagId } = await params;
 
     // Check project exists
-    const project = await getProjectById(projectId);
+    const project = await getProjectById(BigInt(projectId));
     if (!project) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }
@@ -126,7 +126,7 @@ export async function DELETE(
     const { id: projectId, tagId } = await params;
 
     // Check project exists
-    const project = await getProjectById(projectId);
+    const project = await getProjectById(BigInt(projectId));
     if (!project) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }

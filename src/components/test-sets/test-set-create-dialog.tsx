@@ -60,14 +60,16 @@ export function TestSetCreateDialog({ projectId, onSuccess, trigger }: TestSetCr
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button size="sm">
-            <Plus className="mr-2 size-4" />
-            新規作成
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          trigger || (
+            <Button size="sm">
+              <Plus className="mr-2 size-4" />
+              新規作成
+            </Button>
+          )
+        }
+      />
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>テストセットの作成</DialogTitle>

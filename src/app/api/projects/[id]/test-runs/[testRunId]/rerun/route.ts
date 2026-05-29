@@ -50,15 +50,19 @@ export async function GET(request: Request, { params }: RouteParams) {
     // ステータス別カウントを取得
     const statusCounts = await getTestRunCaseStatusCounts(BigInt(testRunId));
 
+    const failedCount = statusCounts['FAILED'] ?? 0;
+    const blockedCount = statusCounts['BLOCKED'] ?? 0;
+    const skippedCount = statusCounts['SKIPPED'] ?? 0;
+    const retestCount = statusCounts['RETEST'] ?? 0;
+
     return NextResponse.json({
       statusCounts,
       rerunCandidates: {
-        failed: statusCounts.FAILED,
-        blocked: statusCounts.BLOCKED,
-        skipped: statusCounts.SKIPPED,
-        retest: statusCounts.RETEST,
-        total:
-          statusCounts.FAILED + statusCounts.BLOCKED + statusCounts.SKIPPED + statusCounts.RETEST,
+        failed: failedCount,
+        blocked: blockedCount,
+        skipped: skippedCount,
+        retest: retestCount,
+        total: failedCount + blockedCount + skippedCount + retestCount,
       },
     });
   } catch (error) {

@@ -402,8 +402,7 @@ export async function importFromZephyr(
           name: options.testSpecName || 'Zephyr Import',
           description: 'Zephyrからインポートされたテストケース',
           status: 'DRAFT',
-          version: 1,
-          createdById: userId,
+          version: '1',
         },
       });
       testSpecId = testSpec.id;

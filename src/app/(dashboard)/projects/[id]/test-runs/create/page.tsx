@@ -329,15 +329,17 @@ export default function CreateTestRunPage({ params }: CreateTestRunPageProps) {
 
   const goNext = () => {
     const currentIndex = WIZARD_STEPS.findIndex((s) => s.key === currentStep);
-    if (currentIndex < WIZARD_STEPS.length - 1) {
-      goToStep(WIZARD_STEPS[currentIndex + 1].key);
+    const nextStep = WIZARD_STEPS[currentIndex + 1];
+    if (currentIndex < WIZARD_STEPS.length - 1 && nextStep) {
+      goToStep(nextStep.key);
     }
   };
 
   const goPrev = () => {
     const currentIndex = WIZARD_STEPS.findIndex((s) => s.key === currentStep);
-    if (currentIndex > 0) {
-      goToStep(WIZARD_STEPS[currentIndex - 1].key);
+    const prevStep = WIZARD_STEPS[currentIndex - 1];
+    if (currentIndex > 0 && prevStep) {
+      goToStep(prevStep.key);
     }
   };
 
@@ -511,7 +513,7 @@ export default function CreateTestRunPage({ params }: CreateTestRunPageProps) {
       {/* Step Content */}
       <Card>
         <CardHeader>
-          <CardTitle>{WIZARD_STEPS[currentStepIndex].label}</CardTitle>
+          <CardTitle>{WIZARD_STEPS[currentStepIndex]?.label ?? ''}</CardTitle>
           <CardDescription>
             {currentStep === 'basic' && 'テストランの基本情報を入力してください。'}
             {currentStep === 'cases' && 'テストランに含めるテストケースを選択してください。'}
@@ -548,7 +550,7 @@ export default function CreateTestRunPage({ params }: CreateTestRunPageProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="milestone">マイルストーン</Label>
-                  <Select value={milestoneId} onValueChange={setMilestoneId}>
+                  <Select value={milestoneId} onValueChange={(v) => v && setMilestoneId(v)}>
                     <SelectTrigger id="milestone">
                       <SelectValue placeholder="選択してください" />
                     </SelectTrigger>
@@ -565,7 +567,7 @@ export default function CreateTestRunPage({ params }: CreateTestRunPageProps) {
 
                 <div className="grid gap-2">
                   <Label htmlFor="configuration">コンフィギュレーション</Label>
-                  <Select value={configurationId} onValueChange={setConfigurationId}>
+                  <Select value={configurationId} onValueChange={(v) => v && setConfigurationId(v)}>
                     <SelectTrigger id="configuration">
                       <SelectValue placeholder="選択してください" />
                     </SelectTrigger>
@@ -655,7 +657,7 @@ export default function CreateTestRunPage({ params }: CreateTestRunPageProps) {
                   テスト仕様書がありません。
                 </div>
               ) : (
-                <Accordion type="multiple" value={expandedSpecs} className="space-y-2">
+                <Accordion multiple value={expandedSpecs} className="space-y-2">
                   {testSpecs.map((spec) => (
                     <AccordionItem key={spec.id} value={spec.id} className="rounded-lg border">
                       <AccordionTrigger
@@ -666,7 +668,9 @@ export default function CreateTestRunPage({ params }: CreateTestRunPageProps) {
                           <span className="font-medium">{spec.name}</span>
                           <div className="flex items-center gap-2">
                             {testCasesBySpec[spec.id] && (
-                              <Badge variant="outline">{testCasesBySpec[spec.id].length} 件</Badge>
+                              <Badge variant="outline">
+                                {testCasesBySpec[spec.id]?.length ?? 0} 件
+                              </Badge>
                             )}
                           </div>
                         </div>
@@ -754,7 +758,7 @@ export default function CreateTestRunPage({ params }: CreateTestRunPageProps) {
                 <>
                   <div className="flex flex-wrap items-center gap-4 rounded-lg bg-muted/50 p-4">
                     <Label className="text-sm font-medium">一括割当:</Label>
-                    <Select value={bulkAssigneeId} onValueChange={setBulkAssigneeId}>
+                    <Select value={bulkAssigneeId} onValueChange={(v) => v && setBulkAssigneeId(v)}>
                       <SelectTrigger className="w-[200px]">
                         <SelectValue placeholder="担当者を選択" />
                       </SelectTrigger>
@@ -810,12 +814,13 @@ export default function CreateTestRunPage({ params }: CreateTestRunPageProps) {
                           <TableCell>
                             <Select
                               value={assigneeMap[tc.id] || 'none'}
-                              onValueChange={(v) =>
+                              onValueChange={(v) => {
+                                if (!v) return;
                                 setAssigneeMap((prev) => ({
                                   ...prev,
                                   [tc.id]: v === 'none' ? '' : v,
-                                }))
-                              }
+                                }));
+                              }}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="未割当" />

@@ -11,7 +11,7 @@ import { z } from 'zod';
 // Tool request schema
 const toolRequestSchema = z.object({
   tool: z.string().min(1, 'Tool name is required'),
-  arguments: z.record(z.unknown()).optional().default({}),
+  arguments: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 // GET - List available tools
@@ -194,7 +194,6 @@ async function listProjects() {
     id: p.id.toString(),
     name: p.name,
     description: p.description,
-    prefix: p.prefix,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   }));
@@ -203,40 +202,39 @@ async function listProjects() {
 async function getTestCases(args: Record<string, unknown>) {
   const where: Record<string, unknown> = { deletedAt: null };
 
-  if (args.specId) {
-    where.testSpecId = BigInt(args.specId as string);
-  } else if (args.projectId) {
-    where.testSpec = { projectId: BigInt(args.projectId as string) };
+  if (args['specId']) {
+    where['testSpecId'] = BigInt(args['specId'] as string);
+  } else if (args['projectId']) {
+    where['testSpec'] = { projectId: BigInt(args['projectId'] as string) };
   }
 
-  if (args.status) where.status = args.status;
-  if (args.priority) where.priority = args.priority;
+  if (args['status']) where['status'] = args['status'];
+  if (args['priority']) where['priority'] = args['priority'];
 
   const testCases = await prisma.testCase.findMany({
     where,
     include: {
       testSpec: true,
-      testSteps: { orderBy: { stepNumber: 'asc' } },
+      testSteps: { orderBy: { stepNo: 'asc' } },
     },
     orderBy: { updatedAt: 'desc' },
-    take: (args.limit as number) || 50,
+    take: (args['limit'] as number) || 50,
   });
 
   return testCases.map((tc) => ({
     id: tc.id.toString(),
     specId: tc.testSpecId.toString(),
-    specTitle: tc.testSpec.title,
+    specTitle: tc.testSpec.name,
     title: tc.title,
     description: tc.description,
-    precondition: tc.precondition,
+    precondition: tc.preconditions,
     priority: tc.priority,
     testType: tc.testType,
-    status: tc.status,
     steps: tc.testSteps.map((step) => ({
       id: step.id.toString(),
-      stepNumber: step.stepNumber,
-      action: step.action || '',
-      expectedResult: step.expectedResult || '',
+      stepNumber: step.stepNo,
+      action: step.actionMd || '',
+      expectedResult: step.expectedMd || '',
     })),
     createdAt: tc.createdAt.toISOString(),
     updatedAt: tc.updatedAt.toISOString(),
@@ -245,7 +243,7 @@ async function getTestCases(args: Record<string, unknown>) {
 
 async function createTestCase(args: Record<string, unknown>) {
   const spec = await prisma.testSpec.findUnique({
-    where: { id: BigInt(args.specId as string) },
+    where: { id: BigInt(args['specId'] as string) },
   });
 
   if (!spec) {
@@ -253,52 +251,61 @@ async function createTestCase(args: Record<string, unknown>) {
   }
 
   const maxSortOrder = await prisma.testCase.aggregate({
-    where: { testSpecId: BigInt(args.specId as string), deletedAt: null },
+    where: { testSpecId: BigInt(args['specId'] as string), deletedAt: null },
     _max: { sortOrder: true },
   });
 
-  const steps = args.steps as Array<{ action: string; expectedResult: string }> | undefined;
+  const steps = args['steps'] as Array<{ action: string; expectedResult: string }> | undefined;
 
   const testCase = await prisma.testCase.create({
     data: {
-      testSpecId: BigInt(args.specId as string),
-      title: args.title as string,
-      description: (args.description as string) || null,
-      precondition: (args.precondition as string) || null,
-      priority: (args.priority as string) || 'MEDIUM',
-      testType: (args.testType as string) || null,
-      status: 'ACTIVE',
+      testSpecId: BigInt(args['specId'] as string),
+      title: args['title'] as string,
+      description: (args['description'] as string) || null,
+      preconditions: (args['precondition'] as string) || null,
+      priority: ((args['priority'] as string) || 'MEDIUM') as
+        | 'LOW'
+        | 'MEDIUM'
+        | 'HIGH'
+        | 'CRITICAL',
+      testType: ((args['testType'] as string) || 'FUNCTIONAL') as
+        | 'FUNCTIONAL'
+        | 'INTEGRATION'
+        | 'E2E'
+        | 'PERFORMANCE'
+        | 'SECURITY'
+        | 'USABILITY'
+        | 'OTHER',
       sortOrder: (maxSortOrder._max.sortOrder || 0) + 1,
       testSteps: steps
         ? {
             create: steps.map((step, index) => ({
-              stepNumber: index + 1,
-              action: step.action,
-              expectedResult: step.expectedResult,
+              stepNo: index + 1,
+              actionMd: step.action,
+              expectedMd: step.expectedResult,
             })),
           }
         : undefined,
     },
     include: {
-      testSteps: { orderBy: { stepNumber: 'asc' } },
+      testSteps: { orderBy: { stepNo: 'asc' } },
     },
   });
 
   return {
     id: testCase.id.toString(),
     specId: testCase.testSpecId.toString(),
-    specTitle: spec.title,
+    specTitle: spec.name,
     title: testCase.title,
     description: testCase.description,
-    precondition: testCase.precondition,
+    precondition: testCase.preconditions,
     priority: testCase.priority,
     testType: testCase.testType,
-    status: testCase.status,
     steps: testCase.testSteps.map((step) => ({
       id: step.id.toString(),
-      stepNumber: step.stepNumber,
-      action: step.action || '',
-      expectedResult: step.expectedResult || '',
+      stepNumber: step.stepNo,
+      action: step.actionMd || '',
+      expectedResult: step.expectedMd || '',
     })),
     createdAt: testCase.createdAt.toISOString(),
     updatedAt: testCase.updatedAt.toISOString(),
@@ -309,8 +316,8 @@ async function updateTestResult(args: Record<string, unknown>) {
   const testRunCase = await prisma.testRunCase.findUnique({
     where: {
       testRunId_testCaseId: {
-        testRunId: BigInt(args.testRunId as string),
-        testCaseId: BigInt(args.testCaseId as string),
+        testRunId: BigInt(args['testRunId'] as string),
+        testCaseId: BigInt(args['testCaseId'] as string),
       },
     },
     include: { testCase: true },
@@ -323,17 +330,17 @@ async function updateTestResult(args: Record<string, unknown>) {
   const updated = await prisma.testRunCase.update({
     where: { id: testRunCase.id },
     data: {
-      status: args.status as string,
-      comment: (args.comment as string) || testRunCase.comment,
-      executionTime: (args.executionTime as number) || testRunCase.executionTime,
+      status: args['status'] as 'NOT_RUN' | 'PASSED' | 'FAILED' | 'BLOCKED' | 'SKIPPED' | 'RETEST',
+      comment: (args['comment'] as string) || testRunCase.comment,
+      executionTime: (args['executionTime'] as number) || testRunCase.executionTime,
       executedAt: new Date(),
     },
   });
 
   return {
     success: true,
-    testRunId: args.testRunId,
-    testCaseId: args.testCaseId,
+    testRunId: args['testRunId'],
+    testCaseId: args['testCaseId'],
     testCaseTitle: testRunCase.testCase.title,
     status: updated.status,
     executedAt: updated.executedAt?.toISOString(),
@@ -342,16 +349,16 @@ async function updateTestResult(args: Record<string, unknown>) {
 
 async function getTestRuns(args: Record<string, unknown>) {
   const where: Record<string, unknown> = {
-    projectId: BigInt(args.projectId as string),
+    projectId: BigInt(args['projectId'] as string),
   };
 
-  if (args.status) where.status = args.status;
+  if (args['status']) where['status'] = args['status'];
 
   const testRuns = await prisma.testRun.findMany({
     where,
     include: { _count: { select: { testRunCases: true } } },
     orderBy: { updatedAt: 'desc' },
-    take: (args.limit as number) || 20,
+    take: (args['limit'] as number) || 20,
   });
 
   return Promise.all(
@@ -387,11 +394,11 @@ async function getTestRuns(args: Record<string, unknown>) {
 
 async function getBugs(args: Record<string, unknown>) {
   const where: Record<string, unknown> = {
-    projectId: BigInt(args.projectId as string),
+    projectId: BigInt(args['projectId'] as string),
   };
 
-  if (args.status) where.status = args.status;
-  if (args.priority) where.priority = args.priority;
+  if (args['status']) where['status'] = args['status'];
+  if (args['priority']) where['priority'] = args['priority'];
 
   const bugs = await prisma.bug.findMany({
     where,
@@ -400,7 +407,7 @@ async function getBugs(args: Record<string, unknown>) {
       reporter: { select: { id: true, name: true } },
     },
     orderBy: { updatedAt: 'desc' },
-    take: (args.limit as number) || 50,
+    take: (args['limit'] as number) || 50,
   });
 
   return bugs.map((b) => ({

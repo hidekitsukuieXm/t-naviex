@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import {
-  getRoles,
-  createRole,
-  isRoleNameTaken,
-  type CreateRoleData,
-} from '@/lib/repositories/role-repository';
+import { getRoles, createRole, isRoleNameTaken } from '@/lib/repositories/role-repository';
 import { logRoleCreate } from '@/lib/audit';
-import { validateRoleName, isSystemRole } from '@/types/role';
+import { validateRoleName, isSystemRole, type CreateRoleData } from '@/types/role';
 
 // GET /api/roles - ロール一覧取得
 export async function GET() {

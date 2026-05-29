@@ -235,7 +235,7 @@ export function SmartSelectionEditor({
           <ChangeSetForm
             changeSet={changeSet}
             onSave={handleSaveChangeSet}
-            onDelete={onDeleteChangeSet ? () => setShowDeleteDialog(true) : undefined}
+            onDelete={onDeleteChangeSet ? async () => setShowDeleteDialog(true) : undefined}
             isLoading={isSaving}
           />
         </TabsContent>

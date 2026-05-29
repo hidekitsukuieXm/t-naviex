@@ -157,7 +157,7 @@ function mapTdToolTestSuite(item: Record<string, unknown>): TdToolTestSuite {
     description: item.description ? String(item.description) : undefined,
     testCases: Array.isArray(item.testCases) ? item.testCases.map(mapTdToolTestCase) : undefined,
     children: Array.isArray(item.children || item.suites || item.subSuites)
-      ? (item.children || item.suites || (item.subSuites as Array<Record<string, unknown>>)).map(
+      ? ((item.children || item.suites || item.subSuites) as Array<Record<string, unknown>>).map(
           mapTdToolTestSuite
         )
       : undefined,
@@ -204,7 +204,7 @@ function mapTdToolTestCase(item: Record<string, unknown>): TdToolTestCase {
   const relatedRequirements: string[] = [];
   if (Array.isArray(item.relatedRequirements || item.requirements || item.reqs)) {
     relatedRequirements.push(
-      ...(item.relatedRequirements || item.requirements || (item.reqs as string[])).map(String)
+      ...((item.relatedRequirements || item.requirements || item.reqs) as string[]).map(String)
     );
   }
 
@@ -323,8 +323,7 @@ export async function importFromTdTool(
           name: options.testSpecName || 'TD Tool Import',
           description: 'TDテスト設計ツールからインポートされたテストケース',
           status: 'DRAFT',
-          version: 1,
-          createdById: userId,
+          version: '1',
         },
       });
       testSpecId = testSpec.id;
@@ -417,7 +416,6 @@ async function importTdToolTestSuites(
           testSpecId,
           parentId: parentSectionId,
           name: suite.name,
-          description: suite.description || null,
           sortOrder: sortOrder++,
         },
       });
@@ -620,7 +618,7 @@ export async function exportToTdTool(
         deletedAt: null,
       },
       include: {
-        steps: {
+        testSteps: {
           orderBy: { stepNo: 'asc' },
         },
         section: true,
@@ -652,8 +650,8 @@ export async function exportToTdTool(
           tags: tc.tags,
         };
 
-        if (options.includeSteps && tc.steps.length > 0) {
-          tdCase.steps = tc.steps.map((step) => ({
+        if (options.includeSteps && tc.testSteps.length > 0) {
+          tdCase.steps = tc.testSteps.map((step) => ({
             stepNo: step.stepNo,
             action: step.actionMd,
             expectedResult: step.expectedMd || '',

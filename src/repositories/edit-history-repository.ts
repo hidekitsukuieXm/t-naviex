@@ -4,7 +4,7 @@
  * テストケース編集履歴のリポジトリ
  */
 
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import {
   EditHistory,
   EditOperationType,

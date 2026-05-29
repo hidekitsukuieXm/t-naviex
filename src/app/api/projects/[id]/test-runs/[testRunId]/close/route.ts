@@ -51,15 +51,17 @@ export async function GET(request: Request, { params }: RouteParams) {
     // ステータス別カウントを取得
     const statusCounts = await getTestRunCaseStatusCounts(BigInt(testRunId));
     const total = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
-    const executed = total - statusCounts.NOT_RUN;
-    const passRate = executed > 0 ? Math.round((statusCounts.PASSED / executed) * 100) : 0;
+    const notRunCount = statusCounts['NOT_RUN'] ?? 0;
+    const passedCount = statusCounts['PASSED'] ?? 0;
+    const executed = total - notRunCount;
+    const passRate = executed > 0 ? Math.round((passedCount / executed) * 100) : 0;
 
     return NextResponse.json({
       statusCounts,
       summary: {
         total,
         executed,
-        notExecuted: statusCounts.NOT_RUN,
+        notExecuted: notRunCount,
         passRate,
       },
     });

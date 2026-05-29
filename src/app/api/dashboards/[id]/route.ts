@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { z } from 'zod';
+import { Prisma } from '@/generated/prisma';
 import {
   getDashboardById,
   updateDashboard,
@@ -26,7 +27,7 @@ const updateDashboardSchema = z.object({
   description: z.string().optional().nullable(),
   isDefault: z.boolean().optional(),
   isPublic: z.boolean().optional(),
-  layout: z.record(z.unknown()).optional(),
+  layout: z.record(z.string(), z.unknown()).optional(),
   duplicate: z.boolean().optional(), // 複製モード
   newName: z.string().optional(), // 複製時の新しい名前
 });
@@ -82,7 +83,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'バリデーションエラー', details: validation.error.errors },
+        { error: 'バリデーションエラー', details: validation.error.issues },
         { status: 400 }
       );
     }
@@ -102,7 +103,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { duplicate, newName, ...updateData } = validation.data;
+    const { duplicate, newName, description, layout, ...updateData } = validation.data;
 
     // 複製モードの場合
     if (duplicate) {
@@ -110,8 +111,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ dashboard: toDashboardSafe(duplicated) });
     }
 
-    // 通常更新
-    const dashboard = await updateDashboard(dashboardId, updateData);
+    // 通常更新 (null を undefined に変換, layout を InputJsonValue にキャスト)
+    const dashboard = await updateDashboard(dashboardId, {
+      ...updateData,
+      description: description ?? undefined,
+      layout: layout as Prisma.InputJsonValue | undefined,
+    });
 
     return NextResponse.json({ dashboard: toDashboardSafe(dashboard) });
   } catch (error) {

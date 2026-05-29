@@ -433,3 +433,10 @@ export const customFieldDefinitionInclude = {
 export const customFieldValueInclude = {
   definition: true,
 } satisfies Prisma.CustomFieldValueInclude;
+
+/**
+ * CustomFieldValue with definition included (Prisma type)
+ */
+export type CustomFieldValueWithInclude = Prisma.CustomFieldValueGetPayload<{
+  include: typeof customFieldValueInclude;
+}>;

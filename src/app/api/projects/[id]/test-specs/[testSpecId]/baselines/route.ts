@@ -7,8 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getBaselines, createBaseline } from '@/repositories/baseline-repository';
 import { validateCreateBaselineInput, type BaselineStatus } from '@/types/baseline';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 
 interface RouteParams {
   params: Promise<{ id: string; testSpecId: string }>;
@@ -52,7 +51,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }

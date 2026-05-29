@@ -281,7 +281,7 @@ export class TestabilityCheckerService {
             }))
           : [],
         recommendations: Array.isArray(parsed.recommendations)
-          ? parsed.recommendations.map((r) => String(r))
+          ? parsed.recommendations.map((r: unknown) => String(r))
           : [],
       };
     } catch (error) {

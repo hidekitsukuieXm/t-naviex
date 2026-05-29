@@ -31,13 +31,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Okta設定が不完全です' }, { status: 400 });
     }
 
-    const domain = config.metadata?.domain as string;
+    const metadata = config.metadata as Record<string, unknown> | null;
+    const domain = metadata?.['domain'] as string;
     if (!domain) {
       return NextResponse.json({ error: 'Oktaドメインが設定されていません' }, { status: 400 });
     }
 
     // リダイレクトURIを構築
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const baseUrl = process.env['NEXTAUTH_URL'] || 'http://localhost:3000';
     const redirectUri = `${baseUrl}/api/sso/okta/callback`;
 
     // state と nonce を生成

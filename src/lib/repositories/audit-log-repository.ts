@@ -1,3 +1,4 @@
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import type {
   AuditLog,
@@ -16,7 +17,7 @@ export async function createAuditLog(data: CreateAuditLogInput): Promise<void> {
       action: data.action,
       targetType: data.targetType,
       targetId: data.targetId ?? null,
-      details: data.details ?? null,
+      details: data.details ? (data.details as Prisma.InputJsonValue) : Prisma.DbNull,
       ipAddress: data.ipAddress ?? null,
       userAgent: data.userAgent ?? null,
     },

@@ -108,9 +108,17 @@ export function ApiTokenCard({ token, onRevoke, onDelete }: ApiTokenCardProps) {
       return <Badge variant="destructive">期限切れ</Badge>;
     }
     if (remainingDays !== null && remainingDays <= 7) {
-      return <Badge variant="warning">まもなく期限切れ</Badge>;
+      return (
+        <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-50">
+          まもなく期限切れ
+        </Badge>
+      );
     }
-    return <Badge variant="success">有効</Badge>;
+    return (
+      <Badge variant="outline" className="border-green-500 text-green-600 bg-green-50">
+        有効
+      </Badge>
+    );
   };
 
   const getExpirationText = () => {
@@ -235,7 +243,8 @@ export function ApiTokenCard({ token, onRevoke, onDelete }: ApiTokenCardProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>トークンを失効しますか？</AlertDialogTitle>
             <AlertDialogDescription>
-              トークン「{token.name}」を失効すると、このトークンを使用したAPIアクセスはできなくなります。
+              トークン「{token.name}
+              」を失効すると、このトークンを使用したAPIアクセスはできなくなります。
               この操作は取り消せません。
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -259,8 +268,7 @@ export function ApiTokenCard({ token, onRevoke, onDelete }: ApiTokenCardProps) {
             <AlertDialogTitle>トークンを削除しますか？</AlertDialogTitle>
             <AlertDialogDescription>
               トークン「{token.name}」を完全に削除します。
-              使用ログも含めて全てのデータが削除されます。
-              この操作は取り消せません。
+              使用ログも含めて全てのデータが削除されます。 この操作は取り消せません。
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

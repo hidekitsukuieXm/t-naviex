@@ -88,7 +88,7 @@ function transformToWithTags(
     examples: data.examples as string[],
     references: data.references as string[],
     tags: data.tags.map((t) => t.tag),
-  };
+  } as BugCountermeasureWithTags;
 }
 
 function transformToWithFeedbacks(
@@ -108,7 +108,7 @@ function transformToWithFeedbacks(
     examples: data.examples as string[],
     references: data.references as string[],
     tags: data.tags.map((t) => t.tag),
-  };
+  } as BugCountermeasureWithFeedbacks;
 }
 
 // ========================================
@@ -139,7 +139,7 @@ export async function createBugCountermeasure(
             })),
           }
         : undefined,
-    },
+    } as Prisma.BugCountermeasureCreateInput,
     include: tagsInclude,
   });
 
@@ -186,7 +186,7 @@ export async function updateBugCountermeasure(
             })),
           }
         : undefined,
-    },
+    } as Prisma.BugCountermeasureUpdateInput,
     include: tagsInclude,
   });
 
@@ -223,17 +223,17 @@ export async function duplicateBugCountermeasure(
       category: original.category,
       status: 'DRAFT',
       severityLevel: original.severityLevel,
-      rootCauses: original.rootCauses,
-      symptoms: original.symptoms,
-      preventionMeasures: original.preventionMeasures,
-      detectionMethods: original.detectionMethods,
-      correctionSteps: original.correctionSteps,
-      affectedAreas: original.affectedAreas,
-      testCoverage: original.testCoverage,
-      examples: original.examples,
-      references: original.references,
+      rootCauses: original.rootCauses as Prisma.InputJsonValue,
+      symptoms: original.symptoms as Prisma.InputJsonValue,
+      preventionMeasures: original.preventionMeasures as Prisma.InputJsonValue,
+      detectionMethods: original.detectionMethods as Prisma.InputJsonValue,
+      correctionSteps: original.correctionSteps as Prisma.InputJsonValue,
+      affectedAreas: original.affectedAreas as Prisma.InputJsonValue,
+      testCoverage: original.testCoverage as Prisma.InputJsonValue,
+      examples: original.examples as Prisma.InputJsonValue,
+      references: original.references as Prisma.InputJsonValue,
       version: '1.0.0',
-      metadata: original.metadata,
+      metadata: original.metadata as Prisma.InputJsonValue,
       createdById,
       tags: {
         create: original.tags.map((t) => ({

@@ -101,35 +101,39 @@ export function ProjectSelector({ collapsed = false }: ProjectSelectorProps) {
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          role="combobox"
-          aria-expanded={open}
-          aria-label="プロジェクトを選択"
-          className={cn(
-            'flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-sidebar-accent',
-            collapsed ? 'justify-center w-full' : 'w-full'
-          )}
-        >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <FolderKanban className="size-4" />
-          </div>
-          {!collapsed && (
-            <>
-              <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium">
-                  {selectedProject?.name || 'プロジェクトを選択'}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {selectedProject ? PROJECT_STATUS_LABELS[selectedProject.status] : 'プロジェクト'}
-                </span>
-              </div>
-              <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
-            </>
-          )}
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="ghost"
+            role="combobox"
+            aria-expanded={open}
+            aria-label="プロジェクトを選択"
+            className={cn(
+              'flex items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-sidebar-accent',
+              collapsed ? 'justify-center w-full' : 'w-full'
+            )}
+          >
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <FolderKanban className="size-4" />
+            </div>
+            {!collapsed && (
+              <>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-sm font-medium">
+                    {selectedProject?.name || 'プロジェクトを選択'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {selectedProject
+                      ? PROJECT_STATUS_LABELS[selectedProject.status]
+                      : 'プロジェクト'}
+                  </span>
+                </div>
+                <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground" />
+              </>
+            )}
+          </Button>
+        }
+      />
       <PopoverContent className="w-72 p-0" align="start">
         <Command shouldFilter={false}>
           <CommandInput

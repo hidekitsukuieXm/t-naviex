@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // Mock Prisma generated enums
-vi.mock('@/generated/prisma', () => ({
+vi.mock('@prisma/client', () => ({
   // User enums
   UserStatus: {
     ACTIVE: 'ACTIVE',

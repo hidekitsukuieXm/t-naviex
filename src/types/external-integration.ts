@@ -116,7 +116,7 @@ export const createExternalIntegrationSchema = z.object({
   username: z.string().max(100).optional().nullable(),
   password: z.string().max(500).optional().nullable(),
   projectKey: z.string().max(100).optional().nullable(),
-  options: z.record(z.unknown()).optional().nullable(),
+  options: z.record(z.string(), z.unknown()).optional().nullable(),
   isEnabled: z.boolean().optional().default(true),
 });
 
@@ -136,7 +136,7 @@ export const updateExternalIntegrationSchema = z.object({
   username: z.string().max(100).optional().nullable(),
   password: z.string().max(500).optional().nullable(),
   projectKey: z.string().max(100).optional().nullable(),
-  options: z.record(z.unknown()).optional().nullable(),
+  options: z.record(z.string(), z.unknown()).optional().nullable(),
   isEnabled: z.boolean().optional(),
 });
 

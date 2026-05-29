@@ -88,13 +88,19 @@ export function calculateCombinationCount(parameters: TestParameter[]): number {
 }
 
 // バリデーション
-export function validateTestParameter(data: CreateTestParameterData | UpdateTestParameterData): {
+export function validateTestParameter(
+  data: CreateTestParameterData | UpdateTestParameterData,
+  isCreate: boolean = true
+): {
   valid: boolean;
   errors: string[];
 } {
   const errors: string[] = [];
 
-  if ('name' in data && data.name !== undefined) {
+  // 作成時はnameが必須
+  if (isCreate && (!('name' in data) || !data.name || data.name.trim().length === 0)) {
+    errors.push('パラメーター名は必須です。');
+  } else if ('name' in data && data.name !== undefined) {
     if (!data.name || data.name.trim().length === 0) {
       errors.push('パラメーター名は必須です。');
     } else if (data.name.length > 255) {

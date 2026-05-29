@@ -131,19 +131,21 @@ export function KnowledgeSearchBar({
         </div>
 
         <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="icon" className="relative">
-              <Filter className="h-4 w-4" />
-              {filterCount > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -right-1 -top-1 h-4 w-4 p-0 text-[10px]"
-                >
-                  {filterCount}
-                </Badge>
-              )}
-            </Button>
-          </PopoverTrigger>
+          <PopoverTrigger
+            render={
+              <Button variant="outline" size="icon" className="relative">
+                <Filter className="h-4 w-4" />
+                {filterCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -right-1 -top-1 h-4 w-4 p-0 text-[10px]"
+                  >
+                    {filterCount}
+                  </Badge>
+                )}
+              </Button>
+            }
+          />
           <PopoverContent className="w-80" align="end">
             <div className="space-y-4">
               <div className="flex items-center justify-between">

@@ -45,7 +45,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     // プロジェクト存在確認
-    const exists = await projectExists(projectId);
+    const exists = await projectExists(BigInt(projectId));
     if (!exists) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }
@@ -88,7 +88,7 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
 
     // プロジェクト存在確認
-    const exists = await projectExists(projectId);
+    const exists = await projectExists(BigInt(projectId));
     if (!exists) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }

@@ -72,18 +72,34 @@ export async function GET(request: NextRequest) {
     }
 
     // プロバイダーを初期化
-    const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+    const baseUrl = process.env['NEXTAUTH_URL'] || request.nextUrl.origin;
     const redirectUri = `${baseUrl}/api/sso/azure-ad/callback`;
-    const provider = AzureAdProvider.fromSsoConfiguration(
-      {
-        ...config,
-        id: config.id.toString(),
-        metadata: config.metadata as Record<string, unknown> | undefined,
-        createdAt: config.createdAt,
-        updatedAt: config.updatedAt,
-      },
-      redirectUri
-    );
+    const ssoConfig = {
+      id: config.id.toString(),
+      name: config.name,
+      displayName: config.displayName,
+      providerType: config.providerType,
+      providerName: config.providerName,
+      status: config.status,
+      clientId: config.clientId ?? undefined,
+      clientSecret: config.clientSecret ?? undefined,
+      authorizationUrl: config.authorizationUrl ?? undefined,
+      tokenUrl: config.tokenUrl ?? undefined,
+      userInfoUrl: config.userInfoUrl ?? undefined,
+      scopes: config.scopes ?? undefined,
+      entityId: config.entityId ?? undefined,
+      ssoUrl: config.ssoUrl ?? undefined,
+      sloUrl: config.sloUrl ?? undefined,
+      certificate: config.certificate ?? undefined,
+      privateKey: config.privateKey ?? undefined,
+      allowedDomains: config.allowedDomains ?? undefined,
+      autoProvision: config.autoProvision,
+      defaultRoleId: config.defaultRoleId?.toString() ?? undefined,
+      metadata: config.metadata as Record<string, unknown> | undefined,
+      createdAt: config.createdAt,
+      updatedAt: config.updatedAt,
+    };
+    const provider = AzureAdProvider.fromSsoConfiguration(ssoConfig, redirectUri);
 
     // ユーザー情報を取得
     const ssoUserInfo = await provider.authenticateUser(code);
@@ -136,9 +152,7 @@ export async function GET(request: NextRequest) {
         data: {
           email: userData.email,
           name: userData.name,
-          externalId: userData.externalId,
           status: 'ACTIVE',
-          metadata: userData.metadata,
           ...(roleIds.length > 0 && {
             userRoles: {
               create: roleIds.map((roleId) => ({
@@ -175,12 +189,6 @@ export async function GET(request: NextRequest) {
 
     // ログイン成功をログ
     await logSsoAttempt(config.id, ssoUserInfo, true, null, null, user.id);
-
-    // 最終ログイン時刻を更新
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
 
     // セッションを作成（JWTトークンを発行）
     // NextAuth.jsのcredentialsプロバイダーを使ってログイン

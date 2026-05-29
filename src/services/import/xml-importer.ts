@@ -246,8 +246,7 @@ export async function importFromXml(
           name: options.testSpecName || 'XML Import',
           description: 'XMLからインポートされたテストケース',
           status: 'DRAFT',
-          version: 1,
-          createdById: userId,
+          version: '1',
         },
       });
       testSpecId = testSpec.id;
@@ -275,7 +274,6 @@ export async function importFromXml(
             data: {
               testSpecId,
               name: sectionName,
-              description: sectionDesc,
               sortOrder: sectionOrder++,
             },
           });

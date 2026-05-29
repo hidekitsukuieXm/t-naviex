@@ -95,7 +95,7 @@ function transformToWithTags(
     benefits: data.benefits as string[],
     risks: data.risks as string[],
     tags: data.tags.map((t) => t.tag),
-  };
+  } as BestPracticeWithTags;
 }
 
 /**
@@ -113,7 +113,7 @@ function transformToWithFeedbacks(
     benefits: data.benefits as string[],
     risks: data.risks as string[],
     tags: data.tags.map((t) => t.tag),
-  };
+  } as BestPracticeWithFeedbacks;
 }
 
 // ========================================
@@ -142,7 +142,7 @@ export async function createBestPractice(
             })),
           }
         : undefined,
-    },
+    } as Prisma.BestPracticeCreateInput,
     include: tagsInclude,
   });
 
@@ -194,7 +194,7 @@ export async function updateBestPractice(
             })),
           }
         : undefined,
-    },
+    } as Prisma.BestPracticeUpdateInput,
     include: tagsInclude,
   });
 
@@ -236,12 +236,12 @@ export async function duplicateBestPractice(
       category: original.category,
       complexity: original.complexity,
       status: 'DRAFT',
-      applicability: original.applicability,
-      examples: original.examples,
-      benefits: original.benefits,
-      risks: original.risks,
+      applicability: original.applicability as Prisma.InputJsonValue,
+      examples: original.examples as Prisma.InputJsonValue,
+      benefits: original.benefits as Prisma.InputJsonValue,
+      risks: original.risks as Prisma.InputJsonValue,
       version: '1.0.0',
-      metadata: original.metadata,
+      metadata: original.metadata as Prisma.InputJsonValue,
       createdById,
       tags: {
         create: original.tags.map((t) => ({

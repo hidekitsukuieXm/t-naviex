@@ -5,10 +5,9 @@ import {
   updateRole,
   deleteRole,
   isRoleNameTaken,
-  type UpdateRoleData,
 } from '@/lib/repositories/role-repository';
 import { logRoleUpdate, logRoleDelete } from '@/lib/audit';
-import { validateRoleName, isSystemRole } from '@/types/role';
+import { validateRoleName, isSystemRole, type UpdateRoleData } from '@/types/role';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -141,6 +140,10 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     const role = await updateRole(roleId, updateData);
+
+    if (!role) {
+      return NextResponse.json({ error: 'ロールが見つかりません。' }, { status: 404 });
+    }
 
     // 監査ログを記録
     await logRoleUpdate(session.user.id, id, {

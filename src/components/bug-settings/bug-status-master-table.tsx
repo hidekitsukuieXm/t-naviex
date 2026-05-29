@@ -290,8 +290,8 @@ export function BugStatusMasterTable() {
               <Label htmlFor="category">カテゴリ</Label>
               <Select
                 value={formData.category}
-                onValueChange={(value: StatusCategory) =>
-                  setFormData({ ...formData, category: value })
+                onValueChange={(value) =>
+                  setFormData({ ...formData, category: value as StatusCategory })
                 }
               >
                 <SelectTrigger>

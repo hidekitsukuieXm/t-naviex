@@ -29,6 +29,9 @@ export const BUG_FIELD_LABELS: Record<string, string> = {
   externalUrl: '外部URL',
 };
 
+// Alias for backwards compatibility
+export const BUG_HISTORY_FIELD_LABELS = BUG_FIELD_LABELS;
+
 // ============================================
 // Zod Schemas
 // ============================================

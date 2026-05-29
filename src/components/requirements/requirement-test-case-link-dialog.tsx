@@ -178,12 +178,14 @@ export function RequirementTestCaseLinkDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Link2 className="mr-2 size-4" />
-          テストケース紐付け
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline" size="sm">
+            <Link2 className="mr-2 size-4" />
+            テストケース紐付け
+          </Button>
+        }
+      />
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>テストケースの紐付け</DialogTitle>

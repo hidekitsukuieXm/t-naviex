@@ -15,6 +15,7 @@ import {
   type TestSpecSearchParams,
   type CreateTestSpecInput,
 } from '@/lib/repositories/test-spec-repository';
+import type { TestSpecStatus } from '@/types/test-spec';
 import { getProjectById } from '@/lib/repositories/project-repository';
 
 // GET /api/v1/test-specs - テスト仕様書一覧取得
@@ -26,11 +27,12 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       const { page, limit } = parsePaginationParams(searchParams);
 
       const projectId = searchParams.get('projectId');
+      const status = searchParams.get('status') as TestSpecStatus | null;
 
       const params: TestSpecSearchParams = {
-        projectId: projectId ? BigInt(projectId) : undefined,
+        projectId: projectId || undefined,
         query: searchParams.get('query') || undefined,
-        status: searchParams.get('status') || undefined,
+        status: status || undefined,
         page,
         limit,
         sortBy: (searchParams.get('sortBy') as TestSpecSearchParams['sortBy']) || 'updatedAt',
@@ -97,8 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
 
       // プロジェクトの存在確認
-      const projectId = BigInt(body.projectId);
-      const project = await getProjectById(projectId);
+      const project = await getProjectById(BigInt(body.projectId));
       if (!project) {
         return createErrorResponse(
           ErrorCodes.NOT_FOUND,
@@ -109,26 +110,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
 
       const createData: CreateTestSpecInput = {
-        projectId,
+        projectId: body.projectId,
         name: body.name.trim(),
         description: body.description || null,
-        status: body.status || 'DRAFT',
-        createdById: context.userId,
+        status: (body.status as TestSpecStatus) || 'DRAFT',
       };
 
       const testSpec = await createTestSpec(createData);
 
-      return NextResponse.json(
-        {
-          success: true,
-          data: { testSpec },
-          meta: {
-            requestId,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        { status: 201, headers: { 'X-Request-Id': requestId } }
-      );
+      return createSuccessResponse({ testSpec }, requestId);
     },
     { requiredScopes: ['WRITE_TEST_SPECS'] }
   );

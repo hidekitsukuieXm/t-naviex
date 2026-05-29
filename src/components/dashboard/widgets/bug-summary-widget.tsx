@@ -202,7 +202,9 @@ export function BugSummaryWidget({ widget, projectId }: BugSummaryWidgetProps) {
           <div className="space-y-1">
             {groupData.map((item) => (
               <div key={item.key} className="flex items-center justify-between text-sm">
-                <span className={cn('text-muted-foreground', 'color' in item && item.color)}>
+                <span
+                  className={cn('text-muted-foreground', 'color' in item && (item.color as string))}
+                >
                   {item.label}
                 </span>
                 <span className="font-medium">{item.count}</span>

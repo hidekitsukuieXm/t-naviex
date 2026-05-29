@@ -297,6 +297,7 @@ export default function ProjectsPage() {
               <Select
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value) => {
+                  if (!value) return;
                   const [field, order] = value.split('-') as [SortField, SortOrder];
                   setSortBy(field);
                   setSortOrder(order);

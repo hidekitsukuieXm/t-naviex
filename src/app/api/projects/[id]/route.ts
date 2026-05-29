@@ -155,7 +155,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     const updateData: {
       name?: string;
       description?: string | null;
-      status?: string;
+      status?: 'ACTIVE' | 'INACTIVE' | 'ARCHIVED' | 'PLANNING';
       projectType?: string | null;
       targetVersion?: string | null;
     } = {};
@@ -169,7 +169,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     if (body.status !== undefined) {
-      updateData.status = body.status;
+      updateData.status = body.status as 'ACTIVE' | 'INACTIVE' | 'ARCHIVED' | 'PLANNING';
     }
 
     if (body.projectType !== undefined) {

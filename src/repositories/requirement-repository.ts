@@ -588,7 +588,7 @@ export async function getTraceabilityMatrix(projectId: bigint): Promise<Traceabi
               testSpecId: true,
               testSpec: {
                 select: {
-                  title: true,
+                  name: true,
                 },
               },
             },
@@ -608,11 +608,15 @@ export async function getTraceabilityMatrix(projectId: bigint): Promise<Traceabi
       status: r.status as RequirementStatus,
       priority: r.priority as RequirementPriority,
     },
-    testCases: r.testCases.map((tc) => ({
-      id: tc.testCase.id,
-      title: tc.testCase.title,
-      testSpecId: tc.testCase.testSpecId,
-      testSpecTitle: tc.testCase.testSpec.title,
-    })),
+    testCases: r.testCases.map(
+      (tc: {
+        testCase: { id: bigint; title: string; testSpecId: bigint; testSpec: { name: string } };
+      }) => ({
+        id: tc.testCase.id,
+        title: tc.testCase.title,
+        testSpecId: tc.testCase.testSpecId,
+        testSpecTitle: tc.testCase.testSpec.name,
+      })
+    ),
   }));
 }

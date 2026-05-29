@@ -13,10 +13,13 @@ import {
   getProjects,
   createProject,
   isProjectNameTaken,
+} from '@/lib/repositories/project-repository';
+import {
+  validateProject,
+  type ProjectStatus,
   type CreateProjectInput,
   type ProjectSearchParams,
-} from '@/lib/repositories/project-repository';
-import { validateProject, type ProjectStatus } from '@/types/project';
+} from '@/types/project';
 
 // GET /api/v1/projects - プロジェクト一覧取得
 export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse>> {
@@ -125,17 +128,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
       const project = await createProject(createData);
 
-      return NextResponse.json(
-        {
-          success: true,
-          data: { project },
-          meta: {
-            requestId,
-            timestamp: new Date().toISOString(),
-          },
-        },
-        { status: 201, headers: { 'X-Request-Id': requestId } }
-      );
+      return createSuccessResponse({ project }, requestId);
     },
     { requiredScopes: ['WRITE_PROJECTS'] }
   );

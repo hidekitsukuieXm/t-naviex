@@ -100,7 +100,7 @@ export function createErrorResponse(
     error: {
       code,
       message,
-      ...(details && { details }),
+      ...(details ? { details } : {}),
     },
     meta: {
       requestId,
@@ -287,7 +287,7 @@ export async function withApiAuth<T>(
       response.headers.set('X-RateLimit-Reset', rateLimitInfo.resetAt.toISOString());
     }
 
-    return response;
+    return response as NextResponse<ApiResponse<T> | ApiResponse<never>>;
   } catch (error) {
     console.error('API authentication error:', error);
 

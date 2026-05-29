@@ -129,7 +129,7 @@ export function BaselineViewDialog({
                   </div>
                 ) : (
                   <ScrollArea className="h-[400px]">
-                    <Accordion type="multiple" className="w-full">
+                    <Accordion className="w-full">
                       {baseline.items.map((item, index) => (
                         <AccordionItem key={item.id} value={item.id}>
                           <AccordionTrigger className="hover:no-underline">

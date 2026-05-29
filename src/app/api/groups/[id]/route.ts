@@ -81,16 +81,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })),
       memberCount: group._count.userGroups,
       childrenCount: group._count.children,
-      members: group.userGroups?.map((ug) => ({
-        userId: ug.userId.toString(),
-        groupId: ug.groupId.toString(),
-        user: {
-          id: ug.user.id.toString(),
-          email: ug.user.email,
-          name: ug.user.name,
-        },
-        joinedAt: ug.createdAt,
-      })),
+      members: group.userGroups?.map((ug) => {
+        const user =
+          'user' in ug ? (ug as { user: { id: bigint; email: string; name: string } }).user : null;
+        return {
+          userId: ug.userId.toString(),
+          groupId: ug.groupId.toString(),
+          user: user
+            ? {
+                id: user.id.toString(),
+                email: user.email,
+                name: user.name,
+              }
+            : undefined,
+          joinedAt: ug.createdAt,
+        };
+      }),
       path,
       createdAt: group.createdAt,
       updatedAt: group.updatedAt,
@@ -273,15 +279,16 @@ async function getGroupPath(groupId: bigint): Promise<{ id: string; name: string
   let currentId: bigint | null = groupId;
 
   while (currentId) {
-    const group = await prisma.group.findUnique({
-      where: { id: currentId },
-      select: { id: true, name: true, parentId: true },
-    });
+    const foundGroup: { id: bigint; name: string; parentId: bigint | null } | null =
+      await prisma.group.findUnique({
+        where: { id: currentId },
+        select: { id: true, name: true, parentId: true },
+      });
 
-    if (!group) break;
+    if (!foundGroup) break;
 
-    path.unshift({ id: group.id.toString(), name: group.name });
-    currentId = group.parentId;
+    path.unshift({ id: foundGroup.id.toString(), name: foundGroup.name });
+    currentId = foundGroup.parentId;
   }
 
   return path;
@@ -294,18 +301,18 @@ async function checkIsDescendant(groupId: bigint, potentialAncestorId: bigint): 
   let currentId: bigint | null = groupId;
 
   while (currentId) {
-    const group = await prisma.group.findUnique({
+    const foundGroup: { parentId: bigint | null } | null = await prisma.group.findUnique({
       where: { id: currentId },
       select: { parentId: true },
     });
 
-    if (!group) return false;
+    if (!foundGroup) return false;
 
-    if (group.parentId && group.parentId === potentialAncestorId) {
+    if (foundGroup.parentId && foundGroup.parentId === potentialAncestorId) {
       return true;
     }
 
-    currentId = group.parentId;
+    currentId = foundGroup.parentId;
   }
 
   return false;

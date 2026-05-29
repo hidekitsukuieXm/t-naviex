@@ -83,6 +83,10 @@ async function readResource(uri: string) {
 
   const [, resourceType, projectId] = match;
 
+  if (!resourceType || !projectId) {
+    return NextResponse.json({ error: 'Invalid resource URI format' }, { status: 400 });
+  }
+
   let data: unknown;
 
   switch (resourceType) {

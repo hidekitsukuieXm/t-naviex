@@ -91,12 +91,14 @@ export function DashboardCreateDialog({ projectId, onSuccess }: DashboardCreateD
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          新規ダッシュボード
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            新規ダッシュボード
+          </Button>
+        }
+      />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>ダッシュボードを作成</DialogTitle>

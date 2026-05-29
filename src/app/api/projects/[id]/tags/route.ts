@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
+import { auth } from '@/lib/auth';
 import { getTags, getAllTags, createTag, getTagByName } from '@/lib/repositories/tag-repository';
 import { getProjectById } from '@/lib/repositories/project-repository';
 import { logTagCreate } from '@/lib/audit';
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id: projectId } = await params;
 
     // Check project exists
-    const project = await getProjectById(projectId);
+    const project = await getProjectById(BigInt(projectId));
     if (!project) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const { id: projectId } = await params;
 
     // Check project exists
-    const project = await getProjectById(projectId);
+    const project = await getProjectById(BigInt(projectId));
     if (!project) {
       return NextResponse.json({ error: 'プロジェクトが見つかりません。' }, { status: 404 });
     }

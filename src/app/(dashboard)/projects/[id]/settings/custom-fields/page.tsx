@@ -139,6 +139,18 @@ export default function CustomFieldsSettingsPage({ params }: PageProps) {
     [projectId, editingDefinition, fetchDefinitions]
   );
 
+  // Submit wrapper
+  const handleSubmit = useCallback(
+    async (data: CreateCustomFieldDefinitionRequest | UpdateCustomFieldDefinitionRequest) => {
+      if (editingDefinition) {
+        await handleUpdate(data as UpdateCustomFieldDefinitionRequest);
+      } else {
+        await handleCreate(data as CreateCustomFieldDefinitionRequest);
+      }
+    },
+    [editingDefinition, handleCreate, handleUpdate]
+  );
+
   // 削除
   const handleDelete = useCallback(
     async (definitionId: number) => {
@@ -226,7 +238,7 @@ export default function CustomFieldsSettingsPage({ params }: PageProps) {
       </div>
 
       {/* タブ */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={(v) => v && setActiveTab(v)}>
         <TabsList>
           <TabsTrigger value="all">
             すべて
@@ -271,7 +283,7 @@ export default function CustomFieldsSettingsPage({ params }: PageProps) {
             <CustomFieldForm
               definition={editingDefinition ?? undefined}
               projectId={projectId}
-              onSubmit={editingDefinition ? handleUpdate : handleCreate}
+              onSubmit={handleSubmit}
               onCancel={handleCloseSheet}
               isLoading={isSaving}
             />

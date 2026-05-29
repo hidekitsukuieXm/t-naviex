@@ -85,6 +85,7 @@ export interface SsoConfiguration {
 
   createdAt: Date;
   updatedAt: Date;
+  lastUsedAt?: Date;
 }
 
 /**
@@ -193,11 +194,22 @@ export interface SsoUserInfo {
 }
 
 /**
+ * SSO接続チェック項目
+ */
+export interface SsoConnectionCheck {
+  name: string;
+  passed: boolean;
+  message?: string;
+}
+
+/**
  * SSO接続テスト結果
  */
 export interface SsoConnectionTestResult {
   success: boolean;
   message: string;
+  checks: SsoConnectionCheck[];
+  responseTime?: number;
   details?: {
     authorizationUrl?: boolean;
     tokenUrl?: boolean;

@@ -189,14 +189,16 @@ export function MasterManagementDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger asChild>
-          {trigger || (
-            <Button variant="outline" size="sm">
-              <Settings className="mr-2 size-4" />
-              {label}設定
-            </Button>
-          )}
-        </DialogTrigger>
+        <DialogTrigger
+          render={
+            trigger || (
+              <Button variant="outline" size="sm">
+                <Settings className="mr-2 size-4" />
+                {label}設定
+              </Button>
+            )
+          }
+        />
         <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{label}マスタ管理</DialogTitle>

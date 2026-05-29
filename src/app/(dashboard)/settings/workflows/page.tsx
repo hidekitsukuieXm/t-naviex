@@ -206,10 +206,12 @@ export default function WorkflowSettingsPage() {
   ): Record<string, BugWorkflowTransition[]> => {
     return transitions.reduce(
       (acc, t) => {
-        if (!acc[t.fromStatus]) {
-          acc[t.fromStatus] = [];
+        const current = acc[t.fromStatus];
+        if (!current) {
+          acc[t.fromStatus] = [t];
+        } else {
+          current.push(t);
         }
-        acc[t.fromStatus].push(t);
         return acc;
       },
       {} as Record<string, BugWorkflowTransition[]>

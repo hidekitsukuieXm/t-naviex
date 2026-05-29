@@ -176,7 +176,6 @@ async function importTestResult(
     data: {
       status,
       executedAt: new Date(),
-      executedById: userId,
       executionTime: mappedResult.duration,
       comment: mappedResult.errorMessage
         ? `[Automation Import]\n${mappedResult.errorMessage}`
@@ -192,8 +191,9 @@ async function importTestResult(
       executedById: userId,
       executedAt: new Date(),
       executionTime: mappedResult.duration,
-      notes: mappedResult.errorMessage || null,
-      errorDetails: mappedResult.stackTrace || null,
+      comment: mappedResult.errorMessage
+        ? `${mappedResult.errorMessage}${mappedResult.stackTrace ? '\n\n' + mappedResult.stackTrace : ''}`
+        : null,
       environment: 'Automated Test',
       version: 1,
     },

@@ -29,20 +29,36 @@ export async function GET(request: NextRequest) {
     }
 
     // リダイレクトURIを構築
-    const baseUrl = process.env.NEXTAUTH_URL || request.nextUrl.origin;
+    const baseUrl = process.env['NEXTAUTH_URL'] || request.nextUrl.origin;
     const redirectUri = `${baseUrl}/api/sso/azure-ad/callback`;
 
     // プロバイダーを初期化
-    const provider = AzureAdProvider.fromSsoConfiguration(
-      {
-        ...config,
-        id: config.id.toString(),
-        metadata: config.metadata as Record<string, unknown> | undefined,
-        createdAt: config.createdAt,
-        updatedAt: config.updatedAt,
-      },
-      redirectUri
-    );
+    const ssoConfig = {
+      id: config.id.toString(),
+      name: config.name,
+      displayName: config.displayName,
+      providerType: config.providerType,
+      providerName: config.providerName,
+      status: config.status,
+      clientId: config.clientId ?? undefined,
+      clientSecret: config.clientSecret ?? undefined,
+      authorizationUrl: config.authorizationUrl ?? undefined,
+      tokenUrl: config.tokenUrl ?? undefined,
+      userInfoUrl: config.userInfoUrl ?? undefined,
+      scopes: config.scopes ?? undefined,
+      entityId: config.entityId ?? undefined,
+      ssoUrl: config.ssoUrl ?? undefined,
+      sloUrl: config.sloUrl ?? undefined,
+      certificate: config.certificate ?? undefined,
+      privateKey: config.privateKey ?? undefined,
+      allowedDomains: config.allowedDomains ?? undefined,
+      autoProvision: config.autoProvision,
+      defaultRoleId: config.defaultRoleId?.toString() ?? undefined,
+      metadata: config.metadata as Record<string, unknown> | undefined,
+      createdAt: config.createdAt,
+      updatedAt: config.updatedAt,
+    };
+    const provider = AzureAdProvider.fromSsoConfiguration(ssoConfig, redirectUri);
 
     // stateとnonceを生成
     const state = generateState();

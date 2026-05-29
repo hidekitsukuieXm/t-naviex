@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@/generated/prisma';
 import {
   validateProjectLevel,
   type ProjectLevel,
@@ -89,7 +90,7 @@ export async function POST(request: Request) {
         displayName: body.displayName,
         description: body.description ?? null,
         features: body.features ?? [],
-        limits: body.limits ?? {},
+        limits: (body.limits ?? {}) as Prisma.InputJsonValue,
         isDefault: body.isDefault ?? false,
         sortOrder: body.sortOrder ?? 0,
       },

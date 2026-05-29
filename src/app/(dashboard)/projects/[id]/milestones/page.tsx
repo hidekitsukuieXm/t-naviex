@@ -352,6 +352,7 @@ export default function MilestonesPage({ params }: MilestonesPageProps) {
               <Select
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value) => {
+                  if (!value) return;
                   const [field, order] = value.split('-') as [SortField, SortOrder];
                   setSortBy(field);
                   setSortOrder(order);
@@ -466,7 +467,9 @@ export default function MilestonesPage({ params }: MilestonesPageProps) {
                         <div className="flex items-center gap-2">
                           <span>{milestone.name}</span>
                           {isOverdue && (
-                            <AlertTriangle className="size-4 text-destructive" title="期限超過" />
+                            <span title="期限超過">
+                              <AlertTriangle className="size-4 text-destructive" />
+                            </span>
                           )}
                         </div>
                         {milestone.description && (

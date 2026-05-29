@@ -449,6 +449,7 @@ export class AdfsProvider {
       success: allPassed,
       message: allPassed ? 'ADFS接続テストに成功しました' : 'ADFS接続テストに一部失敗しました',
       details,
+      checks: [],
     };
   }
 

@@ -428,7 +428,7 @@ export default function TestRunsPage({ params }: TestRunsPageProps) {
                   )}
                 </SelectContent>
               </Select>
-              <Select value={milestoneFilter} onValueChange={setMilestoneFilter}>
+              <Select value={milestoneFilter} onValueChange={(v) => v && setMilestoneFilter(v)}>
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="マイルストーン" />
                 </SelectTrigger>
@@ -442,7 +442,10 @@ export default function TestRunsPage({ params }: TestRunsPageProps) {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={configurationFilter} onValueChange={setConfigurationFilter}>
+              <Select
+                value={configurationFilter}
+                onValueChange={(v) => v && setConfigurationFilter(v)}
+              >
                 <SelectTrigger className="w-36">
                   <SelectValue placeholder="コンフィグ" />
                 </SelectTrigger>
@@ -459,6 +462,7 @@ export default function TestRunsPage({ params }: TestRunsPageProps) {
               <Select
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value) => {
+                  if (!value) return;
                   const [field, order] = value.split('-') as [SortField, SortOrder];
                   setSortBy(field);
                   setSortOrder(order);
@@ -581,7 +585,9 @@ export default function TestRunsPage({ params }: TestRunsPageProps) {
                         <div className="flex items-center gap-2">
                           <span>{testRun.name}</span>
                           {overdue && (
-                            <AlertTriangle className="size-4 text-destructive" title="期限超過" />
+                            <span title="期限超過">
+                              <AlertTriangle className="size-4 text-destructive" />
+                            </span>
                           )}
                         </div>
                         {testRun.description && (

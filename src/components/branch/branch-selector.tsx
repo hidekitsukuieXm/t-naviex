@@ -58,30 +58,32 @@ export function BranchSelector({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          disabled={disabled}
-          className={cn('justify-between', className)}
-        >
-          <span className="flex items-center gap-2 truncate">
-            <GitBranch className="h-4 w-4 shrink-0" />
-            {selectedBranch ? (
-              <>
-                <span className="truncate">{selectedBranch.name}</span>
-                <Badge variant="outline" className="text-xs shrink-0">
-                  {getBranchTypeLabel(selectedBranch.type)}
-                </Badge>
-              </>
-            ) : (
-              <span className="text-muted-foreground">{placeholder}</span>
-            )}
-          </span>
-          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            disabled={disabled}
+            className={cn('justify-between', className)}
+          >
+            <span className="flex items-center gap-2 truncate">
+              <GitBranch className="h-4 w-4 shrink-0" />
+              {selectedBranch ? (
+                <>
+                  <span className="truncate">{selectedBranch.name}</span>
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {getBranchTypeLabel(selectedBranch.type)}
+                  </Badge>
+                </>
+              ) : (
+                <span className="text-muted-foreground">{placeholder}</span>
+              )}
+            </span>
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        }
+      />
       <PopoverContent className="w-[300px] p-0" align="start">
         <Command>
           <CommandInput placeholder="ブランチを検索..." />

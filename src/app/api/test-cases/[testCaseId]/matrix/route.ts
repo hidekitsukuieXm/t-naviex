@@ -274,8 +274,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const targetCells: { rowIndex: number; columnIndex: number; cell: MatrixCell }[] = [];
 
         for (let ri = 0; ri < cells.length; ri++) {
-          for (let ci = 0; ci < cells[ri].length; ci++) {
-            const cell = cells[ri][ci];
+          const row = cells[ri];
+          if (!row) continue;
+          for (let ci = 0; ci < row.length; ci++) {
+            const cell = row[ci];
+            if (!cell) continue;
             let include = false;
 
             switch (strategy as MatrixExpansionStrategy) {
@@ -306,17 +309,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         await deleteExpandedCases(matrix.id);
 
         // 展開テストケースを作成
-        const expandedCases = targetCells.map(({ rowIndex, columnIndex }) => ({
-          matrixTestCaseId: matrix.id,
-          rowIndex,
-          columnIndex,
-          generatedTitle: generateTestCaseTitle(
-            titleTemplate,
-            rowItems[rowIndex],
-            colItems[columnIndex],
-            matrix.name
-          ),
-        }));
+        const expandedCases = targetCells
+          .filter(({ rowIndex, columnIndex }) => rowItems[rowIndex] && colItems[columnIndex])
+          .map(({ rowIndex, columnIndex }) => ({
+            matrixTestCaseId: matrix.id,
+            rowIndex,
+            columnIndex,
+            generatedTitle: generateTestCaseTitle(
+              titleTemplate,
+              rowItems[rowIndex]!,
+              colItems[columnIndex]!,
+              matrix.name
+            ),
+          }));
 
         await createExpandedCases(expandedCases);
 

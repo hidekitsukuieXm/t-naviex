@@ -11,6 +11,9 @@ import type {
   TestSpecListResponse,
 } from '@/types/test-spec';
 
+// Re-export types for external use
+export type { UpdateTestSpecInput, CreateTestSpecInput, TestSpecSearchParams };
+
 // テスト仕様書作成
 export async function createTestSpec(data: CreateTestSpecInput): Promise<TestSpec> {
   const testSpec = await prisma.testSpec.create({

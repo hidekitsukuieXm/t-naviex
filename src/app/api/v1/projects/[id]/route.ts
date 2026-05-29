@@ -11,9 +11,13 @@ import {
   getProjectById,
   updateProject,
   deleteProject,
-  type UpdateProjectInput,
 } from '@/lib/repositories/project-repository';
-import { validateProject, VALID_PROJECT_STATUSES, type ProjectStatus } from '@/types/project';
+import {
+  validateProject,
+  VALID_PROJECT_STATUSES,
+  type ProjectStatus,
+  type UpdateProjectInput,
+} from '@/types/project';
 
 interface RouteParams {
   params: Promise<{ id: string }>;

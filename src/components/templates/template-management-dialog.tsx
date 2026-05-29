@@ -282,14 +282,16 @@ export function TemplateManagementDialog({ projectId, trigger }: TemplateManagem
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger asChild>
-          {trigger || (
-            <Button variant="outline" size="sm">
-              <FileText className="mr-2 size-4" />
-              テンプレート管理
-            </Button>
-          )}
-        </DialogTrigger>
+        <DialogTrigger
+          render={
+            trigger || (
+              <Button variant="outline" size="sm">
+                <FileText className="mr-2 size-4" />
+                テンプレート管理
+              </Button>
+            )
+          }
+        />
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>テストケーステンプレート管理</DialogTitle>

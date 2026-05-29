@@ -86,7 +86,7 @@ function transformToWithTags(
     inputTypes: data.inputTypes as string[],
     outputTypes: data.outputTypes as string[],
     tags: data.tags.map((t) => t.tag),
-  };
+  } as TestDesignKnowledgeWithTags;
 }
 
 function transformToWithFeedbacks(
@@ -104,7 +104,7 @@ function transformToWithFeedbacks(
     inputTypes: data.inputTypes as string[],
     outputTypes: data.outputTypes as string[],
     tags: data.tags.map((t) => t.tag),
-  };
+  } as TestDesignKnowledgeWithFeedbacks;
 }
 
 // ========================================
@@ -133,7 +133,7 @@ export async function createTestDesignKnowledge(
             })),
           }
         : undefined,
-    },
+    } as Prisma.TestDesignKnowledgeCreateInput,
     include: tagsInclude,
   });
 
@@ -180,7 +180,7 @@ export async function updateTestDesignKnowledge(
             })),
           }
         : undefined,
-    },
+    } as Prisma.TestDesignKnowledgeUpdateInput,
     include: tagsInclude,
   });
 
@@ -216,15 +216,15 @@ export async function duplicateTestDesignKnowledge(
       technique: original.technique,
       category: original.category,
       status: 'DRAFT',
-      applicableScenarios: original.applicableScenarios,
-      considerations: original.considerations,
-      examples: original.examples,
-      tools: original.tools,
-      references: original.references,
-      inputTypes: original.inputTypes,
-      outputTypes: original.outputTypes,
+      applicableScenarios: original.applicableScenarios as Prisma.InputJsonValue,
+      considerations: original.considerations as Prisma.InputJsonValue,
+      examples: original.examples as Prisma.InputJsonValue,
+      tools: original.tools as Prisma.InputJsonValue,
+      references: original.references as Prisma.InputJsonValue,
+      inputTypes: original.inputTypes as Prisma.InputJsonValue,
+      outputTypes: original.outputTypes as Prisma.InputJsonValue,
       version: '1.0.0',
-      metadata: original.metadata,
+      metadata: original.metadata as Prisma.InputJsonValue,
       createdById,
       tags: {
         create: original.tags.map((t) => ({

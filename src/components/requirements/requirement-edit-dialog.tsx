@@ -118,14 +118,16 @@ export function RequirementEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm">
-            <Pencil className="mr-2 size-4" />
-            編集
-          </Button>
-        )}
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          trigger || (
+            <Button variant="outline" size="sm">
+              <Pencil className="mr-2 size-4" />
+              編集
+            </Button>
+          )
+        }
+      />
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>要求仕様の編集</DialogTitle>

@@ -103,7 +103,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
     if (orderByField) {
       options.orderBy = {
-        field: orderByField as BugListOptions['orderBy']['field'],
+        field: orderByField as NonNullable<BugListOptions['orderBy']>['field'],
         direction: (orderDirection === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc',
       };
     }

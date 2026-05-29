@@ -204,12 +204,14 @@ export function GeneratePatternsDialog({ projectId, onSuccess }: GeneratePattern
 
   return (
     <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : handleClose())}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Wand2 className="mr-2 size-4" />
-          パターン生成
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button variant="outline">
+            <Wand2 className="mr-2 size-4" />
+            パターン生成
+          </Button>
+        }
+      />
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>コンフィギュレーションパターン生成</DialogTitle>

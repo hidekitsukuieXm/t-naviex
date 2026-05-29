@@ -7,6 +7,7 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mc
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
+import type { TestType } from '@/generated/prisma';
 
 // Types for MCP responses
 export interface MCPProject {
@@ -117,7 +118,7 @@ Use the provided tools to interact with the test management system.
           id: p.id.toString(),
           name: p.name,
           description: p.description,
-          prefix: p.prefix,
+          prefix: '',
           createdAt: p.createdAt.toISOString(),
           updatedAt: p.updatedAt.toISOString(),
         }));
@@ -177,7 +178,7 @@ Use the provided tools to interact with the test management system.
           include: {
             testSpec: true,
             testSteps: {
-              orderBy: { stepNumber: 'asc' },
+              orderBy: { stepNo: 'asc' },
             },
           },
           orderBy: { updatedAt: 'desc' },
@@ -195,9 +196,9 @@ Use the provided tools to interact with the test management system.
           testType: tc.testType,
           steps: tc.testSteps.map((step) => ({
             id: step.id.toString(),
-            stepNumber: step.stepNumber,
-            action: step.action || '',
-            expectedResult: step.expectedResult || '',
+            stepNumber: step.stepNo,
+            action: step.actionMd || '',
+            expectedResult: step.expectedMd || '',
           })),
           createdAt: tc.createdAt.toISOString(),
           updatedAt: tc.updatedAt.toISOString(),
@@ -279,20 +280,20 @@ Use the provided tools to interact with the test management system.
             description: args.description || null,
             preconditions: args.preconditions || null,
             priority: args.priority || 'MEDIUM',
-            testType: args.testType || 'FUNCTIONAL',
+            testType: (args.testType || 'FUNCTIONAL') as TestType,
             sortOrder: (maxSortOrder._max.sortOrder || 0) + 1,
             testSteps: args.steps
               ? {
                   create: args.steps.map((step, index) => ({
-                    stepNumber: index + 1,
-                    action: step.action,
-                    expectedResult: step.expectedResult,
+                    stepNo: index + 1,
+                    actionMd: step.action,
+                    expectedMd: step.expectedResult,
                   })),
                 }
               : undefined,
           },
           include: {
-            testSteps: { orderBy: { stepNumber: 'asc' } },
+            testSteps: { orderBy: { stepNo: 'asc' } },
           },
         });
 
@@ -305,12 +306,19 @@ Use the provided tools to interact with the test management system.
           preconditions: testCase.preconditions,
           priority: testCase.priority,
           testType: testCase.testType,
-          steps: testCase.testSteps.map((step) => ({
-            id: step.id.toString(),
-            stepNumber: step.stepNumber,
-            action: step.action || '',
-            expectedResult: step.expectedResult || '',
-          })),
+          steps: testCase.testSteps.map(
+            (step: {
+              id: bigint;
+              stepNo: number;
+              actionMd: string | null;
+              expectedMd: string | null;
+            }) => ({
+              id: step.id.toString(),
+              stepNumber: step.stepNo,
+              action: step.actionMd || '',
+              expectedResult: step.expectedMd || '',
+            })
+          ),
           createdAt: testCase.createdAt.toISOString(),
           updatedAt: testCase.updatedAt.toISOString(),
         };

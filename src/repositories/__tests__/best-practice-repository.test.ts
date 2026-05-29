@@ -49,7 +49,7 @@ vi.mock('@/lib/prisma', () => {
 });
 
 // Prisma生成型をモック
-vi.mock('@/generated/prisma', () => ({
+vi.mock('@prisma/client', () => ({
   Prisma: {},
   BestPracticeComplexity: { LOW: 'LOW', MEDIUM: 'MEDIUM', HIGH: 'HIGH' },
   BestPracticeStatus: {

@@ -19,14 +19,36 @@ function useTabsContext() {
 }
 
 interface TabsProps extends React.HTMLAttributes<HTMLDivElement> {
-  value: string;
-  onValueChange: (value: string) => void;
+  value?: string;
+  onValueChange?: (value: string) => void;
   defaultValue?: string;
 }
 
-function Tabs({ value, onValueChange, className, children, ...props }: TabsProps) {
+function Tabs({
+  value: controlledValue,
+  onValueChange,
+  defaultValue,
+  className,
+  children,
+  ...props
+}: TabsProps) {
+  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue ?? '');
+
+  const isControlled = controlledValue !== undefined;
+  const value = isControlled ? controlledValue : uncontrolledValue;
+
+  const handleValueChange = React.useCallback(
+    (newValue: string) => {
+      if (!isControlled) {
+        setUncontrolledValue(newValue);
+      }
+      onValueChange?.(newValue);
+    },
+    [isControlled, onValueChange]
+  );
+
   return (
-    <TabsContext.Provider value={{ value, onValueChange }}>
+    <TabsContext.Provider value={{ value, onValueChange: handleValueChange }}>
       <div data-slot="tabs" className={cn('w-full', className)} {...props}>
         {children}
       </div>
